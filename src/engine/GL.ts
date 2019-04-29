@@ -9,8 +9,6 @@ import * as draw from './draw'
 import * as scr from './scr'
 import * as shaders from './shaders'
 
-import './glDebugger'
-
 let gl: any = null
 
 export const getContext = () => {
@@ -525,18 +523,11 @@ export const init = function()
   state.textures = []
   state.currenttextures =[]
   state.programs = []
-  
-  const debugUtil = (window as any).WebGLDebugUtils
-  function throwOnGLError(err, funcName, args) {
-    throw debugUtil.glEnumToString(err) + " was caused by call to: " + funcName;
-  };
-  
 
   vid.state.mainwindow = document.getElementById('mainwindow');
   try
   {
-    const ctx = vid.state.mainwindow.getContext('webgl') || vid.state.mainwindow.getContext('experimental-webgl');
-    gl = ctx //debugUtil.makeDebugContext(ctx, throwOnGLError);
+    gl = vid.state.mainwindow.getContext('webgl') || vid.state.mainwindow.getContext('experimental-webgl');
   }
   catch (e) {}
   if (gl == null)

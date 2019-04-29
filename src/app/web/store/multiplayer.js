@@ -1,5 +1,5 @@
 import axios from 'axios'
-const masterServerUrl = 'http://master.netquake.io/api/server'
+const masterServerUrl = 'http://localhost:3000/api/server'
 
 const state = {
   serverStatuses: [],
@@ -14,7 +14,8 @@ const mutationTypes = {
 }
 
 const getters = {
-  getServerStatuses: state => state.serverStatuses
+  getServerStatuses: state => state.serverStatuses,
+  getAutoRefersh: state => state.autoRefresh
 }
 
 const mutations = {
@@ -74,8 +75,8 @@ const actions = {
       .then(() => dispatch('pingAllServers'))
   },
   refreshLoop ({dispatch, getters}) {
-    return dispatch('refresh')
-      .then(() => {
+    const work = getters.getAutoRefersh  ? dispatch('refresh') : Promise.resolve()
+    return work.then(() => {
         setTimeout(() => {
           dispatch('refreshLoop')
         }, refreshTime)

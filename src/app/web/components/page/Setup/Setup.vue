@@ -1,18 +1,15 @@
 <template lang="pug">
   .setup
-    SetupGame
-    Config
+    ul.tab
+      li.tab-item(:class="$route.name==='assets' ? 'active' : ''")
+        router-link.btn.btn-link(:to="{name: 'assets'}") Assets
+      li.tab-item(:class="$route.name==='config' ? 'active' : ''")
+        router-link.btn.btn-link(:to="{name: 'config'}") Config.cfg
+    router-view
 </template>
 
 <script>
-import SetupGame from './SetupGame/SetupGame.vue'
-import Config from './Config.vue'
-
 export default {
-  components: {
-    SetupGame,
-    Config
-  }
 }
 </script>
 <style>

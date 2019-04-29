@@ -264,7 +264,7 @@ export const sendToAll = function(data)
 			state1[i] = state2[i] = true;
 			continue;
 		}
-		if (host.state.client.netconnection.driver === 0)
+		if (host.state.client.netconnection.name === 'loop')
 		{
 			sendMessage(host.state.client.netconnection, data);
 			state1[i] = state2[i] = true;
@@ -296,8 +296,8 @@ export const sendToAll = function(data)
 			{
 				if (canSendMessage(host.state.client.netconnection) === true)
 					state2[i] = true;
-				else
-					getMessage(host.state.client.netconnection);
+				
+				getMessage(host.state.client.netconnection);
 				++count;
 			}
 		}
