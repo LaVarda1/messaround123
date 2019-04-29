@@ -5,6 +5,8 @@
         router-link.btn.btn-link(:to="{name: 'assets'}") Assets
       li.tab-item(:class="$route.name==='config' ? 'active' : ''")
         router-link.btn.btn-link(:to="{name: 'config'}") Config.cfg
+      li.tab-item(:class="$route.name==='autoexec' ? 'active' : ''")
+        router-link.btn.btn-link(:to="{name: 'autoexec'}") Autoexec.cfg
     router-view
 </template>
 

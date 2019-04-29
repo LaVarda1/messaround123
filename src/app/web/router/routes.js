@@ -4,6 +4,7 @@ import Singleplayer from '../components/page/Singleplayer/Singleplayer.vue'
 
 import Setup from '../components/page/Setup/Setup.vue'
 import Config from '../components/page/Setup/Config.vue'
+import Autoexec from '../components/page/Setup/Autoexec.vue'
 import SetupGame from '../components/page/Setup/SetupGame/SetupGame.vue'
 import Game from '../components/Game.vue'
 
@@ -23,7 +24,8 @@ const routes = [
         component: Setup,
         children: [
           { name: 'assets', path: 'assets', component: SetupGame },
-          { name: 'config', path: 'config', component: Config }
+          { name: 'config', path: 'config', component: Config },
+          { name: 'autoexec', path: 'autoexec', component: Autoexec }
         ]
       }
     ]

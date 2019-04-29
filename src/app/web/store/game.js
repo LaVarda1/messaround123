@@ -77,25 +77,32 @@ m_filter "1"
 m_pitch "0.022"
 m_yaw "0.022"
 m_forward "1"
-m_side "0.8"
-+mlook`
+m_side "0.8"`
+
+const recommendedAutoexec = `+mlook
+`
+
 const configFileName = 'Quake.id1/config.cfg'
+const autoExecFileName = 'Quake.id1/autoexec.cfg'
 
 const state = {
   assetMetas: [],
   configFile: '',
+  autoexecFile: '',
   newGameType: ''
 }
 
 const mutationTypes = {
   setAssetMetas: 'setAssetMetas',
   setConfigFile: 'setConfigFile',
+  setAutoexecFile: 'setAutoexecFile',
   setRecommendedConfig: 'setRecommendedConfig'
 }
 
 const getters = {
   allAssetMetas: state => state.assetMetas,
   getConfigFile: state => state.configFile,
+  getAutoexecFile: state => state.autoexecFile,
   hasRegistered: state => !!state.assetMetas.find(a => a.game === 'id1' && a.fileName.toLowerCase() === 'pak1.pak')
 }
 
@@ -105,6 +112,9 @@ const mutations = {
   },
   [mutationTypes.setConfigFile] (state, configFile) {
     state.configFile = configFile || ''
+  },
+  [mutationTypes.setAutoexecFile] (state, autoexecFile) {
+    state.autoexecFile = autoexecFile || ''
   }
 }
 
@@ -120,6 +130,18 @@ const actions = {
   loadRecommendedConfig ({commit}) {
     localStorage[configFileName] = recommendedCfg
     commit(mutationTypes.setConfigFile, recommendedCfg)
+  },
+  loadAutoexec ({commit}) {
+    const autoexecFile = localStorage[autoExecFileName]
+    commit(mutationTypes.setAutoexecFile, autoexecFile)
+  },
+  saveAutoexec ({commit}, autoexecFile) {
+    localStorage[autoExecFileName] = autoexecFile
+    commit(mutationTypes.setAutoexecFile, autoexecFile)
+  },
+  loadRecommendedAutoexec ({commit}) {
+    localStorage[autoExecFileName] = recommendedAutoexec
+    commit(mutationTypes.setAutoexecFile, recommendedAutoexec)
   },
   loadAssets ({commit}) {
     return indexedDb.getAllMeta()

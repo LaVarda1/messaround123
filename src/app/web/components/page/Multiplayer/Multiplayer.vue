@@ -1,6 +1,6 @@
 <template lang="pug">
   .multiplayer
-    table.table
+    table.table(:class="(refreshing ? 'loading' : '')")
       thead
         th Name
         th Connection
@@ -23,11 +23,12 @@
 </template>
 
 <script>
-import {mapGetters, mapMutations} from 'vuex'
+import {mapGetters, mapMutations, mapActions} from 'vuex'
 const sharewareMaps = ['start', 'e1m1', 'e1m2', 'e1m3', 'e1m4', 'e1m5', 'e1m6', 'e1m7']
 export default {
   data () {
     return {
+      refreshing: false
     }
   },
   computed: {
@@ -36,6 +37,7 @@ export default {
   },
   methods: {
     ...mapMutations('multiplayer', ['setAutoRefreshOff', 'setAutoRefreshOn']),
+    ...mapActions('multiplayer', ['refresh']),
     join(server) {
       this.$router.push({name: 'quake', params: {server}})
     },
@@ -51,7 +53,11 @@ export default {
   },
   beforeRouteEnter (to, from, next) {
     return next(vm => {
-      vm.setAutoRefreshOn()
+      vm.refreshing = true
+      vm.refresh().then(() => {
+        vm.refreshing = false
+        vm.setAutoRefreshOn()
+      })
     })
   },
   beforeRouteLeave (to, from, next) {

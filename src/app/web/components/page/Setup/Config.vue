@@ -17,8 +17,10 @@ export default {
   methods: {
     ...mapActions('game', ['saveConfig', 'loadRecommendedConfig'])
   },
-  mounted (){
-    this.$store.dispatch('game/loadConfig')
+  beforeRouteEnter (to, from, next) {
+    return next(vm => {
+      vm.loadRecommendedConfig()
+    })
   }
 }
 </script>

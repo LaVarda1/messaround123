@@ -1,6 +1,7 @@
 <template lang="pug">
-  .multiplayer
+  .singleplayer
     button.btn(@click="start()") Start Game
+
         
 </template>
 
