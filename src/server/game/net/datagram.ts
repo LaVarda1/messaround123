@@ -160,11 +160,12 @@ export const getMessage = function(sock)
 				break;
 			}
 			if (sequence !== sock.unreliableReceiveSequence)
-        con.dPrint('Dropped ' + (sequence - sock.unreliableReceiveSequence) + ' datagram(s)\n');
+        		con.dPrint('Dropped ' + (sequence - sock.unreliableReceiveSequence) + ' datagram(s)\n');
 			sock.unreliableReceiveSequence = sequence + 1;
+			const dest = new Uint8Array(net.state.message.data)
 			net.state.message.cursize = length;
 			for (i = 0; i < length; ++i)
-				net.state.message.data[i] = message[8 + i];
+				dest[i] = message[8 + i];
 			ret = 2;
 			break;
 		}
@@ -178,7 +179,7 @@ export const getMessage = function(sock)
 			if (sequence === sock.ackSequence)
 			{
 				if (++sock.ackSequence !== sock.sendSequence)
-          con.dPrint('ack sequencing error\n');
+          			con.dPrint('ack sequencing error\n');
 			}
 			else
 			{
@@ -215,6 +216,7 @@ export const getMessage = function(sock)
 			for (i = 0; i < length; ++i)
 				data[sock.receiveMessageLength + i] = message[8 + i];
 			net.state.message.cursize = sock.receiveMessageLength + length;
+
 			sock.receiveMessageLength = 0;
 			ret = 1;
 			break;
