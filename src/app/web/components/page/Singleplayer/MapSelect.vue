@@ -23,7 +23,7 @@ export default {
     ...mapGetters('game', ['hasRegistered']),
     availableMaps () {
       return mapList
-        .filter(map => !this.hasRegistered || map.game === gameType.Registered)
+        .filter(map => this.hasRegistered || map.game === gameType.ShareWare)
     }
   },
   data () {
