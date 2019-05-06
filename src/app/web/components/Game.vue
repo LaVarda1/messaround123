@@ -14,12 +14,6 @@ const gameHooks = (vueComp) => ({
 })
 
 export default Vue.extend({
-  props: {
-    server: {
-      type: Object,
-      default: null
-    }
-  },
   data() {
     return {
       gameSys: null,
@@ -37,12 +31,10 @@ export default Vue.extend({
   },
   computed: {
     args () {
-      const server = this.server
-      const _args = []
-      if (this.server) {
-        _args.push(`-connect ws://${server.connecthostport}`)
-      } 
-      return _args.join(' ')
+      const params = this.$route.query
+      return Object.keys(params)
+        .map(param => (!!params[param] ? param + ' ' + params[param] : param))
+        .join(' ')
     }
   },
   beforeRouteLeave (to, from, next) {
