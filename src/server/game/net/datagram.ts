@@ -42,12 +42,21 @@ export const init = function()
 	if (com.checkParm('-noudp') != null)
 		return;
 
+	const portStartArg = com.checkParm('-udpportstart')
+	let startPort = 0
+	if (portStartArg) {
+		startPort = parseInt(com.state.argv[portStartArg + 1])
+	}
 	var i, newsocket;
 	for (i = 0; i < sv.state.svs.maxclientslimit; ++i)
 	{
 		newsocket = dgram.createSocket('udp4');
 		state.sockets[i] = newsocket;
-		newsocket.bind();
+		if(startPort) {
+			newsocket.bind(startPort + i);
+		} else {
+			newsocket.bind();
+		}
 		newsocket.on('listening', dgramOnListening);
 		newsocket.on('message', dgramOnMessage);
 		newsocket.on('error', dgramOnError);

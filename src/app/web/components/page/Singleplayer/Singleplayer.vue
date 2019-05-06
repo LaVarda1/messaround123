@@ -1,15 +1,25 @@
 <template lang="pug">
   .singleplayer
-    .panel
-      .panel-title Vanilla Game
-        button.btn(@click="start()") Start Game
-    
-    .panel
-      .panel-title Map Selection
-        .container
-          .column.col-6
-            MapSelect(v-model="mapSelection")
-      button.btn(@click="startCustom()") Start Game
+    .container
+      .column.col-8
+        .panel
+          .panel-header
+            .panel-title
+              h5 Normal Quake
+          .panel-body
+            button.btn(@click="start()") Start Game
+          .panel-footer
+        
+        .panel
+          .panel-header
+            .panel-title
+              h5 Map Selection
+          .panel-body
+            .container
+              .column.col-6
+                MapSelect(v-model="mapSelection")
+          .panel-footer
+            button.btn(@click="startCustom()") Start Game
 
         
 </template>
@@ -37,3 +47,8 @@ export default {
   }
 }
 </script>
+<style lang="scss">
+.panel {
+  margin-top: 1rem;
+}
+</style>
