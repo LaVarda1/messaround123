@@ -115,19 +115,19 @@ const onRequest = (request, response) => {
     if (request.method === 'POST') {
       response.statusCode = 400;
       response.setHeader('Content-Type', 'application/json; charset=UTF-8');
-			request.on('data', (data) => {
-				const str = data.toString('ascii')
-				const obj = JSON.parse(str)
-				if (obj.id === host.state.serverId) {
-					response.statusCode = 200;
-					response.write(JSON.stringify({message: "OK"}))
-				} else {
-					response.write(JSON.stringify({message: "Invalid ID"}))
-				}
-			})			
-			request.on('end', () => {
-				response.end();
-			})
+      request.on('data', (data) => {
+        const str = data.toString('ascii')
+        const obj = JSON.parse(str)
+        if (obj.id === host.state.serverId) {
+          response.statusCode = 200;
+          response.write(JSON.stringify({ message: "OK" }))
+        } else {
+          response.write(JSON.stringify({ message: "Invalid ID" }))
+        }
+      })
+      request.on('end', () => {
+        response.end();
+      })
       return
     } else {
       response.statusCode = 405;
@@ -199,7 +199,7 @@ export const registerWithMaster = () => {
   }
   const serverPost = JSON.stringify({
     serverId: host.state.serverId,
-    game: gameVar && gameVar.value || 'id1',
+    game: gameVar && gameVar.string || '',
     gameType: 'what is this field for?',
     name: net.cvr.hostname.string,
     connecthostport: net.cvr.connecthostport.string,

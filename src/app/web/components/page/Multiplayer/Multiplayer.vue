@@ -39,9 +39,13 @@ export default {
     ...mapMutations('multiplayer', ['setAutoRefreshOff', 'setAutoRefreshOn']),
     ...mapActions('multiplayer', ['refresh']),
     join(server) {
-      this.$router.push({name: 'quake', query: {
-        "-connect": `ws://${server.connecthostport}`
-      }})
+      var query = {
+        "-connect": `ws://${server.connecthostport}`,
+      }
+      if (server.game) {
+        query["-game"] = server.game
+      }
+      this.$router.push({name: 'quake', query})
     },
     formatPlayerCount (server) {
       return `${server.players.length}/${server.maxPlayers}`
