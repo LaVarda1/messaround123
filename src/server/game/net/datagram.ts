@@ -462,27 +462,28 @@ const controlOnMessage = function(msg, rinfo)
 		return;
 	}
 	var s;
-	for (i = 0; i < net.activeSockets.length; ++i)
-	{
-		s = net.activeSockets[i];
-		if (s.disconnected === true)
-			continue;
-		if (net.state.drivers[s.driver].name !== "datagram")
-			continue;
-		if (rinfo.address !== s.addr[0])
-			continue;
-		if ((rinfo.port !== s.addr[1]) || ((sys.floatTime() - s.connecttime) >= 2.0))
-		{
-			net.close(s);
-			return;
-		}
-		buf[2] = 0;
-		buf[3] = 9;
-		buf[4] = 0x81;
-		buf.writeUInt32LE(s.driverdata.data_port, 5);
-		state.controlsocket.send(buf, 0, 9, rinfo.port, rinfo.address);
-		return;
-	}
+	// Joe - Allow clients to join with same IP (clients behind NAT)
+	// for (i = 0; i < net.activeSockets.length; ++i)
+	// {
+	// 	s = net.activeSockets[i];
+	// 	if (s.disconnected === true)
+	// 		continue;
+	// 	if (net.state.drivers[s.driver].name !== "datagram")
+	// 		continue;
+	// 	if (rinfo.address !== s.addr[0])
+	// 		continue;
+	// 	if ((rinfo.port !== s.addr[1]) || ((sys.floatTime() - s.connecttime) >= 2.0))
+	// 	{
+	// 		net.close(s);
+	// 		return;
+	// 	}
+	// 	buf[2] = 0;
+	// 	buf[3] = 9;
+	// 	buf[4] = 0x81;
+	// 	buf.writeUInt32LE(s.driverdata.data_port, 5);
+	// 	state.controlsocket.send(buf, 0, 9, rinfo.port, rinfo.address);
+	// 	return;
+	// }
 	for (i = 0; i < state.sockets.length; ++i)
 	{
 		s = state.sockets[i];

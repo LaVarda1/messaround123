@@ -176,17 +176,19 @@ const serverOnRequest = (request) => {
 		return;
 	}
 	var i, s;
-	for (i = 0; i < net.activeSockets.length; ++i)
-	{
-		s = net.activeSockets[i];
-		if (s.disconnected === true)
-			continue;
-		if (net.state.drivers[s.driver].name !== "websocket")
-			continue;
-		if (request.remoteAddress !== s.address)
-			continue;
-		net.close(s);
-		break;
-	}
+	
+	// Joe - Allow clients to join with same IP (clients behind NAT)
+	// for (i = 0; i < net.activeSockets.length; ++i)
+	// {
+	// 	s = net.activeSockets[i];
+	// 	if (s.disconnected === true)
+	// 		continue;
+	// 	if (net.state.drivers[s.driver].name !== "websocket")
+	// 		continue;
+	// 	if (request.remoteAddress !== s.address)
+	// 		continue;
+	// 	net.close(s);
+	// 	break;
+	// }
 	state.acceptsockets.push(request.accept('quake', request.origin));
 };
