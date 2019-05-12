@@ -88,8 +88,9 @@ export const newQSocket = function()
 		unreliableSendSequence: 0,
 		receiveSequence: 0,
 		unreliableReceiveSequence: 0,
-		addr: '',
-		messages: null
+		addr: null,
+		messages: null,
+		netWait: false
 	};
 	return activeSockets[i];
 };

@@ -113,7 +113,7 @@ export const checkNewConnections = function()
 	if (state.acceptsockets.length === 0)
 		return;
 	var sock = net.newQSocket();
-	var address = state.acceptsockets.shift();
+	var accetpData = state.acceptsockets.shift();
 	var i, newsocket;
 	for (i = 0; i < state.sockets.length; ++i)
 	{
@@ -124,6 +124,8 @@ export const checkNewConnections = function()
 	if (i === state.sockets.length)
 		return;
 	newsocket.data_socket = sock;
+	if (accetpData.mod && accetpData.mod.type == 0x01 && accetpData.mod.version >= 34)
+		sock.netWait = true;		// JPG 3.40 - NAT fix
 	sock.lastSendTime = net.state.time;
 	sock.canSend = true;
 	sock.driverdata = newsocket;
@@ -136,14 +138,14 @@ export const checkNewConnections = function()
 	sock.unreliableReceiveSequence = 0;
 	sock.receiveMessageLength = 0;
 	sock.receiveMessage = new Buffer(8192);
-	sock.addr = address;
-	sock.address = address[0] + ':' + address[1];
+	sock.addr = [accetpData.address, accetpData.port],
+	sock.address = accetpData.address + ':' + accetpData.port
 	sock.messages = [];
 	var buf = new Buffer(1032);
 	buf.writeUInt32LE(0x09000080, 0);
 	buf[4] = 0x81;
 	buf.writeUInt32LE(newsocket.data_port, 5);
-	state.controlsocket.send(buf, 0, 9, address[1], address[0]);
+	state.controlsocket.send(buf, 0, 9, accetpData.port, accetpData.address);
 	return sock;
 };
 
@@ -156,10 +158,20 @@ export const getMessage = function(sock)
 	var message, length, flags, ret = 0, sequence, i;
 	for (; sock.messages.length > 0; )
 	{
+// 		if (!sock.netWait && sfunc.AddrCompare(&readaddr, &sock->addr) != 0)
+// 		{
+// #ifdef DEBUG
+// 			con.dPrint("Forged packet received\n");
+// 			con.dPrint("Expected: %s\n", StrAddr (&sock->addr));
+// 			con.dPrint("Received: %s\n", StrAddr (&readaddr));
+// #endif
+// 			continue;
+//		}
 		message = sock.messages.shift();
 		length = (message[2] << 8) + message[3] - 8;
 		flags = message[1];
 		sequence = message.readUInt32BE(4);
+
 		if ((flags & 16) !== 0)
 		{
 			if (sequence < sock.unreliableReceiveSequence)
@@ -338,7 +350,7 @@ const controlOnMessage = function(msg, rinfo)
 	buf[0] = 0x80;
 	buf[1] = 0;
 
-	if (command === 2)
+	if (command === 2) // CCREQ_SERVER_INFO
 	{
 		if (msg.toString('ascii', 5, 11) !== 'QUAKE\0')
 			return;
@@ -366,7 +378,7 @@ const controlOnMessage = function(msg, rinfo)
 
 	var i;
 
-	if (command === 3)
+	if (command === 3) // CCREQ_PLAYER_INFO
 	{
 		var playerNumber = msg[5];
 		if (playerNumber == null)
@@ -402,7 +414,7 @@ const controlOnMessage = function(msg, rinfo)
 		return;
 	}
 
-	if (command === 4)
+	if (command === 4) // CCREQ_RULE_INFO
 	{
 		var prevCvarName = msg.toString('ascii', 5).slice('\0')[0];
 		if (prevCvarName.length !== 0)
@@ -452,7 +464,7 @@ const controlOnMessage = function(msg, rinfo)
 	if (msg.toString('ascii', 5, 11) !== 'QUAKE\0')
 		return;
 
-	if (msg[11] !== 3)
+	if (msg[11] !== 3) // NET_PROTOCOL_VERSION
 	{
 		buf[2] = 0;
 		buf[3] = 28;
@@ -484,6 +496,18 @@ const controlOnMessage = function(msg, rinfo)
 	// 	state.controlsocket.send(buf, 0, 9, rinfo.port, rinfo.address);
 	// 	return;
 	// }
+
+	// JPG - support for mods
+	let mod = 0, modVersion = 0, modFlags = 0
+	if (msg.length > 12)
+		mod = msg[12]
+
+	if (msg.length > 13)
+		modVersion = msg[13]
+
+	if (msg.length > 14)
+		modFlags = msg[14]
+
 	for (i = 0; i < state.sockets.length; ++i)
 	{
 		s = state.sockets[i];
@@ -499,7 +523,11 @@ const controlOnMessage = function(msg, rinfo)
 		state.controlsocket.send(buf, 0, 22, rinfo.port, rinfo.address);
 		return;
 	}
-	state.acceptsockets.push([rinfo.address, rinfo.port]);
+	state.acceptsockets.push({address: rinfo.address, port: rinfo.port, mod: {
+		type: mod,
+		version: modVersion,
+		flags: modFlags
+	}});
 };
 
 const dgramOnError = function(e)
@@ -519,11 +547,16 @@ const dgramOnMessage = function(msg, rinfo)
 	if (this.data_socket == null)
 		return;
 	var addr = this.data_socket.addr;
-	if ((rinfo.address !== addr[0]) || (rinfo.port !== addr[1]))
+	if (!this.data_socket.netWait && ((rinfo.address !== addr[0]) || (rinfo.port !== addr[1])))
 		return;
 	if (rinfo.size < 8)
 		return;
 	if ((msg[0] & 0x80) !== 0)
 		return;
+	if (this.data_socket.netWait) {
+		addr.addr = [rinfo.address, rinfo.port]
+		addr.address = rinfo.address + ':' + rinfo.port
+		this.data_socket.netWait = false
+	}
 	this.data_socket.messages.push(msg);
 };

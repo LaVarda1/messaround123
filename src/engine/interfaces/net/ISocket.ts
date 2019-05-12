@@ -17,6 +17,7 @@ export default interface ISocket {
   unreliableSendSequence: number,
   receiveSequence: number,
   unreliableReceiveSequence: number,
-  addr: string,
-  messages: Buffer[]
+  addr: any,
+  messages: Buffer[],
+  netWait: boolean
 }
