@@ -9,7 +9,7 @@ Based on JS port of GLQuake by Triang3l
 
 # This repository contains three major components with two targets
 
-# The compnoents 
+# The components 
 
 - Quake JS Engine
 - Quake NodeJS server bindings
@@ -18,7 +18,7 @@ Based on JS port of GLQuake by Triang3l
 # Targets
 
 - NodeJS Quake server
-- Frontend assets for app (served with nginx, but any webserver supporing XHR range requests will work)
+- Frontend assets for app (served with nginx, but any webserver supporting XHR range requests will work)
 
 # Installing
 
@@ -42,7 +42,7 @@ Development
 `npm run build`
 
 Standalone
-Serve with nginx using nginx.conf, or a webserver of your choise
+Serve with nginx using nginx.conf, or a webserver of your choice
 
 Development
 `npm run start:dev`
