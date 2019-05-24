@@ -59,8 +59,10 @@ export const init = async function()
   state.conback.texnum = GL.loadPicTexture(state.conback);
 
   state.loading = await cachePic('loading');
-  state.loadingElem = document.getElementById('loading');
+  state.loadingCont = document.getElementById('loading');
+  state.loadingElem = state.loadingCont.querySelector('img');
   state.loadingElem.src = picToDataURL(state.loading);
+  state.loadingMsg = state.loadingCont.querySelector('.loading-message');
   state.gameContainer = document.querySelector('.game-container')
 
   state.gameContainer.style.backgroundImage = 'url("' + picToDataURL(picFromWad('BACKTILE')) + '")';
@@ -188,19 +190,20 @@ export const fadeScreen = function()
   GL.streamDrawColoredQuad(0, 0, vid.state.width, vid.state.height, 0, 0, 0, 204);
 };
 
-export const beginDisc = function()
+export const beginDisc = function(file)
 {
-  if (state.loadingElem == null)
+  if (state.loadingCont == null)
     return;
-  state.loadingElem.style.left = ((vid.state.width - state.loading.width) >> 1) + 'px';
-  state.loadingElem.style.top = ((vid.state.height - state.loading.height) >> 1) + 'px';
-  state.loadingElem.style.display = 'inline-block';
+  state.loadingCont.style.left = ((vid.state.width - state.loading.width) >> 1) + 'px';
+  state.loadingCont.style.top = ((vid.state.height - state.loading.height) >> 1) + 'px';
+  state.loadingCont.style.display = 'inline-block';
+  state.loadingMsg.innerText = file
 };
 
 export const endDisc = function()
 {
-  if (state.loadingElem != null)
-    state.loadingElem.style.display = 'none';
+  if (state.loadingCont != null)
+    state.loadingCont.style.display = 'none';
 };
 
 export const picToDataURL = function(pic)

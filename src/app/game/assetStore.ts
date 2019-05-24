@@ -91,7 +91,7 @@ export const loadFile = async (filename: string) : Promise<ArrayBuffer> =>
 {
   filename = filename.toLowerCase();
   var i, j, k, search, netpath, pak, file, data;
-  draw.beginDisc();
+  draw.beginDisc(filename);
   for (i = com.state.searchpaths.length - 1; i >= 0; --i)
   {
     search = com.state.searchpaths[i];

@@ -19,7 +19,7 @@ var devMiddleware = require('webpack-dev-middleware')(compiler, {
 app.use('/id1', express.static(path.join(__dirname, '../id1')))
 app.use(connectHistory())
 compiler.hooks.afterEmit.tap('compilation', compilation => {
-  console.log(compilation)
+  // console.log(compilation)
   hotMiddleware.publish({ action: 'reload' })
 })
 
