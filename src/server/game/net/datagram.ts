@@ -125,7 +125,8 @@ export const checkNewConnections = function()
 		return;
 	newsocket.data_socket = sock;
 	if (accetpData.mod && accetpData.mod.type == 0x01 && accetpData.mod.version >= 34) {
-		con.print('Proquake, waiting for new socket\n');
+		con.print(newsocket.data_port + ' Proquake, waiting for new socket\n');
+		con.print(newsocket.data_port + ' This request was on ' + accetpData.port + '\n');
 		sock.netWait = true;		// JPG 3.40 - NAT fix
 	}
 	sock.lastSendTime = net.state.time;
@@ -318,7 +319,7 @@ export const sendUnreliableMessage = function(sock, data)
 	for (i = 0; i < data.cursize; ++i)
 		buf[8 + i] = src[i];
 	
-	con.print('sending UM to port ' +  sock.addr[1] + '\n');
+	con.print(sock.driverdata.data_port + ' Sending UM to port ' +  sock.addr[1] + '\n');
 	sock.driverdata.send(buf, 0, data.cursize + 8, sock.addr[1], sock.addr[0]);
 	return 1;
 };
@@ -559,7 +560,8 @@ const dgramOnMessage = function(msg, rinfo)
 	if ((msg[0] & 0x80) !== 0)
 		return;
 	if (this.data_socket.netWait) {
-		con.print('Receiving new port: ' + rinfo.port + '\n')
+		con.print(this.data_port + ' Previous port: ' + addr.addr[1] + '\n')
+		con.print(this.data_port + ' Receiving new port: ' + rinfo.port + '\n')
 		addr.addr = [rinfo.address, rinfo.port]
 		addr.address = rinfo.address + ':' + rinfo.port
 		this.data_socket.netWait = false
