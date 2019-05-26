@@ -562,8 +562,8 @@ const dgramOnMessage = function(msg, rinfo)
 	if (this.data_socket.netWait) {
 		con.print(this.data_port + ' Previous port: ' + addr[1] + '\n')
 		con.print(this.data_port + ' Receiving new port: ' + rinfo.port + '\n')
-		addr.addr = [rinfo.address, rinfo.port]
-		addr.address = rinfo.address + ':' + rinfo.port
+		this.data_socket.addr = [rinfo.address, rinfo.port]
+		this.data_socket.address = rinfo.address + ':' + rinfo.port
 		this.data_socket.netWait = false
 	}
 	this.data_socket.messages.push(msg);
