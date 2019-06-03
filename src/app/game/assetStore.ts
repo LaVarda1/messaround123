@@ -135,15 +135,22 @@ export const loadFile = async (filename: string) : Promise<ArrayBuffer> =>
           return q.strmem(gotFile.responseText);
         }
         break;
-      
       }
     }
+
     const gotFile = await getFile(netpath) as any;
     if ((gotFile.status >= 200) && (gotFile.status <= 299))
     {
       sys.print('FindFile: ' + netpath + '\n');
       draw.endDisc();
       return q.strmem(gotFile.responseText);
+    }
+    // try indexedDb.
+    const tryIndexedDb = (await indexeddb.getAllAssetsPerGame(search.dir)).find(asset => {
+      return asset.fileName.toLowerCase() === filename.toLowerCase()
+    })
+    if (tryIndexedDb) {
+      return tryIndexedDb.data
     }
   }
   sys.print('FindFile: can\'t find ' + filename + '\n');
@@ -220,7 +227,8 @@ const getStorePackFileContents = (game, name, data) => {
 export const loadStorePackFiles = async (game: string): Promise<Array<{name: string, data: ArrayBuffer, contents: IPackedFile[]}>> => {
   let entries = null
   try {
-    entries = await indexeddb.getAllAssetsPerGame(game) as any
+    entries = (await indexeddb.getAllAssetsPerGame(game) as any)
+      .filter(g => g.fileName.toLowerCase().indexOf('.pak') > -1)
 
     if (!entries || entries.length === 0) {
       return null

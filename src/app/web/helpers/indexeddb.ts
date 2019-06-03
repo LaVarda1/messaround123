@@ -72,7 +72,7 @@ export const getAllAssetsPerGame = async (game) => {
 }
 
 export const saveAsset = async (game: string, fileName: string, fileCount: number, blob: any) => {
-  if (!game || !fileName || fileCount <= 0) {
+  if (!game || !fileName || blob.length <= 0) {
     throw new Error('Missing data while trying to save asset')
   }
   const metaObj = {

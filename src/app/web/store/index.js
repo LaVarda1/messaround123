@@ -3,14 +3,16 @@ import Vue from 'vue'
 import player from './player'
 import game from './game'
 import multiplayer from './multiplayer'
-Vue.use(Vuex)
+import maps from './maps'
 
+Vue.use(Vuex)
 
 const store = new Vuex.Store({
   modules: {
     multiplayer,
     player,
-    game
+    game,
+    maps
   },
 })
 
@@ -23,6 +25,8 @@ store.dispatch('game/loadAutoexec')
 if (!store.getters['game/getAutoexecFile']) {
   store.dispatch('game/loadRecommendedAutoexec')
 }
+
+store.dispatch('maps/loadMapListing')
 store.dispatch('game/loadAssets')
 store.dispatch('multiplayer/refreshLoop')
 

@@ -125,8 +125,6 @@ export const checkNewConnections = function()
 		return;
 	newsocket.data_socket = sock;
 	if (accetpData.mod && accetpData.mod.type == 0x01 && accetpData.mod.version >= 34) {
-		con.print(newsocket.data_port + ' Proquake, waiting for new socket\n');
-		con.print(newsocket.data_port + ' This request was on ' + accetpData.port + '\n');
 		sock.netWait = true;		// JPG 3.40 - NAT fix
 	}
 	sock.lastSendTime = net.state.time;
@@ -154,7 +152,6 @@ export const checkNewConnections = function()
 
 export const getMessage = function(sock)
 {
-	
 	if (sock.driverdata == null)
 		return -1;
 	if ((sock.canSend !== true) && ((net.state.time - sock.lastSendTime) > 1.0))
@@ -162,15 +159,10 @@ export const getMessage = function(sock)
 	var message, length, flags, ret = 0, sequence, i;
 	for (; sock.messages.length > 0; )
 	{
-// 		if (!sock.netWait && sfunc.AddrCompare(&readaddr, &sock->addr) != 0)
-// 		{
-// #ifdef DEBUG
-// 			con.dPrint("Forged packet received\n");
-// 			con.dPrint("Expected: %s\n", StrAddr (&sock->addr));
-// 			con.dPrint("Received: %s\n", StrAddr (&readaddr));
-// #endif
-// 			continue;
-//		}
+		// if (!sock.netWait && sfunc.AddrCompare(&readaddr, &sock->addr) != 0)
+		// {
+		// 	continue;
+		// }
 		message = sock.messages.shift();
 		length = (message[2] << 8) + message[3] - 8;
 		flags = message[1];
@@ -312,6 +304,7 @@ export const sendUnreliableMessage = function(sock, data)
 {
 	if (sock.driverdata == null)
 		return -1;
+	con.print(sock.driverdata.data_port + ' sending um')
 	var buf = new Buffer(1032);
 	buf.writeUInt32BE(data.cursize + 0x00100008, 0);
 	buf.writeUInt32BE(sock.unreliableSendSequence++, 4);
@@ -319,7 +312,6 @@ export const sendUnreliableMessage = function(sock, data)
 	for (i = 0; i < data.cursize; ++i)
 		buf[8 + i] = src[i];
 	
-	con.print(sock.driverdata.data_port + ' Sending UM to port ' +  sock.addr[1] + '\n');
 	sock.driverdata.send(buf, 0, data.cursize + 8, sock.addr[1], sock.addr[0]);
 	return 1;
 };
@@ -480,6 +472,7 @@ const controlOnMessage = function(msg, rinfo)
 		return;
 	}
 	var s;
+
 	// Joe - Allow clients to join with same IP (clients behind NAT)
 	// for (i = 0; i < net.activeSockets.length; ++i)
 	// {
@@ -560,8 +553,6 @@ const dgramOnMessage = function(msg, rinfo)
 	if ((msg[0] & 0x80) !== 0)
 		return;
 	if (this.data_socket.netWait) {
-		con.print(this.data_port + ' Previous port: ' + addr[1] + '\n')
-		con.print(this.data_port + ' Receiving new port: ' + rinfo.port + '\n')
 		this.data_socket.addr = [rinfo.address, rinfo.port]
 		this.data_socket.address = rinfo.address + ':' + rinfo.port
 		this.data_socket.netWait = false
