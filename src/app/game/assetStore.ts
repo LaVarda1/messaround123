@@ -146,9 +146,7 @@ export const loadFile = async (filename: string) : Promise<ArrayBuffer> =>
       return q.strmem(gotFile.responseText);
     }
     // try indexedDb.
-    const tryIndexedDb = (await indexeddb.getAllAssetsPerGame(search.dir)).find(asset => {
-      return asset.fileName.toLowerCase() === filename.toLowerCase()
-    })
+    const tryIndexedDb = await indexeddb.getAsset(search.dir, filename)
     if (tryIndexedDb) {
       return tryIndexedDb.data
     }

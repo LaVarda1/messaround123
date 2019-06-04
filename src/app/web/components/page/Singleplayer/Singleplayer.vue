@@ -1,7 +1,7 @@
 <template lang="pug">
   .singleplayer
     .container
-      .column.col-8
+      .column.col-12
         .panel
           .panel-header
             .panel-title
@@ -27,7 +27,7 @@
           .panel-body
             .container
               .column.col-12
-                Quaddicted(v-model="mapSelection")
+                Quaddicted
           .panel-footer
             button.btn(@click="startCustom()") Start Game
 
@@ -37,7 +37,7 @@
 <script>
 import {mapGetters, mapMutations} from 'vuex'
 import MapSelect from './MapSelect.vue'
-import Quaddicted from './Quaddicted.vue'
+import Quaddicted from './Quaddicted/Quaddicted.vue'
 
 export default {
   components: {

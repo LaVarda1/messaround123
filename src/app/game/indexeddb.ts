@@ -75,6 +75,17 @@ export const getAllAssetsPerGame = async (game) => {
   }))
 }
 
+export const getAsset = async (game, fileName) => {
+  const assetMeta = (await getAllMetaPerGame(game)).find(meta => meta.fileName.toLowerCase() === fileName.toLowerCase())
+  
+  return !assetMeta
+    ? Promise.resolve(null)
+    : {
+      ...assetMeta,
+      ...(await dbOperation(assetStoreName, store => store.get(assetMeta.assetId)))
+    }
+}
+
 export const saveAsset = async (game: string, fileName: string, fileCount: number, blob: any) => {
   if (!game || !fileName || fileCount <= 0) {
     throw new Error('Missing data while trying to save asset')

@@ -49,9 +49,10 @@ const getBinaryData = (url) => {
 
 const fixBaseDir = (fileList) => {
   const fileArrays = fileList.map(file => file.split('/'))
-  if (any(fa => fa[0].indexOf('.bsp') > -1, fileArrays)) {
+  if (any(fa => fa[0].toLowerCase().indexOf('.bsp') > -1, fileArrays)) {
     return fileArrays.map(fa => ['maps'].concat(fa).join('/'))
-  } else if (any(fa => fa[0].indexOf('maps') > -1, fileArrays)) {
+  } else if (any(fa => fa[0].toLowerCase().indexOf('maps') > -1, fileArrays)
+      || any(fa => fa[0].toLowerCase().indexOf('.pak') > -1, fileArrays)) {
     return fileArrays.map(fa => fa.join('/'))
   } else {
     return fileArrays.map(fa => tail(fa).join('/'))
@@ -66,14 +67,12 @@ const getMapZip = async (fileHandler, mapId) => {
   await zip.loadAsync(arrayBuf)
 
   const files = Object.keys(zip.files).filter(f => !zip.files[f].dir)
-  debugger
+
   const fixedFilePaths = fixBaseDir(files)
 
   return await Promise.all(files.map((fileName, idx) => {
     return zip.file(fileName).async("arraybuffer").then(buffer => fileHandler(mapId, fixedFilePaths[idx], buffer))
-
-  }
-  ))
+  }))
 }
 
 const saveToIndexedDb = (mapId, fileName, data) => {
@@ -87,12 +86,6 @@ const actions = {
   },
   loadMap ({commit, dispatch}, mapId) { 
     return getMapZip(saveToIndexedDb, mapId)
-    // return axios.get(quaddictedMapsUrl + '/' + mapId)
-    //   .then(response => {
-    //     const fileHandler = (file, data) => {
-    //       return dispatch('game/triggerSelfDismissingNotifcation', {...}, {root:true})
-    //     }
-    //   })
   }
 }
 
