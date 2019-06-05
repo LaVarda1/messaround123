@@ -29,7 +29,6 @@
               .column.col-12
                 Quaddicted
           .panel-footer
-            button.btn(@click="startCustom()") Start Game
 
         
 </template>

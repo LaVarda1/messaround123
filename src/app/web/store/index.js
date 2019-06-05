@@ -26,7 +26,6 @@ if (!store.getters['game/getAutoexecFile']) {
   store.dispatch('game/loadRecommendedAutoexec')
 }
 
-store.dispatch('maps/loadMapListing')
 store.dispatch('game/loadAssets')
 store.dispatch('multiplayer/refreshLoop')
 

@@ -2,8 +2,9 @@
   .panel
     .panel-header
       h6 Selected: {{map.title}}
-    .panel-body 
-      .container
+    .panel-body
+      MapLoadProgress(:map="map" v-if="getMapIsLoading")
+      .container(v-else)
         .columns
           .column.col-6
             a(:href="link" target="_blank") Quaddicted Details
@@ -33,12 +34,16 @@
             .start
               button.tooltip.tooltip-left.btn(@click="play" :disabled="map.requirements.length > 0" :data-tooltip="tooltipText") Play!
 
+    .panel-footer
 
 
 </template>
 
 <script>
 import {contains} from 'ramda'
+import MapLoadProgress from './MapLoadProgress.vue'
+import {mapGetters} from 'vuex'
+
 const guessStartMap = startMaps => {
   if (contains('start', startMaps)) {
     return 'start'
@@ -52,9 +57,13 @@ export default {
       default: () => {}
     }
   },
+  components: {
+    MapLoadProgress
+  },
   data () {
     return {
-      startMap: ''
+      startMap: guessStartMap(this.map.mapList),
+      mapLaunching: false
     }
   },
   watch: {
@@ -63,6 +72,7 @@ export default {
     }
   },
   computed: {
+    ...mapGetters('maps', ['getMapIsLoading']),
     link () {
       return 'https://www.quaddicted.com/reviews/' + this.map.detailLink
     },

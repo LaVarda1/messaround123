@@ -1,7 +1,7 @@
 const dbName = 'webQuakeAssets',
   metaStoreName = 'meta',
   assetStoreName = 'assets',
-  dbVersion = 4;
+  dbVersion = 5;
 
 const indexedDb: IDBFactory = window.indexedDB
 
@@ -10,8 +10,15 @@ function open (): Promise<IDBDatabase> {
     var openReq: IDBOpenDBRequest = indexedDb.open(dbName, dbVersion);
     openReq.onupgradeneeded = function(event: any) {
       var db = event.target.result as IDBDatabase;
-      db.createObjectStore("meta", { autoIncrement: true });
-      db.createObjectStore("assets", { keyPath: 'assetId' });
+      if (event.oldVersion < 4) {
+        db.createObjectStore("meta", { autoIncrement: true });
+        db.createObjectStore("assets", { keyPath: 'assetId' });
+      }
+      if (event.oldVersion < 5) {
+        var metaStore = openReq.transaction.objectStore("meta");
+        metaStore.createIndex("game", "game", { unique: false });
+        metaStore.createIndex("game, filename", ["game", "fileName"], { unique: false });
+      }
     };
     openReq.onerror = function(event) {
       alert("Why didn't you allow my web app to use IndexedDB?!");

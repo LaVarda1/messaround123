@@ -1,12 +1,16 @@
 <template lang="pug">
   .quaddicted-maps
+    .server-error(v-if="!loading && !available")
+      h5.text-error The map service seems to be down and is currently unvailable :(
+    .server-error(v-if="loadMapError")
+      h6.text-error The map failed to load :(
     Breakout(v-if="selectedMap" :map="selectedMap" @play="playMap")
-    .search.form-group
+    .search.form-group(v-if="loading || available")
       .col-3
         label.form-label(for="maps-search") Search
       .col-9
-        input.form-input(type="search" placeholder="Search" v-model="search")
-    Table.maps-table(:mapList="filteredMaps" v-model="selectedMapId")
+        input.form-input(type="search" placeholder="Search" v-model="search" :disabled="loading")
+    Table.maps-table(v-if="loading || available" :mapList="filteredMaps" v-model="selectedMapId" :loading="loading")
   
 </template>
 
@@ -26,7 +30,24 @@ export default {
   data () {
     return {
       search: '',
-      selectedMapId: ''
+      selectedMapId: '',
+      loading: false,
+      mapListing: [],
+      available: true,
+      loadMapError: ''
+    }
+  },
+  mounted() {
+    if (!this.getMapListing  || this.getMapListing.length <= 0) {
+      this.loading = true
+      this.loadMapListing()
+        .then(maps => {
+          this.loading = false
+        })
+        .catch(err => {
+          this.available = false
+          this.loading = false
+        })
     }
   },
   components: {
@@ -35,6 +56,9 @@ export default {
   },
   computed: {
     ...mapGetters('maps', ['getMapListing']),
+    available () {
+      return this.getMapListing.length > 0
+    },
     filteredMaps () {
       const searchTerm = (this.search || '').trim().toLowerCase()
       return !this.search
@@ -50,7 +74,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions('maps', ['loadMap']),
+    ...mapActions('maps', ['loadMap', 'loadMapListing']),
     playMap (mapName) {
       this.loadMap(this.selectedMapId)
         .then(() => {
@@ -58,6 +82,10 @@ export default {
             '-game': this.selectedMapId,
             '+map': mapName
           }})
+        })
+        .catch(err => {
+          debugger
+          this.loadMapError = err.message
         })
     }
   }

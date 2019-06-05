@@ -1,5 +1,5 @@
 <template lang="pug">
-  table.table.table-hover.table-fixed-header
+  table.table.table-hover.table-fixed-header(:class="loading ? 'loading-lg loading' : ''")
     thead
       tr
         th.title Title
@@ -25,6 +25,10 @@ export default {
     value: {
       type: String,
       default: ''
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
   methods: {
