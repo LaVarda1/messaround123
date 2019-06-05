@@ -4,6 +4,8 @@ const dbName = 'webQuakeAssets',
   dbVersion = 5;
 
 const indexedDb: IDBFactory = window.indexedDB
+const gameAndFileIndex = "game, filename"
+const gameIndex = "game"
 
 function open (): Promise<IDBDatabase> {
   return new Promise(function(resolve, reject){
@@ -16,8 +18,8 @@ function open (): Promise<IDBDatabase> {
       }
       if (event.oldVersion < 5) {
         var metaStore = openReq.transaction.objectStore("meta");
-        metaStore.createIndex("game", "game", { unique: false });
-        metaStore.createIndex("game, filename", ["game", "fileName"], { unique: false });
+        metaStore.createIndex(gameIndex, "game", { unique: false });
+        metaStore.createIndex(gameAndFileIndex, ["game", "fileName"], { unique: false });
       }
     };
     openReq.onerror = function(event) {
@@ -28,6 +30,18 @@ function open (): Promise<IDBDatabase> {
       resolve(event.target.result);
     };
   });
+}
+
+const promiseMe = (request: IDBRequest) => {
+  return new Promise((resolve, reject) =>  {
+    request.onerror = function(e) {
+      console.log(e);
+      reject(e);
+    };
+    request.onsuccess = function(event) {
+      resolve(request.result as any);
+    };
+  })
 }
 
 const dbOperation = async (storeName: string, fn: (db: IDBObjectStore) => IDBRequest): Promise<any> => {
@@ -49,6 +63,18 @@ const dbOperation = async (storeName: string, fn: (db: IDBObjectStore) => IDBReq
   })
 }
 
+export const hasGame = async (game) => {
+  const db = await open()
+
+  var transaction = db.transaction(['meta'], 'readonly');
+  var meta = transaction.objectStore('meta');
+  var index = meta.index(gameIndex);
+
+  // Select the first matching record, if any exists, assume game exists
+  const assetMeta = await promiseMe(index.get(IDBKeyRange.only([game.toLowerCase()]))) as any
+  return !!assetMeta
+}
+
 export const getAllMeta = async (): Promise<Array<any>> => {
   const keys = await dbOperation(metaStoreName, store => store.getAllKeys())
   return Promise.all(keys.map(async key => {
@@ -63,7 +89,7 @@ export const getAllMeta = async (): Promise<Array<any>> => {
 
 export const getAllMetaPerGame = async (game): Promise<Array<any>> => {
   const assetMetas = await getAllMeta()
-  return assetMetas.filter(meta => meta.game === game)
+  return assetMetas.filter(meta => meta.game === game.toLowerCase())
 }
 
 export const getAllAssets = async () => {
@@ -83,8 +109,8 @@ export const saveAsset = async (game: string, fileName: string, fileCount: numbe
     throw new Error('Missing data while trying to save asset')
   }
   const metaObj = {
-    game,
-    fileName,
+    game: game.toLowerCase(),
+    fileName: fileName.toLowerCase(),
     fileCount
   }
   const assetId = await dbOperation(metaStoreName, store => store.put(metaObj))

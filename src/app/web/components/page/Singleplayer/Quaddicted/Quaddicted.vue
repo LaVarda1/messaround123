@@ -33,7 +33,6 @@ export default {
       selectedMapId: '',
       loading: false,
       mapListing: [],
-      available: true,
       loadMapError: ''
     }
   },
@@ -45,7 +44,6 @@ export default {
           this.loading = false
         })
         .catch(err => {
-          this.available = false
           this.loading = false
         })
     }

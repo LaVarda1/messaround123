@@ -5,6 +5,7 @@ const dbName = 'webQuakeAssets',
 
 const indexedDb: IDBFactory = window.indexedDB
 const gameAndFileIndex = "game, filename"
+const gameIndex = "game"
 
 function open (): Promise<IDBDatabase> {
   return new Promise(function(resolve, reject){
@@ -17,7 +18,7 @@ function open (): Promise<IDBDatabase> {
       }
       if (event.oldVersion < 5) {
         var metaStore = openReq.transaction.objectStore("meta");
-        metaStore.createIndex("game", "game", { unique: false });
+        metaStore.createIndex(gameIndex, "game", { unique: false });
         metaStore.createIndex(gameAndFileIndex, ["game", "fileName"], { unique: false });
       }
     };
@@ -76,7 +77,7 @@ export const getAllMeta = async (): Promise<Array<any>> => {
 
 export const getAllMetaPerGame = async (game): Promise<Array<any>> => {
   const assetMetas = await getAllMeta()
-  return assetMetas.filter(meta => meta.game === game)
+  return assetMetas.filter(meta => meta.game === game.toLowerCase())
 }
 
 export const getAllAssets = async () => {
@@ -108,9 +109,9 @@ export const getAsset = async (game, fileName) => {
   // var request = index.openCursor(IDBKeyRange.only([game, fileName]));
 
   // Select the first matching record
-  const assetMeta = await promiseMe(index.get(IDBKeyRange.only([game, fileName]))) as any
+  const assetMeta = await promiseMe(index.get(IDBKeyRange.only([game.toLowerCase(), fileName.toLowerCase()]))) as any
   if (assetMeta) {
-    const assetId = await promiseMe(index.getKey(IDBKeyRange.only([game, fileName]))) as any
+    const assetId = await promiseMe(index.getKey(IDBKeyRange.only([game.toLowerCase(), fileName.toLowerCase()]))) as any
     return {
       ...assetMeta,
       ...(await promiseMe(assets.get(assetId)))
@@ -124,8 +125,8 @@ export const saveAsset = async (game: string, fileName: string, fileCount: numbe
     throw new Error('Missing data while trying to save asset')
   }
   const metaObj = {
-    game,
-    fileName,
+    game: game.toLowerCase(),
+    fileName: fileName.toLowerCase(),
     fileCount
   }
   const assetId = await dbOperation(metaStoreName, store => store.put(metaObj))

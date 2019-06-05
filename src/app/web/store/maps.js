@@ -4,7 +4,7 @@ import * as indexedDb from '../helpers/indexeddb'
 import {any, tail} from 'ramda'
 
 //const quaddictedMapsUrl = 'http://maps.netquake.io/api/maps'
-const quaddictedMapsUrl = 'http://localhost:3000/api/maps'
+const quaddictedMapsUrl = 'http://localhost:30001/api/maps'
 
 const state = {
   mapListing: [],
@@ -85,12 +85,21 @@ const getBinaryData = (url, progress) => {
     })
 }
 
+const anyFirstElementContains = searchTerm =>
+  any(fa => fa[0].toLowerCase().indexOf(searchTerm) > -1)
+
+const anyFirstElementIs = searchTerm =>
+  any(fa => fa[0].toLowerCase() === searchTerm)
+
 const fixBaseDir = (fileList) => {
+  const hasAMapAtRoot = anyFirstElementContains('.bsp')
+  const hasMapDirAtRoot = anyFirstElementIs('maps')
+  const hasPakFileAtRoot = anyFirstElementContains('.pak')
+
   const fileArrays = fileList.map(file => file.split('/'))
-  if (any(fa => fa[0].toLowerCase().indexOf('.bsp') > -1, fileArrays)) {
+  if (hasAMapAtRoot(fileArrays)) {
     return fileArrays.map(fa => ['maps'].concat(fa).join('/'))
-  } else if (any(fa => fa[0].toLowerCase().indexOf('maps') > -1, fileArrays)
-      || any(fa => fa[0].toLowerCase().indexOf('.pak') > -1, fileArrays)) {
+  } else if (hasMapDirAtRoot(fileArrays) || hasPakFileAtRoot(fileArrays)) {
     return fileArrays.map(fa => fa.join('/'))
   } else {
     return fileArrays.map(fa => tail(fa).join('/'))
@@ -101,26 +110,39 @@ const getMapZip = async (fileHandler, mapId, commit) => {
   commit(mutationTypes.setMapIsLoading, true)
   commit(mutationTypes.setMapLoadProgress, {loaded: 0, total: 0, message: 'Downloading...'})
 
-  const url = quaddictedMapsUrl + '/' + mapId
-  const arrayBuf = await getBinaryData(url, (loaded, total) => {
-    commit(mutationTypes.setMapLoadProgress, {loaded, total, message: 'Downloading...'})
-  })
-  const zip = new JSZip()
+  try {
+    const url = quaddictedMapsUrl + '/' + mapId
+    const arrayBuf = await getBinaryData(url, (loaded, total) => {
+      commit(mutationTypes.setMapLoadProgress, {loaded, total, message: 'Downloading...'})
+    })
+
+    commit(mutationTypes.setMapLoadProgress, { message: 'Unzipping...'})
   
-  commit(mutationTypes.setMapLoadProgress, { message: 'Unzipping...'})
-  await zip.loadAsync(arrayBuf)
+    const zip = new JSZip()
+    await zip.loadAsync(arrayBuf)
+    debugger
+    // Ignore entries marked as directories
+    const files = Object.keys(zip.files).filter(f => !zip.files[f].dir)
+  
+    const fixedFilePaths = fixBaseDir(files)
+  
+    // Unzip all files, and send them to the file handler
+    await Promise.all(files.map((fileName, idx) => {
+      return zip.file(fileName)
+        .async("arraybuffer")
+        .then(buffer => fileHandler(mapId, fixedFilePaths[idx], buffer))
+    }))
 
-  const files = Object.keys(zip.files).filter(f => !zip.files[f].dir)
-
-  const fixedFilePaths = fixBaseDir(files)
-
-  return await Promise.all(files.map((fileName, idx) => {
-    return zip.file(fileName).async("arraybuffer").then(buffer => fileHandler(mapId, fixedFilePaths[idx], buffer))
-  }))
-  .then(() => {
     commit(mutationTypes.setMapLoadProgress, {loaded: 0, total: 0, message: ''})
     commit(mutationTypes.setMapIsLoading, false)
-  })
+  }
+  catch (err) {
+    // make sure this is cleaned up.
+    commit(mutationTypes.setMapLoadProgress, {loaded: 0, total: 0, message: ''})
+    commit(mutationTypes.setMapIsLoading, false)
+
+    throw err
+  }
 }
 
 const saveToIndexedDb = (mapId, fileName, data) => {
@@ -132,8 +154,12 @@ const actions = {
     return axios.get(quaddictedMapsUrl)
       .then(response => commit(mutationTypes.setMapListing, response.data))
   },
-  loadMap ({commit, dispatch}, mapId) { 
-    return getMapZip(saveToIndexedDb, mapId, commit)
+  async loadMap ({commit, dispatch}, mapId) {
+    const hasGame = await indexedDb.hasGame(mapId)
+
+    return hasGame
+      ? Promise.resolve() 
+      : getMapZip(saveToIndexedDb, mapId, commit)
   }
 }
 
