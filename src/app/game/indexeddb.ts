@@ -1,17 +1,26 @@
 const dbName = 'webQuakeAssets',
   metaStoreName = 'meta',
   assetStoreName = 'assets',
-  dbVersion = 4;
+  dbVersion = 5;
 
 const indexedDb: IDBFactory = window.indexedDB
+const gameAndFileIndex = "game, filename"
+const gameIndex = "game"
 
 function open (): Promise<IDBDatabase> {
   return new Promise(function(resolve, reject){
     var openReq: IDBOpenDBRequest = indexedDb.open(dbName, dbVersion);
     openReq.onupgradeneeded = function(event: any) {
       var db = event.target.result as IDBDatabase;
-      db.createObjectStore("meta", { autoIncrement: true });
-      db.createObjectStore("assets", { keyPath: 'assetId' });
+      if (event.oldVersion < 4) {
+        db.createObjectStore("meta", { autoIncrement: true });
+        db.createObjectStore("assets", { keyPath: 'assetId' });
+      }
+      if (event.oldVersion < 5) {
+        var metaStore = openReq.transaction.objectStore("meta");
+        metaStore.createIndex(gameIndex, "game", { unique: false });
+        metaStore.createIndex(gameAndFileIndex, ["game", "fileName"], { unique: false });
+      }
     };
     openReq.onerror = function(event) {
       alert("Why didn't you allow my web app to use IndexedDB?!");
@@ -21,6 +30,18 @@ function open (): Promise<IDBDatabase> {
       resolve(event.target.result);
     };
   });
+}
+
+const promiseMe = (request: IDBRequest) => {
+  return new Promise((resolve, reject) =>  {
+    request.onerror = function(e) {
+      console.log(e);
+      reject(e);
+    };
+    request.onsuccess = function(event) {
+      resolve(request.result as any);
+    };
+  })
 }
 
 const dbOperation = async (storeName: string, fn: (db: IDBObjectStore) => IDBRequest): Promise<any> => {
@@ -56,7 +77,7 @@ export const getAllMeta = async (): Promise<Array<any>> => {
 
 export const getAllMetaPerGame = async (game): Promise<Array<any>> => {
   const assetMetas = await getAllMeta()
-  return assetMetas.filter(meta => meta.game === game)
+  return assetMetas.filter(meta => meta.game === game.toLowerCase())
 }
 
 export const getAllAssets = async () => {
@@ -75,13 +96,37 @@ export const getAllAssetsPerGame = async (game) => {
   }))
 }
 
+export const getAsset = async (game, fileName) => {
+  const db = await open()
+
+  // In your query section
+  var transaction = db.transaction(['assets', 'meta'], 'readonly');
+  var meta = transaction.objectStore('meta');
+  var assets = transaction.objectStore('assets');
+  var index = meta.index(gameAndFileIndex);
+
+  // // Select only those records where prop1=value1 and prop2=value2
+  // var request = index.openCursor(IDBKeyRange.only([game, fileName]));
+
+  // Select the first matching record
+  const assetMeta = await promiseMe(index.get(IDBKeyRange.only([game.toLowerCase(), fileName.toLowerCase()]))) as any
+  if (assetMeta) {
+    const assetId = await promiseMe(index.getKey(IDBKeyRange.only([game.toLowerCase(), fileName.toLowerCase()]))) as any
+    return {
+      ...assetMeta,
+      ...(await promiseMe(assets.get(assetId)))
+    }
+  }
+  return null
+}
+
 export const saveAsset = async (game: string, fileName: string, fileCount: number, blob: any) => {
   if (!game || !fileName || fileCount <= 0) {
     throw new Error('Missing data while trying to save asset')
   }
   const metaObj = {
-    game,
-    fileName,
+    game: game.toLowerCase(),
+    fileName: fileName.toLowerCase(),
     fileCount
   }
   const assetId = await dbOperation(metaStoreName, store => store.put(metaObj))

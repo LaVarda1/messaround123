@@ -1,7 +1,7 @@
 <template lang="pug">
   .singleplayer
     .container
-      .column.col-8
+      .column.col-12
         .panel
           .panel-header
             .panel-title
@@ -13,13 +13,25 @@
         .panel
           .panel-header
             .panel-title
-              h5 Map Selection
+              h5 Original Map Selection
           .panel-body
             .container
               .column.col-6
                 MapSelect(v-model="mapSelection")
           .panel-footer
             button.btn(@click="startCustom()") Start Game
+        .panel
+          .panel-header
+            .panel-title
+              h5 Quaddicted Custom Map Selection
+              .note Note: This is still experimental. Webquake may 
+                span.text-error not 
+                | work with some of the more advanced mods.
+          .panel-body
+            .container
+              .column.col-12
+                Quaddicted
+          .panel-footer
 
         
 </template>
@@ -27,10 +39,12 @@
 <script>
 import {mapGetters, mapMutations} from 'vuex'
 import MapSelect from './MapSelect.vue'
+import Quaddicted from './Quaddicted/Quaddicted.vue'
 
 export default {
   components: {
-    MapSelect
+    MapSelect,
+    Quaddicted
   },
   data () {
     return {
