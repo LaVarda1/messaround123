@@ -26,7 +26,11 @@
               h5 Quaddicted Custom Map Selection
               .note Note: This is still experimental. Webquake may 
                 span.text-error not 
-                | work with some of the more advanced mods.
+                | work with some of the more advanced mods. If you own a mod that is unsupported with webquake and know why, please
+                |  fill out an issue 
+                a(href="https://gitlab.com/joe.lukacovic/netquake.io/issues" target="_blank") here  
+                |  with your mod name and what feature needs to be added to webquake to support your mod
+                
           .panel-body
             .container
               .column.col-12
