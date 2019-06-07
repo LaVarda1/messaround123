@@ -3,8 +3,8 @@ import * as JSZip from 'jszip'
 import * as indexedDb from '../helpers/indexeddb'
 import {any, tail} from 'ramda'
 
-//const quaddictedMapsUrl = 'http://maps.netquake.io/api/maps'
-const quaddictedMapsUrl = 'http://localhost:30001/api/maps'
+const quaddictedMapsUrl = 'http://maps.netquake.io/api/maps'
+//const quaddictedMapsUrl = 'http://localhost:3000/api/maps'
 
 const state = {
   mapListing: [],
@@ -120,7 +120,7 @@ const getMapZip = async (fileHandler, mapId, commit) => {
   
     const zip = new JSZip()
     await zip.loadAsync(arrayBuf)
-    debugger
+
     // Ignore entries marked as directories
     const files = Object.keys(zip.files).filter(f => !zip.files[f].dir)
   
@@ -156,7 +156,6 @@ const actions = {
   },
   async loadMap ({commit, dispatch}, mapId) {
     const hasGame = await indexedDb.hasGame(mapId)
-
     return hasGame
       ? Promise.resolve() 
       : getMapZip(saveToIndexedDb, mapId, commit)

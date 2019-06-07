@@ -71,7 +71,7 @@ export const hasGame = async (game) => {
   var index = meta.index(gameIndex);
 
   // Select the first matching record, if any exists, assume game exists
-  const assetMeta = await promiseMe(index.get(IDBKeyRange.only([game.toLowerCase()]))) as any
+  const assetMeta = await promiseMe(index.get(IDBKeyRange.only(game.toLowerCase()))) as any
   return !!assetMeta
 }
 

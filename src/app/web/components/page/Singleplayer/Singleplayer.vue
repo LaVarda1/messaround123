@@ -24,6 +24,9 @@
           .panel-header
             .panel-title
               h5 Quaddicted Custom Map Selection
+              .note Note: This is still experimental. Webquake may 
+                span.text-error not 
+                | work with some of the more advanced mods.
           .panel-body
             .container
               .column.col-12

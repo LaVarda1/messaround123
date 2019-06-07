@@ -32,7 +32,7 @@
                   option(v-for="m in map.mapList" :value="m") {{m}}
           .column.col-3
             .start
-              button.tooltip.tooltip-left.btn(@click="play" :disabled="map.requirements.length > 0" :data-tooltip="tooltipText") Play!
+              button.btn-sm.tooltip.tooltip-left.btn(@click="play" :disabled="map.requirements.length > 0" :data-tooltip="tooltipText") Play!
 
     .panel-footer
 
