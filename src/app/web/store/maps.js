@@ -3,8 +3,8 @@ import * as JSZip from 'jszip'
 import * as indexedDb from '../helpers/indexeddb'
 import {any, tail} from 'ramda'
 
-//const quaddictedMapsUrl = 'http://maps.netquake.io/api/maps'
-const quaddictedMapsUrl = 'http://localhost:3000/api/maps'
+const quaddictedMapsUrl = 'http://maps.netquake.io/api/maps'
+// const quaddictedMapsUrl = 'http://localhost:3000/api/maps'
 
 const state = {
   mapListing: [],
