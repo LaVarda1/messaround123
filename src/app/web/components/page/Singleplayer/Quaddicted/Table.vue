@@ -2,14 +2,26 @@
   table.table.table-hover.table-fixed-header(:class="loading ? 'loading-lg loading' : ''")
     thead
       tr
-        th.title Title
-        th.author Author(s)
-        th.rating Rating
-        th.size.ta-right Size
+        th.title
+          a(@click="changeSort('title')") Title
+          i.sorting.icon(v-if="sortBy==='title'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
+        th.author
+          a(@click="changeSort('author')") Author(s)
+          i.sorting.icon(v-if="sortBy==='author'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
+        th.date
+          a(@click="changeSort('date')") Released
+          i.sorting.icon(v-if="sortBy==='date'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
+        th.rating
+          a(@click="changeSort('userrating')") Rating
+          i.sorting.icon(v-if="sortBy==='userrating'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
+        th.size.ta-right
+          a(@click="changeSort('size')") Size
+          i.sorting.icon(v-if="sortBy==='size'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
     tbody
-      tr(v-for="map in mapList" @click="selectMap(map)" :class="map.id === value ? 'active' : ''" )
+      tr(v-for="map in sortedMaps" @click="selectMap(map)" :class="map.id === value ? 'active' : ''" )
         td.title {{map.title}}
         td.author {{map.author}}
+        td.date {{released(map.date)}}
         td.rating
           .rating-container
             .star-ratings-css-top(:style="'width: ' + rating(map.userrating) + '%;'")
@@ -31,6 +43,10 @@
 <script>
 import {mapGetters, mapActions} from 'vuex'
 
+const valueForSort = value => {
+  return typeof value === 'string' ? value.toLowerCase() : value
+}
+
 export default {
   props: {
     mapList: {
@@ -46,18 +62,47 @@ export default {
       default: false
     }
   },
+  computed: {
+    sortedMaps () {
+      return this.mapList.slice().sort((a, b) => {
+        const first = valueForSort((this.sortOrder === 'desc' ? a : b)[this.sortBy])
+        const second = valueForSort((this.sortOrder === 'desc' ? b : a)[this.sortBy])
+
+        return first > second ? 1 :
+          first < second ? -1 : 0
+      })
+    }
+  },
   data () {
     return {
-      sortBy: 'title',
-      sortOrder: 'desc'
+      sortBy: 'date',
+      sortOrder: 'asc'
     }
   },
   methods: {
     selectMap (map) {
       this.$emit('input', map.id)
     },
+    released (date) {
+      const _date = new Date(date)
+      var mm = _date.getMonth() + 1; // getMonth() is zero-based
+      var dd = _date.getDate();
+
+      return [_date.getFullYear(),
+              (mm>9 ? '' : '0') + mm,
+              (dd>9 ? '' : '0') + dd
+            ].join('-');
+    },
     rating (userRating) {
       return (userRating / 5) * 100
+    },
+    changeSort (sortCol) {
+      if (this.sortBy === sortCol) {
+        this.sortOrder = this.sortOrder === 'desc' ? 'asc' : 'desc'
+      } else {
+        this.sortBy = sortCol
+        this.sortOrder = 'desc'
+      }
     }
   }
 }
@@ -94,6 +139,9 @@ export default {
     z-index: 0;
   }
 }
+.sorting {
+  padding-left: 1rem;
+}
 .table-fixed-header {
   tbody {
     display: block;
@@ -112,12 +160,18 @@ export default {
     &.author {
       min-width: 300px;
     }
+    &.date {
+      min-width: 100px;
+    }
     &.rating {
       min-width: 100px;
     }
     &.size {
       min-width: 100px;
     }
+  }
+  th a {
+    cursor: pointer;
   }
 }
 .ta-right {
