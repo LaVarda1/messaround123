@@ -224,6 +224,7 @@ export const init = async (argv: string) =>
 			if(e && e.message)
 			{
 				console.log(e && e.message)
+				quit()
 			}
 		}
 
@@ -287,29 +288,30 @@ export const quit = function()
 
 export const error = function(text)
 {
-	if (state.looping)
-		state.looping = false;
-	var i;
-  const eventNames = Object.keys(events)
-	for (i = 0; i < eventNames.length; ++i)
-		window[eventNames[i]] = null;
-	if (host.state.initialized === true)
-		host.shutdown();
-	document.body.style.cursor = 'auto';
-	i = con.state.text.length - 25;
-	if (i < 0)
-		i = 0;
-	if (window.console != null)
-	{
-		for (; i < con.state.text.length; ++i)
-			console.log(con.state.text[i].text);
-	}
+	// if (state.looping)
+	// 	state.looping = false;
+	// var i;
+  // const eventNames = Object.keys(events)
+	// for (i = 0; i < eventNames.length; ++i)
+	// 	window[eventNames[i]] = null;
+	// if (host.state.initialized === true)
+	// 	host.shutdown();
+	// document.body.style.cursor = 'auto';
+	// i = con.state.text.length - 25;
+	// if (i < 0)
+	// 	i = 0;
+	// if (window.console != null)
+	// {
+	// 	for (; i < con.state.text.length; ++i)
+	// 		console.log(con.state.text[i].text);
+	// }
 	alert(text);
-	if (state.hooks && state.hooks.quit) {
-		state.hooks.quit()
-	} else {
-		throw new Error(text);
-	}
+	throw new Error(text);
+	// if (state.hooks && state.hooks.quit) {
+	// 	state.hooks.quit()
+	// } else {
+	// 	throw new Error(text);
+	// }
 };
 
 export const getExternalCommand = () => {

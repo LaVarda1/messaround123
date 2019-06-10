@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import CustomAssets from './CustomAssets.vue'
+import CustomAssets from './CustomAssets/CustomAssets.vue'
 import BaseAssets from './BaseAssets.vue'
 import { mapGetters } from 'vuex'
 

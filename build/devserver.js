@@ -10,7 +10,7 @@ var app = express()
 
 var port = process.env.PORT || 8080
 var compiler = webpack(webpackConfig)
-app.us
+
 var devMiddleware = require('webpack-dev-middleware')(compiler, {
   publicPath: webpackConfig.output.publicPath,
   quiet: true

@@ -3,8 +3,8 @@ import * as JSZip from 'jszip'
 import * as indexedDb from '../helpers/indexeddb'
 import {any, tail} from 'ramda'
 
-const quaddictedMapsUrl = 'http://maps.netquake.io/api/maps'
-//const quaddictedMapsUrl = 'http://localhost:3000/api/maps'
+//const quaddictedMapsUrl = 'http://maps.netquake.io/api/maps'
+const quaddictedMapsUrl = 'http://localhost:3000/api/maps'
 
 const state = {
   mapListing: [],
@@ -13,6 +13,9 @@ const state = {
     loaded: 0,
     total: 0,
     message: ''
+  },
+  downloaded: {
+
   }
 }
 
@@ -102,11 +105,16 @@ const fixBaseDir = (fileList) => {
   } else if (hasMapDirAtRoot(fileArrays) || hasPakFileAtRoot(fileArrays)) {
     return fileArrays.map(fa => fa.join('/'))
   } else {
-    return fileArrays.map(fa => tail(fa).join('/'))
+    let removedSubDir = fileArrays.map(fa => tail(fa))
+    debugger
+    if (hasAMapAtRoot(removedSubDir)) {
+      removedSubDir = removedSubDir.map(fa => ['maps'].concat(fa))
+    }
+    return removedSubDir.map(fa => fa.join('/'))
   }
 }
 
-const getMapZip = async (fileHandler, mapId, commit) => {
+const loadMapZip = async (fileHandler, mapId, commit) => {
   commit(mutationTypes.setMapIsLoading, true)
   commit(mutationTypes.setMapLoadProgress, {loaded: 0, total: 0, message: 'Downloading...'})
 
@@ -158,7 +166,12 @@ const actions = {
     const hasGame = await indexedDb.hasGame(mapId)
     return hasGame
       ? Promise.resolve() 
-      : getMapZip(saveToIndexedDb, mapId, commit)
+      : loadMapZip(saveToIndexedDb, mapId, commit)
+          .then(dispatch('game/loadAssets', {}, {root: true}))
+
+  },
+  async loadDownloaded ({commit}) {
+    // const indexedDb.saveAsset(mapId, fileName, 0, data)
   }
 }
 

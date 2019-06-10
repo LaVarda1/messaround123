@@ -17,7 +17,8 @@ module.exports = {
   output: {
     path: path.join(__dirname, resolveDir("dist/app")),
     filename: "[name].bundle.js",
-    chunkFilename: "[id].chunk.js"
+    chunkFilename: "[id].chunk.js",
+    publicPath: '/'
   },
   resolve: {
     extensions: [ '.tsx', '.ts', '.js' ]
