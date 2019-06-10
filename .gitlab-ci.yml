@@ -35,3 +35,23 @@ push_job:
     - docker push $CONTAINER_SERVER_REF_IMAGE
     - docker tag $CONTAINER_SERVER_REF_IMAGE $CONTAINER_SERVER_RELEASE_IMAGE
     - docker push $CONTAINER_SERVER_RELEASE_IMAGE
+
+deploy:
+  image: docker:latest
+  stage: deploy
+  environment:
+    name: Production
+    url: http://www.netquake.io
+  before_script:
+    - apk update
+    - apk add openssh
+    - mkdir -p ~/.ssh     
+    - echo -e "$PROD_BUILD_SSH_KEY" > ~/.ssh/id_rsa     
+    - chmod 600 ~/.ssh/id_rsa     
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  script:
+    - echo "Deploying to Production"
+    - ssh gitlab@$PROD_HOST "/home/gitlab/deploy_frontend $CONTAINER_FRONTEND_REF_IMAGE"
+  when: manual
+  only:
+    - master
