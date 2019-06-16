@@ -1,4 +1,5 @@
 import * as sys from '../sys'
+import * as def from '../../../engine/def'
 import * as net from '../../../engine/net'
 import ISocket from '../../../engine/interfaces/net/ISocket'
 import IDatagram from '../../../engine/interfaces/net/IDatagram'
@@ -34,7 +35,7 @@ export const connect = function(host: string)
 	if (state.client == null)
 	{
 		state.client = net.newQSocket();
-		state.client.receiveMessage = new Uint8Array(new ArrayBuffer(8192));
+		state.client.receiveMessage = new Uint8Array(new ArrayBuffer(def.max_message));
 		state.client.address = 'localhost';
 	}
 	state.client.receiveMessageLength = 0;
@@ -43,7 +44,7 @@ export const connect = function(host: string)
 	if (state.server == null)
 	{
 		state.server = net.newQSocket();
-		state.server.receiveMessage = new Uint8Array(new ArrayBuffer(8192));
+		state.server.receiveMessage = new Uint8Array(new ArrayBuffer(def.max_message));
 		state.server.address = 'LOCAL';
 	}
 	state.server.receiveMessageLength = 0;
@@ -96,7 +97,7 @@ export const sendMessage = function(sock: ISocket, data: IDatagram)
 		return -1;
 	var bufferLength = sock.driverdata.receiveMessageLength;
 	sock.driverdata.receiveMessageLength += data.cursize + 3;
-	if (sock.driverdata.receiveMessageLength > 8192)
+	if (sock.driverdata.receiveMessageLength > def.max_message)
 		sys.error('Loop.SendMessage: overflow');
 	var buffer = sock.driverdata.receiveMessage;
 	buffer[bufferLength] = 1;
@@ -113,7 +114,7 @@ export const sendUnreliableMessage = function(sock: ISocket, data: IDatagram)
 		return -1;
 	var bufferLength = sock.driverdata.receiveMessageLength;
 	sock.driverdata.receiveMessageLength += data.cursize + 3;
-	if (sock.driverdata.receiveMessageLength > 8192)
+	if (sock.driverdata.receiveMessageLength > def.max_message)
 		sys.error('Loop.SendMessage: overflow');
 	var buffer = sock.driverdata.receiveMessage;
 	buffer[bufferLength] = 2;

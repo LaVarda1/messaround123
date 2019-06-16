@@ -89,10 +89,10 @@ const getBinaryData = (url, progress) => {
 }
 
 const anyFirstElementContains = searchTerm =>
-  any(fa => fa[0].toLowerCase().indexOf(searchTerm) > -1)
+  any(fa => fa.length && fa[0].toLowerCase().indexOf(searchTerm) > -1)
 
 const anyFirstElementIs = searchTerm =>
-  any(fa => fa[0].toLowerCase() === searchTerm)
+  any(fa => fa.length && fa[0].toLowerCase() === searchTerm)
 
 const fixBaseDir = (fileList) => {
   const hasAMapAtRoot = anyFirstElementContains('.bsp')
@@ -105,8 +105,7 @@ const fixBaseDir = (fileList) => {
   } else if (hasMapDirAtRoot(fileArrays) || hasPakFileAtRoot(fileArrays)) {
     return fileArrays.map(fa => fa.join('/'))
   } else {
-    let removedSubDir = fileArrays.map(fa => tail(fa))
-    debugger
+    let removedSubDir = fileArrays.map(fa => fa.length > 1 ? tail(fa) : fa)
     if (hasAMapAtRoot(removedSubDir)) {
       removedSubDir = removedSubDir.map(fa => ['maps'].concat(fa))
     }

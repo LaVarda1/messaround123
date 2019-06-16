@@ -6,6 +6,7 @@ import * as sv from './sv'
 import * as cvar from './cvar'
 import * as cmd from './cmd'
 import * as com from './com'
+import * as def from './def'
 import * as q from './q'
 import ISocket from './interfaces/net/ISocket'
 import IDatagram from './interfaces/net/IDatagram'
@@ -34,7 +35,7 @@ interface IState {
 export let state: IState = {
 	listening: false,
 	drivers: [],
-  message: {data: new ArrayBuffer(8192), cursize: 0},
+  message: {data: new ArrayBuffer(def.max_message), cursize: 0},
 	activeconnections: 0,
 	time: 0,
 	driverlevel: 0,
@@ -49,7 +50,7 @@ export const initState = () => {
 	state = {
 		listening: false,
 		drivers: [],
-		message: {data: new ArrayBuffer(8192), cursize: 0},
+		message: {data: new ArrayBuffer(def.max_message), cursize: 0},
 		activeconnections: 0,
 		time: 0,
 		driverlevel: 0,

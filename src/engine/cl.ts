@@ -24,7 +24,7 @@ export let cls = {
   state: 0,
   spawnparms: '',
   demonum: 0,
-  message: {data: new ArrayBuffer(8192), cursize: 0}
+  message: {data: new ArrayBuffer(def.max_message), cursize: 0}
 } as any
 
 export let clState = {
@@ -171,7 +171,7 @@ export const getMessage = function()
     }
     var view = new DataView(cls.demofile);
     net.state.message.cursize = view.getUint32(cls.demoofs, true);
-    if (net.state.message.cursize > 8000)
+    if (net.state.message.cursize > def.max_message)
       sys.error('Demo message > MAX_MSGLEN');
     clState.mviewangles[1] = clState.mviewangles[0];
     clState.mviewangles[0] = [view.getFloat32(cls.demoofs + 4, true), view.getFloat32(cls.demoofs + 8, true), view.getFloat32(cls.demoofs + 12, true)];
@@ -1054,7 +1054,7 @@ const initState = () => {
     state: 0,
     spawnparms: '',
     demonum: 0,
-    message: {data: new ArrayBuffer(8192), cursize: 0}
+    message: {data: new ArrayBuffer(def.max_message), cursize: 0}
   }
 }
 
@@ -1149,7 +1149,7 @@ export const keepaliveMessage = async function()
   if ((sv.state.server.active === true) || (cls.demoplayback === true))
     return;
   var oldsize = net.state.message.cursize;
-  var olddata = new Uint8Array(8192);
+  var olddata = new Uint8Array(def.max_message);
   olddata.set(new Uint8Array(net.state.message.data, 0, oldsize));
   var ret;
   for (;;)
@@ -1187,11 +1187,12 @@ export const parseServerInfo = async function()
   con.dPrint('Serverinfo packet received.\n');
   clearState();
   var i = msg.readLong();
-  if (i !== protocol.version)
+  if (i !== protocol.netquake && i !== protocol.fitzquake)
   {
-    con.print('Server returned version ' + i + ', not ' + protocol.version + '\n');
+    con.print('Server returned protocol version ' + i + ' which is unsupported.\n');
     return;
   }
+  clState.protocol = i
   clState.maxclients = msg.readByte();
   if ((clState.maxclients <= 0) || (clState.maxclients > 16))
   {
@@ -1264,22 +1265,18 @@ export const parseUpdate = function(bits)
   }
 
   if ((bits & protocol.U.morebits) !== 0)
-    bits += (msg.readByte() << 8);
-
+    bits |= (msg.readByte() << 8);
+  if ((bits & protocol.U.extend1) !== 0)
+    bits |= (msg.readByte() << 16)
+  if ((bits & protocol.U.extend2) !== 0)
+    bits |= (msg.readByte() << 24)
+  
   var ent = entityNum(((bits & protocol.U.longentity) !== 0) ? msg.readShort() : msg.readByte());
 
   var forcelink = ent.msgtime !== clState.mtime[1];
   ent.msgtime = clState.mtime[0];
 
-  var model = clState.model_precache[((bits & protocol.U.model) !== 0) ? msg.readByte() : ent.baseline.modelindex];
-  if (model !== ent.model)
-  {
-    ent.model = model;
-    if (model != null)
-      ent.syncbase = (model.random === true) ? Math.random() : 0.0;
-    else
-      forcelink = true;
-  }
+  let modNum = ((bits & protocol.U.model) !== 0) ? msg.readByte() : ent.baseline.modelindex
 
   ent.frame = ((bits & protocol.U.frame) !== 0) ? msg.readByte() : ent.baseline.frame;
   ent.colormap = ((bits & protocol.U.colormap) !== 0) ? msg.readByte() : ent.baseline.colormap;
@@ -1297,6 +1294,33 @@ export const parseUpdate = function(bits)
   ent.msg_origins[0][2] = ((bits & protocol.U.origin3) !== 0) ? msg.readCoord() : ent.baseline.origin[2];
   ent.msg_angles[0][2] = ((bits & protocol.U.angle3) !== 0) ? msg.readAngle() : ent.baseline.angles[2];
 
+  if (bits & protocol.U.alpha) 
+    ent.alpha = msg.readByte()
+  else
+    ent.alpha = ent.baseline.alpha
+
+  if (bits & protocol.U.frame2) 
+    ent.frame = (ent.frame & 0x00FF) | (msg.readByte() << 8)
+  if (bits & protocol.U.model2) 
+    modNum = (modNum & 0x00FF) | (msg.readByte() << 8)
+
+  if (bits & protocol.U.lerpfinish) {
+    ent.lerpfinish = ent.msgtime + (msg.readByte() / 255)
+    ent.lerpflags |= r.LERP.finish
+  } else {
+    ent.lerpflags &= ~r.LERP.finish
+  }
+
+  var model = clState.model_precache[modNum];
+  if (model !== ent.model)
+  {
+    ent.model = model;
+    if (model != null)
+      ent.syncbase = (model.random === true) ? Math.random() : 0.0;
+    else
+      forcelink = true;
+  }
+  
   if ((bits & protocol.U.nolerp) !== 0)
     ent.forcelink = true;
 
@@ -1310,10 +1334,19 @@ export const parseUpdate = function(bits)
   }
 };
 
-const parseBaseline = function(ent)
+const parseBaseline = function(ent, version)
 {
-  ent.baseline.modelindex = msg.readByte();
-  ent.baseline.frame = msg.readByte();
+  var i, bits
+  if (clState.protocol === protocol.VERSION.bjp3) {
+    ent.baseline.modelindex = msg.readShort()
+    ent.baseline.frame = msg.readByte()
+    bits = 0
+  } else {
+    bits = version === 2 ? msg.readByte() : 0
+    ent.baseline.modelindex = (bits & protocol.BASE.largemodel) ? msg.readShort() : msg.readByte()
+    ent.baseline.frame = (bits & protocol.BASE.largeframe) ? msg.readShort() : msg.readByte()
+  }
+
   ent.baseline.colormap = msg.readByte();
   ent.baseline.skin = msg.readByte();
   ent.baseline.origin[0] = msg.readCoord();
@@ -1322,12 +1355,23 @@ const parseBaseline = function(ent)
   ent.baseline.angles[1] = msg.readAngle();
   ent.baseline.origin[2] = msg.readCoord();
   ent.baseline.angles[2] = msg.readAngle();
+
+  ent.baseline.alpha = bits & protocol.BASE.alpha ? msg.readByte() : protocol.ENT_ALPHA.default
 };
 
-export const parseClientdata = function(bits)
+export const parseClientdata = function()
 {
   var i;
 
+  var bits = (new Uint16Array([msg.readShort()]))[0] 
+
+  // fitzquake protocol additional data
+	if (bits & protocol.SU.extend1)
+		bits |= (msg.readByte() << 16);
+
+	if (bits & protocol.SU.extend2)
+    bits |= (msg.readByte() << 24);
+  
   clState.viewheight = ((bits & protocol.SU.viewheight) !== 0) ? msg.readChar() : protocol.default_viewheight;
   clState.idealpitch = ((bits & protocol.SU.idealpitch) !== 0) ? msg.readChar() : 0.0;
 
@@ -1372,10 +1416,41 @@ export const parseClientdata = function(bits)
     clState.stats[def.STAT.activeweapon] = msg.readByte();
   else
     clState.stats[def.STAT.activeweapon] = 1 << msg.readByte();
+
+  if (bits & protocol.SU.weapon2)
+    clState.stats[def.STAT.weapon] |= (msg.readByte() << 8);
+
+  if (bits & protocol.SU.armor2)
+    clState.stats[def.STAT.armor] |= (msg.readByte() << 8);
+
+  if (bits & protocol.SU.ammo2)
+    clState.stats[def.STAT.ammo] |= (msg.readByte() << 8);
+
+  if (bits & protocol.SU.shells2)
+    clState.stats[def.STAT.shells] |= (msg.readByte() << 8);
+
+  if (bits & protocol.SU.nails2)
+    clState.stats[def.STAT.nails] |= (msg.readByte() << 8);
+
+  if (bits & protocol.SU.rockets2)
+    clState.stats[def.STAT.rockets] |= (msg.readByte() << 8);
+
+  if (bits & protocol.SU.cells2)
+    clState.stats[def.STAT.cells] |= (msg.readByte() << 8);
+
+  if (bits & protocol.SU.weaponframe2)
+    clState.stats[def.STAT.weaponframe] |= (msg.readByte() << 8);
+
+  if (bits & protocol.SU.weaponalpha)
+    msg.readByte() // TODO: weaponalpha
+
+  // if (bits & SU_WEAPONALPHA)
+  //   cl.viewent_gun.alpha = MSG_ReadByte();
+  // else
+  //   cl.viewent_gun.alpha = ENTALPHA_DEFAULT;
 };
 
-export const parseStatic = function()
-{
+export const parseStatic = function(version) {
   var ent = {
     num: -1,
     update_type: 0,
@@ -1389,12 +1464,15 @@ export const parseStatic = function()
     dlightbits: 0,
     leafs: []
   } as any;
-  state.static_entities[clState.num_statics++] = ent;
-  parseBaseline(ent);
+  // state.static_entities[clState.num_statics++] = ent;
+  parseBaseline(ent, version);
   ent.model = clState.model_precache[ent.baseline.modelindex];
+  ent.lerpflags |= r.LERP.resetanim | r.LERP.resetmove
   ent.frame = ent.baseline.frame;
   ent.skinnum = ent.baseline.skin;
   ent.effects = ent.baseline.effects;
+  ent.alpha = ent.baseline.alpha
+  ent.colormap = 0 // TODO: Joe this doesn't seem right.
   ent.origin = [ent.baseline.origin[0], ent.baseline.origin[1], ent.baseline.origin[2]];
   ent.angles = [ent.baseline.angles[0], ent.baseline.angles[1], ent.baseline.angles[2]];
   r.state.currententity = ent;
@@ -1403,10 +1481,17 @@ export const parseStatic = function()
   r.splitEntityOnNode(clState.worldmodel.nodes[0]);
 };
 
-export const parseStaticSound = async function()
-{
+export const parseStaticSound = async function(version) {
   var org = [msg.readCoord(), msg.readCoord(), msg.readCoord()];
-  var sound_num = msg.readByte();
+  var sound_num
+
+	//johnfitz -- PROTOCOL_FITZQUAKE
+	if (version == 2)
+		sound_num = msg.readShort();
+	else
+		sound_num = msg.readByte();
+  //johnfitz
+  
   var vol = msg.readByte();
   var atten = msg.readByte();
   await s.staticSound(clState.sound_precache[sound_num], org, vol / 255.0, atten);
@@ -1463,12 +1548,13 @@ export const parseServerMessage = async function()
       clState.mtime[0] = msg.readFloat();
       continue;
     case protocol.SVC.clientdata:
-      parseClientdata(msg.readShort());
+      parseClientdata();
       continue;
     case protocol.SVC.version:
       i = msg.readLong();
-      if (i !== protocol.version)
-        await host.error('CL.ParseServerMessage: Server is protocol ' + i + ' instead of ' + protocol.version + '\n');
+      if (i !== protocol.netquake && i !== protocol.fitzquake)
+        await host.error('CL.ParseServerMessage: Server is protocol ' + i + ' is not supported\n');
+      clState.protocol = i
       continue;
     case protocol.SVC.disconnect:
       await host.endGame('Server disconnected\n');
@@ -1531,10 +1617,10 @@ export const parseServerMessage = async function()
       r.parseParticleEffect();
       continue;
     case protocol.SVC.spawnbaseline:
-      parseBaseline(entityNum(msg.readShort()));
+      parseBaseline(entityNum(msg.readShort()), 1);
       continue;
     case protocol.SVC.spawnstatic:
-      parseStatic();
+      parseStatic(1);
       continue;
     case protocol.SVC.temp_entity:
       await parseTEnt();
@@ -1566,7 +1652,7 @@ export const parseServerMessage = async function()
       clState.stats[i] = msg.readLong();
       continue;
     case protocol.SVC.spawnstaticsound:
-      await parseStaticSound();
+      await parseStaticSound(1);
       continue;
     case protocol.SVC.cdtrack:
       clState.cdtrack = msg.readByte();
@@ -1596,6 +1682,26 @@ export const parseServerMessage = async function()
     case protocol.SVC.sellscreen:
       await cmd.executeString('help');
       continue;
+    case protocol.SVC.showlmp:
+      sys.error('showlmp not implemented')
+    case protocol.SVC.hidelmp:
+      sys.error('hidelmp not implemented')
+    case protocol.SVC.skybox:
+      sys.error('skybox not implemented')
+    case protocol.SVC.bf:
+      sys.error('bf not implemented')
+    case protocol.SVC.fog:
+      sys.error('fog not implemented')
+    case protocol.SVC.spawnbaseline2: //PROTOCOL_FITZQUAKE
+      parseBaseline(entityNum(msg.readShort()), 2);
+      continue;
+    case protocol.SVC.spawnstatic2:
+      parseStatic(2)
+      continue;
+    case protocol.SVC.spawnstaticsound2:
+      await parseStaticSound(2);
+      continue;
+  
     }
     await host.error('CL.ParseServerMessage: Illegible server message\n');
   }

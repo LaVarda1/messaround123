@@ -99,14 +99,10 @@ export const getAllAssetsPerGame = async (game) => {
 export const getAsset = async (game, fileName) => {
   const db = await open()
 
-  // In your query section
   var transaction = db.transaction(['assets', 'meta'], 'readonly');
   var meta = transaction.objectStore('meta');
   var assets = transaction.objectStore('assets');
   var index = meta.index(gameAndFileIndex);
-
-  // // Select only those records where prop1=value1 and prop2=value2
-  // var request = index.openCursor(IDBKeyRange.only([game, fileName]));
 
   // Select the first matching record
   const assetMeta = await promiseMe(index.get(IDBKeyRange.only([game.toLowerCase(), fileName.toLowerCase()]))) as any

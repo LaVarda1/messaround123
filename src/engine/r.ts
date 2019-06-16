@@ -20,6 +20,14 @@ import * as def from './def'
 import * as draw from './draw'
 import * as s from './s'
 
+const LIGHTMAP_DIM = 1024
+export const LERP = {
+	movestep: 1,
+	resetanim: 1 << 1,
+	resetanim2: 1 << 2,
+	resetmove: 1 << 3,
+	finish: 1 << 4
+}
 export const state = {
 	// efrag
 	// light
@@ -665,7 +673,7 @@ export const drawAliasModel = function(e)
 		skin = skin.skins[i];
 	}
 	GL.bind(program.tTexture, skin.texturenum.texnum);
-	if (clmodel.player === true)
+	if ((e.colormap !== 0) && (clmodel.player === true) && (cvr.nocolors.value === 0))
 		GL.bind(program.tPlayer, skin.playertexture);
 
 	gl.drawArrays(gl.TRIANGLES, 0, clmodel.numtris * 3);
@@ -1798,8 +1806,8 @@ export const allocParticles = function(count)
 // surf
 
 state.lightmap_modified = [];
-state.lightmaps = new Uint8Array(new ArrayBuffer(4194304));
-state.dlightmaps = new Uint8Array(new ArrayBuffer(1048576));
+state.lightmaps = new Uint8Array(new ArrayBuffer(4096 *LIGHTMAP_DIM));
+state.dlightmaps = new Uint8Array(new ArrayBuffer(1024 * LIGHTMAP_DIM));
 
 export const addDynamicLights = function(surf)
 {
@@ -2148,8 +2156,8 @@ export const markLeaves = function()
 export const allocBlock = function(surf)
 {
 	var w = (surf.extents[0] >> 4) + 1, h = (surf.extents[1] >> 4) + 1;
-	var x, y, i, j, best = 1024, best2;
-	for (i = 0; i < (1024 - w); ++i)
+	var x, y, i, j, best = LIGHTMAP_DIM, best2;
+	for (i = 0; i < (LIGHTMAP_DIM - w); ++i)
 	{
 		best2 = 0;
 		for (j = 0; j < w; ++j)
@@ -2166,8 +2174,9 @@ export const allocBlock = function(surf)
 		}
 	}
 	best += h;
-	if (best > 1024)
-		sys.error('AllocBlock: full');
+	if (best > LIGHTMAP_DIM)
+		// sys.error('AllocBlock: full');
+		return
 	for (i = 0; i < w; ++i)
 		state.allocated[x + i] = best;
 	surf.light_s = x;

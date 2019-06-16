@@ -6,7 +6,7 @@ import * as pr from '../../../engine/pr'
 import * as com from '../../../engine/com'
 import * as con from '../../../engine/console'
 import * as net from '../../../engine/net'
-import * as q from '../../../engine/q'
+import * as def from '../../../engine/def'
 import * as cvar from '../../../engine/cvar'
 import * as websocket from 'websocket'
 import * as sys from '../sys'
@@ -134,11 +134,11 @@ export const checkNewConnections = function()
 	sock.sendSequence = 0;
 	sock.unreliableSendSequence = 0;
 	sock.sendMessageLength = 0;
-	sock.sendMessage = new Buffer(8192);
+	sock.sendMessage = new Buffer(def.max_message);
 	sock.receiveSequence = 0;
 	sock.unreliableReceiveSequence = 0;
 	sock.receiveMessageLength = 0;
-	sock.receiveMessage = new Buffer(8192);
+	sock.receiveMessage = new Buffer(def.max_message);
 	sock.addr = [accetpData.address, accetpData.port],
 	sock.address = accetpData.address + ':' + accetpData.port
 	sock.messages = [];

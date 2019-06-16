@@ -9,6 +9,8 @@ import * as draw from './draw'
 import * as scr from './scr'
 import * as shaders from './shaders'
 
+import * as WebGLDebugUtils from './debug.js'
+
 let gl: any = null
 
 export const getContext = () => {
@@ -525,11 +527,18 @@ export const init = function()
   state.programs = []
 
   vid.state.mainwindow = document.getElementById('mainwindow');
+  const onError = (err,fnName, args) => {
+    debugger
+  }
   try
   {
-    gl = vid.state.mainwindow.getContext('webgl') || vid.state.mainwindow.getContext('experimental-webgl');
+    const context = vid.state.mainwindow.getContext('webgl') || vid.state.mainwindow.getContext('experimental-webgl')
+    //const opengl = WebGLDebugUtils.default.makeDebugContext( context, onError, null, null);
+    gl = context
   }
-  catch (e) {}
+  catch (e) {
+    debugger
+  }
   if (gl == null)
     sys.error('Unable to initialize WebGL. Your browser may not support it.');
 

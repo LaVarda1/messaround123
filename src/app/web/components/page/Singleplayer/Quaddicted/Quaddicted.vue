@@ -82,7 +82,6 @@ export default {
           }})
         })
         .catch(err => {
-          debugger
           this.loadMapError = err.message
         })
     }
