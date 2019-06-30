@@ -1,7 +1,8 @@
 export const webquake_version = 54;
 export const timedate = 'Exe: 13:00:49 Jan 27 2019\n';
 
-export const max_edicts = 600;
+export const max_edicts = 8192;
+export const max_message = 32768
 
 export const STAT = {
   health: 0,
@@ -79,3 +80,8 @@ export const HIT = {
   wetsuit: 33554432,
   empathy_shields: 67108864
 };
+
+
+// export const LMAP = {
+//   BLOCK_WIDTH
+// }

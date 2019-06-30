@@ -26,7 +26,7 @@ export let state = {
     num_edicts: 0,
     datagram: {data: new ArrayBuffer(1024), cursize: 0},
     reliable_datagram: {data: new ArrayBuffer(1024), cursize: 0},
-    signon: {data: new ArrayBuffer(8192), cursize: 0},
+    signon: {data: new ArrayBuffer(def.max_message), cursize: 0},
     active: false,
     loading: false
   },
@@ -97,7 +97,7 @@ const initState = () => {
 			num_edicts: 0,
 			datagram: {data: new ArrayBuffer(1024), cursize: 0},
 			reliable_datagram: {data: new ArrayBuffer(1024), cursize: 0},
-			signon: {data: new ArrayBuffer(8192), cursize: 0},
+			signon: {data: new ArrayBuffer(def.max_message), cursize: 0},
 			active: false,
 			loading: false
 		},
@@ -190,7 +190,7 @@ const sendServerinfo = function(client)
 	msg.writeByte(message, protocol.SVC.print);
 	msg.writeString(message, '\x02\nVERSION 1.09 SERVER (' + pr.state.crc + ' CRC)');
 	msg.writeByte(message, protocol.SVC.serverinfo);
-	msg.writeLong(message, protocol.version);
+	msg.writeLong(message, state.server.protocol);
 	msg.writeByte(message, state.svs.maxclients);
 	msg.writeByte(message, ((host.cvr.coop.value === 0) && (host.cvr.deathmatch.value !== 0)) ? 1 : 0);
 	msg.writeString(message, pr.getString(state.server.edicts[0].v_int[pr.entvars.message]));
@@ -326,32 +326,48 @@ const writeEntitiesToClient = function(clent, message)
 			con.print('packet overflow\n');
 			return;
 		}
-
 		bits = 0;
 		for (i = 0; i <= 2; ++i)
 		{
 			miss = ent.v_float[pr.entvars.origin + i] - ent.baseline.origin[i];
 			if ((miss < -0.1) || (miss > 0.1))
-				bits += protocol.U.origin1 << i;
+				bits |= protocol.U.origin1 << i;
 		}
 		if (ent.v_float[pr.entvars.angles] !== ent.baseline.angles[0])
-			bits += protocol.U.angle1;
+			bits |= protocol.U.angle1;
 		if (ent.v_float[pr.entvars.angles1] !== ent.baseline.angles[1])
-			bits += protocol.U.angle2;
+			bits |= protocol.U.angle2;
 		if (ent.v_float[pr.entvars.angles2] !== ent.baseline.angles[2])
-			bits += protocol.U.angle3;
+			bits |= protocol.U.angle3;
 		if (ent.v_float[pr.entvars.movetype] === MOVE_TYPE.step)
-			bits += protocol.U.nolerp;
+			bits |= protocol.U.nolerp;
 		if (ent.baseline.colormap !== ent.v_float[pr.entvars.colormap])
-			bits += protocol.U.colormap;
+			bits |= protocol.U.colormap;
 		if (ent.baseline.skin !== ent.v_float[pr.entvars.skin])
-			bits += protocol.U.skin;
+			bits |= protocol.U.skin;
 		if (ent.baseline.frame !== ent.v_float[pr.entvars.frame])
-			bits += protocol.U.frame;
+			bits |= protocol.U.frame;
 		if (ent.baseline.effects !== ent.v_float[pr.entvars.effects])
-			bits += protocol.U.effects;
+			bits |= protocol.U.effects;
 		if (ent.baseline.modelindex !== ent.v_float[pr.entvars.modelindex])
-			bits += protocol.U.model;
+			bits |= protocol.U.model;
+
+		// Fitzquake additions
+		if (state.server.protocol === protocol.fitzquake) {
+			// if (ent.baseline.alpha != ent.alpha) // TODO: Alpha
+			// 	bits |= protocol.U.alpha
+			if (bits & protocol.U.frame && ent.v_float[pr.entvars.frame] & 0xFF00)
+				bits |= protocol.U.frame2
+			if (bits & protocol.U.frame && ent.v_float[pr.entvars.modelindex] & 0xFF00)
+				bits |= protocol.U.model2
+			if (ent.sendinterval)
+				bits |= protocol.U.lerpfinish
+			if (bits > 65536)
+				bits |= protocol.U.extend1
+			if (bits > 16777216)
+				bits |= protocol.U.extend2
+		}
+
 		if (e >= 256)
 			bits += protocol.U.longentity;
 		if (bits >= 256)
@@ -360,6 +376,12 @@ const writeEntitiesToClient = function(clent, message)
 		msg.writeByte(message, bits + protocol.U.signal);
 		if ((bits & protocol.U.morebits) !== 0)
 			msg.writeByte(message, bits >> 8);
+
+		if ((bits & protocol.U.extend1) !== 0)
+			msg.writeByte(message, bits >> 16)
+		if ((bits & protocol.U.extend2) !== 0)
+			msg.writeByte(message, bits >> 24)
+
 		if ((bits & protocol.U.longentity) !== 0)
 			msg.writeShort(message, e);
 		else
@@ -386,6 +408,17 @@ const writeEntitiesToClient = function(clent, message)
 			msg.writeCoord(message, ent.v_float[pr.entvars.origin2]);
 		if ((bits & protocol.U.angle3) !== 0)
 			msg.writeAngle(message, ent.v_float[pr.entvars.angles2]);
+			
+		//johnfitz -- PROTOCOL_FITZQUAKE
+		// if (bits & protocol.U.alpha)
+		// 	msg.writeByte(message,  ); // TODO Alpha
+		if (bits & protocol.U.frame2)
+			msg.writeByte(message, ent.v_float[pr.entvars.frame] >> 8);
+		if (bits & protocol.U.model2)
+			msg.writeByte(message, ent.v_float[pr.entvars.modelindex] >> 8);
+		if (bits & protocol.U.lerpfinish)
+			msg.writeByte(message, 
+				Math.round((ent.v_float[pr.entvars.nextthink]-state.server.time) * 255))
 	}
 };
 
@@ -474,10 +507,11 @@ const createBaseline = function()
 		baseline.angles = ed.vector(svent, pr.entvars.angles);
 		baseline.frame = svent.v_float[pr.entvars.frame] >> 0;
 		baseline.skin = svent.v_float[pr.entvars.skin] >> 0;
+		// TODO: Alpha
+		baseline.alpha = protocol.ENT_ALPHA.default
 		if ((i > 0) && (i <= state.server.maxclients))
 		{
-			// JOE:FIXME: entnum not defined. Original code issue
-			baseline.colormap = undefined // entnum;
+			baseline.colormap = i
 			baseline.modelindex = player;
 		}
 		else
@@ -485,10 +519,44 @@ const createBaseline = function()
 			baseline.colormap = 0;
 			baseline.modelindex = modelIndex(pr.getString(svent.v_int[pr.entvars.model]));
 		}
-		msg.writeByte(signon, protocol.SVC.spawnbaseline);
+
+		// fitzquake
+		var bits = 0
+		if (state.server.protocol === protocol.netquake) {
+			if (baseline.modelindex & 0xFF00) 
+				baseline.modelindex = 0
+			if (baseline.frame & 0xFF00) 
+				baseline.frame = 0
+
+			baseline.alpha = protocol.ENT_ALPHA.default
+		} else {
+			if (baseline.modelindex & 0xFF00) 
+				bits |= protocol.BASE.largemodel
+			if (baseline.frame & 0xFF00)
+				bits |= protocol.BASE.largeframe
+			if (baseline.alpha !== protocol.ENT_ALPHA.default) 
+				bits |= protocol.BASE.alpha
+		}
+
+		if (bits)
+			msg.writeByte(signon, protocol.SVC.spawnbaseline2)
+		else 
+			msg.writeByte(signon, protocol.SVC.spawnbaseline)
+
 		msg.writeShort(signon, i);
-		msg.writeByte(signon, baseline.modelindex);
-		msg.writeByte(signon, baseline.frame);
+
+		if (bits)
+			msg.writeByte(signon, bits)
+		
+		if (bits & protocol.BASE.largemodel)
+			msg.writeShort(signon, baseline.modelindex)
+		else
+			msg.writeByte(signon, baseline.modelindex)
+		if (bits & protocol.BASE.largeframe)
+			msg.writeShort(signon, baseline.frame)
+		else
+			msg.writeByte(signon, baseline.frame)
+		
 		msg.writeByte(signon, baseline.colormap);
 		msg.writeByte(signon, baseline.skin);
 		msg.writeCoord(signon, baseline.origin[0]);
@@ -497,6 +565,9 @@ const createBaseline = function()
 		msg.writeAngle(signon, baseline.angles[1]);
 		msg.writeCoord(signon, baseline.origin[2]);
 		msg.writeAngle(signon, baseline.angles[2]);
+
+		if (bits & protocol.BASE.alpha)
+			msg.writeByte(signon, baseline.alpha)
 	}
 };
 
@@ -784,11 +855,29 @@ async function runThink(ent)
 		return true;
 	if (thinktime < state.server.time)
 		thinktime = state.server.time;
+
+	const oldframe = ent.v_float[pr.entvars.frame]
+
 	ent.v_float[pr.entvars.nextthink] = 0.0;
 	pr.state.globals_float[pr.globalvars.time] = thinktime;
 	pr.state.globals_int[pr.globalvars.self] = ent.num;
 	pr.state.globals_int[pr.globalvars.other] = 0;
 	await pr.executeProgram(ent.v_int[pr.entvars.think]);
+
+	ent.sendinterval = false;
+
+	// check if we need to send the interval
+	if (!ent.free &&
+		ent.v_float[pr.entvars.nextthink] && 
+		(ent.v_float[pr.entvars.MOVE_TYPE] == MOVE_TYPE.step || ent.v_float[pr.entvars.frame] != oldframe))
+	{
+		const i = Math.round((ent.v_float[pr.entvars.nextthink]-thinktime) * 255)
+
+		//25 and 26 are close enough to 0.1 to not send
+		if (i >= 0 && i < 256 && i != 25 && i != 26) 
+			ent.sendinterval = true;
+	}
+
 	return (ent.free !== true);
 };
 
@@ -2248,9 +2337,9 @@ export const writeClientdataToMessage = function(ent, message)
 
 	var bits = protocol.SU.items + protocol.SU.weapon;
 	if (ent.v_float[pr.entvars.view_ofs2] !== protocol.default_viewheight)
-		bits += protocol.SU.viewheight;
+		bits |= protocol.SU.viewheight;
 	if (ent.v_float[pr.entvars.idealpitch] !== 0.0)
-		bits += protocol.SU.idealpitch;
+		bits |= protocol.SU.idealpitch;
 
 	var val = pr.entvars.items2, items;
 	if (val != null)
@@ -2264,30 +2353,62 @@ export const writeClientdataToMessage = function(ent, message)
 		items = (ent.v_float[pr.entvars.items] >> 0) + ((pr.state.globals_float[pr.globalvars.serverflags] << 28) >>> 0);
 
 	if (ent.v_float[pr.entvars.flags] & FL.onground)
-		bits += protocol.SU.onground;
+		bits |= protocol.SU.onground;
 	if (ent.v_float[pr.entvars.waterlevel] >= 2.0)
-		bits += protocol.SU.inwater;
+		bits |= protocol.SU.inwater;
 
 	if (ent.v_float[pr.entvars.punchangle] !== 0.0)
-		bits += protocol.SU.punch1;
+		bits |= protocol.SU.punch1;
 	if (ent.v_float[pr.entvars.velocity] !== 0.0)
-		bits += protocol.SU.velocity1;
+		bits |= protocol.SU.velocity1;
 	if (ent.v_float[pr.entvars.punchangle1] !== 0.0)
-		bits += protocol.SU.punch2;
+		bits |= protocol.SU.punch2;
 	if (ent.v_float[pr.entvars.velocity1] !== 0.0)
-		bits += protocol.SU.velocity2;
+		bits |= protocol.SU.velocity2;
 	if (ent.v_float[pr.entvars.punchangle2] !== 0.0)
-		bits += protocol.SU.punch3;
+		bits |= protocol.SU.punch3;
 	if (ent.v_float[pr.entvars.velocity2] !== 0.0)
-		bits += protocol.SU.velocity3;
+		bits |= protocol.SU.velocity3;
 
 	if (ent.v_float[pr.entvars.weaponframe] !== 0.0)
-		bits += protocol.SU.weaponframe;
+		bits |= protocol.SU.weaponframe;
 	if (ent.v_float[pr.entvars.armorvalue] !== 0.0)
-		bits += protocol.SU.armor;
+		bits |= protocol.SU.armor;
+
+	if (state.server.protocol !== protocol.netquake) {
+		if (bits & protocol.SU.weapon && modelIndex(pr.getString(ent.v_int[pr.entvars.weaponmodel])) & 0xFF00) 
+			bits |= protocol.SU.weapon2;
+		if (ent.v_float[pr.entvars.armorvalue] & 0xFF00) 
+			bits |= protocol.SU.armor2;
+		if (ent.v_float[pr.entvars.currentammo] & 0xFF00) 
+			bits |= protocol.SU.ammo2;
+		if (ent.v_float[pr.entvars.ammo_shells] & 0xFF00) 
+			bits |= protocol.SU.shells2;
+		if (ent.v_float[pr.entvars.ammo_nails] & 0xFF00) 
+			bits |= protocol.SU.nails2;
+		if (ent.v_float[pr.entvars.ammo_rockets] & 0xFF00) 
+			bits |= protocol.SU.rockets2;
+		if (ent.v_float[pr.entvars.ammo_cells] & 0xFF00) 
+			bits |= protocol.SU.cells2;
+		if (bits & protocol.SU.weaponframe && ent.v_float[pr.entvars.weaponframe] & 0xFF00)
+			bits |= protocol.SU.weaponframe2
+		// TODO: weaponalpha
+		//if (bits & SU_WEAPON && ent_alpha != ENTALPHA_DEFAULT) bits |= SU_WEAPONALPHA; //for now, weaponalpha = client entity alpha
+		if (bits >= 65536)
+			bits |= protocol.SU.extend1
+		if (bits >= 16777216)
+			bits |= protocol.SU.extend2
+	}
 
 	msg.writeByte(message, protocol.SVC.clientdata);
 	msg.writeShort(message, bits);
+
+	// fitzquake additions
+	if (bits & protocol.SU.extend1)
+		msg.writeByte(message, bits >> 16);
+	if (bits & protocol.SU.extend2)
+		msg.writeByte(message, bits >> 24);
+
 	if ((bits & protocol.SU.viewheight) !== 0)
 		msg.writeChar(message, ent.v_float[pr.entvars.view_ofs2]);
 	if ((bits & protocol.SU.idealpitch) !== 0)
@@ -2332,6 +2453,25 @@ export const writeClientdataToMessage = function(ent, message)
 			}
 		}
 	}
+
+	if (bits & protocol.SU.weapon2)
+		msg.writeByte(message, modelIndex(pr.getString(ent.v_int[pr.entvars.weaponmodel])) >> 8)
+	if (bits & protocol.SU.armor2)
+		msg.writeByte(message, ent.v_float[pr.entvars.armorvalue] >> 8)
+	if (bits & protocol.SU.ammo2)
+		msg.writeByte(message, ent.v_float[pr.entvars.currentammo] >> 8)
+	if (bits & protocol.SU.shells2)
+		msg.writeByte(message, ent.v_float[pr.entvars.ammo_shells] >> 8)
+	if (bits & protocol.SU.nails2)
+		msg.writeByte(message, ent.v_float[pr.entvars.ammo_nails] >> 8)
+	if (bits & protocol.SU.rockets2)
+		msg.writeByte(message, ent.v_float[pr.entvars.ammo_rockets] >> 8)
+	if (bits & protocol.SU.cells2)
+		msg.writeByte(message, ent.v_float[pr.entvars.ammo_cells] >> 8)
+	if (bits & protocol.SU.weaponframe2)
+		msg.writeByte(message, ent.v_float[pr.entvars.weaponframe] >> 8)
+	if (bits & protocol.SU.weaponalpha)
+		msg.writeByte(message, ent.v_float[pr.entvars.alpha] >> 8)
 };
 
 export const saveSpawnparms = async function()
@@ -2382,6 +2522,7 @@ export const spawnServer = async function(server)
 
 	await pr.loadProgs();
 
+	state.server.protocol = protocol.fitzquake
 	state.server.edicts = [];
 	var _ed;
 	for (i = 0; i < def.max_edicts; ++i)

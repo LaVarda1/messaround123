@@ -9,11 +9,8 @@
       | My goal is to make the classic quake easily accessible to anyone without
       | having to worry about command lines or engine executables
       
-    p I've continued his development and made the engine modular in order to easily embed into 
-      | modern web frontends like this one.
-
-    p This is a pet project of mine of mine which I've weanted to do ever since I first saw  
-      | Triang3l's work, and will plan on adding new features for my own amusement.
+    p The source for this project is hosted here: 
+      a(href="https://gitlab.com/joe.lukacovic/netquake.io") https://gitlab.com/joe.lukacovic/netquake.io
 
     p -Joe
       br

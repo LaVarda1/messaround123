@@ -196,6 +196,7 @@ export const particle = function()
 export const ambientsound = function()
 {
 	var samp = pr.getString(pr.state.globals_int[7]), i;
+	let large = false
 	for (i = 0; i < sv.state.server.sound_precache.length; ++i)
 	{
 		if (sv.state.server.sound_precache[i] === samp)
@@ -206,12 +207,31 @@ export const ambientsound = function()
 		con.print('no precache: ' + samp + '\n');
 		return;
 	}
+
+	if (i > 255) {
+		if (sv.state.server.protocol === protocol.VERSION.netquake) {
+			return
+		} else {
+			large = true
+		}
+	}
 	var signon = sv.state.server.signon;
-	msg.writeByte(signon, protocol.SVC.spawnstaticsound);
+	//johnfitz -- PROTOCOL_FITZQUAKE
+	if (large)
+		msg.writeByte(signon, protocol.SVC.spawnstaticsound2);
+	else
+		msg.writeByte(signon, protocol.SVC.spawnstaticsound);
+	//johnfitz
 	msg.writeCoord(signon, pr.state.globals_float[4]);
 	msg.writeCoord(signon, pr.state.globals_float[5]);
 	msg.writeCoord(signon, pr.state.globals_float[6]);
-	msg.writeByte(signon, i);
+	//johnfitz -- PROTOCOL_FITZQUAKE
+	if (large)
+		msg.writeShort(signon, i)
+	else
+		msg.writeByte(signon, i)
+	//johnfitz
+	
 	msg.writeByte(signon, pr.state.globals_float[10] * 255.0);
 	msg.writeByte(signon, pr.state.globals_float[13] * 64.0);
 };
@@ -706,11 +726,47 @@ export const writeEntity = async function() {msg.writeShort(await writeDest(), p
 
 export const makestatic = function()
 {
+	let bits = 0
 	var ent = sv.state.server.edicts[pr.state.globals_int[4]];
+	// fitzquake -- don't send invisible static entities
+	if (ent.alpha === protocol.ENT_ALPHA.zero) {
+		ed.free(ent)
+		return
+	}	
+	var modelIndex = sv.modelIndex(pr.getString(ent.v_int[pr.entvars.model]))
+	//johnfitz -- PROTOCOL_FITZQUAKE
+	if (sv.state.server.protocol == protocol.VERSION.netquake) {
+		if (modelIndex & 0xFF00 || ent.v_float[pr.entvars.frame] & 0xFF00) {
+			ed.free(ent)
+			return //can't display the correct model & frame, so don't show it at all
+		}
+	} else {
+		if (modelIndex & 0xFF00)
+			bits |= protocol.BASE.largemodel
+		if (ent.v_float[pr.entvars.frame] & 0xFF00)
+			bits |= protocol.BASE.largeframe;
+		if (ent.alpha != protocol.ENT_ALPHA.default)
+			bits |= protocol.BASE.alpha;
+	}
 	var message = sv.state.server.signon;
-	msg.writeByte(message, protocol.SVC.spawnstatic);
-	msg.writeByte(message, sv.modelIndex(pr.getString(ent.v_int[pr.entvars.model])));
-	msg.writeByte(message, ent.v_float[pr.entvars.frame]);
+	if (bits) {
+		msg.writeByte(message, protocol.SVC.spawnstatic2)
+		msg.writeByte(message, bits)
+	} else {
+		msg.writeByte(message, protocol.SVC.spawnstatic);
+	}
+
+	if (bits & protocol.BASE.largemodel)
+		msg.writeShort(message, modelIndex)
+	else 
+		msg.writeByte(message, modelIndex);
+
+	if (bits & protocol.BASE.largeframe)
+		msg.writeShort(message, ent.v_float[pr.entvars.frame])
+	else 
+		msg.writeByte(message, ent.v_float[pr.entvars.frame]);
+	//johnfitz
+
 	msg.writeByte(message, ent.v_float[pr.entvars.colormap]);
 	msg.writeByte(message, ent.v_float[pr.entvars.skin]);
 	msg.writeCoord(message, ent.v_float[pr.entvars.origin]);
@@ -719,6 +775,12 @@ export const makestatic = function()
 	msg.writeAngle(message, ent.v_float[pr.entvars.angles1]);
 	msg.writeCoord(message, ent.v_float[pr.entvars.origin2]);
 	msg.writeAngle(message, ent.v_float[pr.entvars.angles2]);
+
+	//johnfitz -- PROTOCOL_FITZQUAKE
+	if (bits & protocol.BASE.alpha)
+		msg.writeByte(message, ent.alpha)
+	//johnfitz
+	
 	ed.free(ent);
 };
 

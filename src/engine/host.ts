@@ -96,7 +96,7 @@ const findMaxClients = function()
 	{
     sv.state.svs.clients[i] = {
       num: i,
-      message: {data: new ArrayBuffer(8000), cursize: 0, allowoverflow: true},
+      message: {data: new ArrayBuffer(def.max_message), cursize: 0, allowoverflow: true},
       colors: 0,
       old_frags: 0
     };

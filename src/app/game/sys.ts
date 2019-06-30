@@ -224,6 +224,8 @@ export const init = async (argv: string) =>
 			if(e && e.message)
 			{
 				console.log(e && e.message)
+				console.log(e && e.stack)
+				debugger
 				quit()
 			}
 		}

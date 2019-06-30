@@ -2,6 +2,7 @@ import ISocket from '../../../engine/interfaces/net/ISocket'
 import IDatagram from '../../../engine/interfaces/net/IDatagram'
 import * as sv from '../../../engine/sv'
 import * as net from '../../../engine/net'
+import * as def from '../../../engine/def'
 import * as websocket from 'websocket'
 import * as httpServer from './http'
 
@@ -59,7 +60,7 @@ export const listen = function()
 	try
 	{
     state.http = httpServer.createHttpServer(net.state.hostport)
-		state.server.mount({httpServer: state.http, maxReceivedMessageSize: 8192});
+		state.server.mount({httpServer: state.http, maxReceivedMessageSize: def.max_message});
 	}
 	catch (e)
 	{
@@ -149,7 +150,7 @@ const connectionOnMessage = function(message)
 {
 	if (message.type !== 'binary')
 		return;
-	if (message.binaryData.length > 8000)
+	if (message.binaryData.length > def.max_message)
 		return;
 	this.data_socket.receiveMessage.push(message.binaryData);
 };

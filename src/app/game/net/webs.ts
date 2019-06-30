@@ -1,6 +1,7 @@
 import ISocket from '../../../engine/interfaces/net/ISocket'
 import IDatagram from '../../../engine/interfaces/net/IDatagram'
 import * as net from '../../../engine/net'
+import * as def from '../../../engine/def'
 
 export const name: string = "websocket"
 export var initialized: boolean = false;
@@ -124,7 +125,7 @@ export const onMessage = function(message)
 	var data = message.data;
 	if (typeof(data) === 'string')
 		return;
-	if (data.byteLength > 8000)
+	if (data.byteLength > def.max_message)
 		return;
 	this.data_socket.receiveMessage.push(new Uint8Array(data));
 };

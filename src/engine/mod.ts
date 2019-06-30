@@ -33,6 +33,8 @@ export const FLAGS = {
 };
 
 export const VERSION = {
+  'bsp2': (('B'.charCodeAt(0) << 0)  | ('S'.charCodeAt(0) << 8)  | ('P'.charCodeAt(0) << 16) | ('2'.charCodeAt(0) << 24)),
+  '2psb': (('B'.charCodeAt(0) << 24) | ('S'.charCodeAt(0) << 16) | ('P'.charCodeAt(0) << 8)  | '2'.charCodeAt(0)),
   brush: 29,
   sprite: 1,
   alias: 6
@@ -446,7 +448,7 @@ export const loadSubmodels = function(buf)
   }
 };
 
-export const loadEdges = function(buf)
+export const loadEdges = function(buf, brushVersion)
 {
   var view = new DataView(buf);
   var fileofs = view.getUint32((LUMP.edges << 3) + 4, true);
@@ -763,11 +765,11 @@ export const loadBrushModel = function(buffer)
 {
   loadmodel.type = TYPE.brush;
   var version = (new DataView(buffer)).getUint32(0, true);
-  if (version !== VERSION.brush)
+  if (version !== VERSION.brush) // && version !== VERSION.bsp2 && version !== VERSION["2psb"])
     sys.error('Mod.LoadBrushModel: ' + loadmodel.name + ' has wrong version number (' + version + ' should be ' + VERSION.brush + ')');
   if (!host.state.dedicated) {
     loadVertexes(buffer);
-    loadEdges(buffer);
+    loadEdges(buffer, version);
     loadSurfedges(buffer);
     loadTextures(buffer);
     loadLighting(buffer);
