@@ -2175,8 +2175,7 @@ export const allocBlock = function(surf)
 	}
 	best += h;
 	if (best > LIGHTMAP_DIM)
-		// sys.error('AllocBlock: full');
-		return
+		sys.error('AllocBlock: full');
 	for (i = 0; i < w; ++i)
 		state.allocated[x + i] = best;
 	surf.light_s = x;
@@ -2227,7 +2226,7 @@ export const buildLightmaps = function()
 	var i, j;
 
 	state.allocated = [];
-	for (i = 0; i < 1024; ++i)
+	for (i = 0; i < LIGHTMAP_DIM; ++i)
 		state.allocated[i] = 0;
 
 	var surf;
@@ -2257,7 +2256,7 @@ export const buildLightmaps = function()
 	}
 
 	GL.bind(0, state.lightmap_texture);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1024, 1024, 0, gl.RGBA, gl.UNSIGNED_BYTE, state.lightmaps);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, LIGHTMAP_DIM, LIGHTMAP_DIM, 0, gl.RGBA, gl.UNSIGNED_BYTE, state.lightmaps);
 };
 
 // scan

@@ -6,6 +6,7 @@ import * as sys from '../../engine/sys'
 import * as con from '../../engine/console'
 import * as indexeddb from './indexeddb'
 import IPackedFile from '../../engine/interfaces/store/IPackedFile'
+import { file } from 'babel-types';
 
 const getFile = async function(file: string) {
   return new Promise((resolve, reject) => {
@@ -87,73 +88,83 @@ export const writeTextFile = (filename, data) =>
   return Promise.resolve(true);
 };
 
-export const loadFile = async (filename: string) : Promise<ArrayBuffer> =>
+const getLocalStorage = (game, filename) => {
+  const path = game + '/' + filename;
+  const data = localStorage.getItem('Quake.' + path);
+  if (data != null)
+  {
+    sys.print('FindFile: ' + path + '\n');
+    return q.strmem(data);
+  }
+  return null
+}
+const _loadFile = async (filename: string) : Promise<ArrayBuffer> =>
 {
   filename = filename.toLowerCase();
-  var i, j, k, search, netpath, pak, file, data;
-  draw.beginDisc(filename);
+  var i, search, netpath;
+  
+
   for (i = com.state.searchpaths.length - 1; i >= 0; --i)
   {
     search = com.state.searchpaths[i];
     netpath = search.dir + '/' + filename;
-    data = localStorage.getItem('Quake.' + netpath);
-    if (data != null)
-    {
-      sys.print('FindFile: ' + netpath + '\n');
-      draw.endDisc();
-      return q.strmem(data);
-    }
-    if (search.type === 'indexeddb') {
-      const file = search.packs.find(p => p.name === filename)
-      if (file && search.data) {
-        sys.print('LocalDBFile: ' + search.dir + '/' + search.name + ' : ' + filename + '\n')
-        draw.endDisc();
-        return search.data.slice(file.filepos, file.filepos + file.filelen);							
-      }
-      continue
-    }
-    for (j = search.packs.length - 1; j >= 0; --j)
-    {
-      pak = search.packs[j];
-      for (k = 0; k < pak.length; ++k)
-      {
-        file = pak[k];
-        if (file.name !== filename)
-          continue;
-        if (file.filelen === 0)
-        {
-          draw.endDisc();
-          return new ArrayBuffer(0);
-        }
 
-        const gotFile = await getFileRange(search.dir + '/pak' + j + '.pak', file.filepos, (file.filepos + file.filelen - 1)) as any
-        
-        if ((gotFile.status >= 200) && (gotFile.status <= 299) && (gotFile.responseText.length === file.filelen))
-        {
-          sys.print('PackFile: ' + search.dir + '/pak' + j + '.pak : ' + filename + '\n')
-          draw.endDisc();
-          return q.strmem(gotFile.responseText);
-        }
-        break;
+    const data = getLocalStorage(search.dir, filename)
+    if (data) {
+      return data
+    }
+
+    if (search.type === 'indexeddb' && search.data) {
+      const file = search.packs.find(p => p.name === filename)
+      if (!file) {
+        continue
       }
+      sys.print('LocalDBFile: ' + search.dir + '/' + search.name + ' : ' + filename + '\n')
+      return search.data.slice(file.filepos, file.filepos + file.filelen);							
+
+    } else  {
+      let pakNum = 0
+      let file = null
+      for (var idx = search.packs.length - 1; idx >= 0; idx--) {
+        file = search.packs[idx].find(f => f.name === filename)
+        if (file) {
+          if(file.filelen === 0) {
+            return new ArrayBuffer(0)
+          }
+          const gotFile = await getFileRange(search.dir + '/pak' + pakNum + '.pak', file.filepos, (file.filepos + file.filelen - 1)) as any
+          
+          if ((gotFile.status >= 200) && (gotFile.status <= 299) && (gotFile.responseText.length === file.filelen))
+          {
+            sys.print('PackFile: ' + search.dir + '/pak' + pakNum + '.pak : ' + filename + '\n')
+            return q.strmem(gotFile.responseText);
+          }
+        }
+      }
+    }
+
+    // try indexedDb.
+    const tryIndexedDb = await indexeddb.getAsset(search.dir, filename)
+    if (tryIndexedDb) {
+      return tryIndexedDb.data
     }
 
     const gotFile = await getFile(netpath) as any;
     if ((gotFile.status >= 200) && (gotFile.status <= 299))
     {
       sys.print('FindFile: ' + netpath + '\n');
-      draw.endDisc();
       return q.strmem(gotFile.responseText);
-    }
-    // try indexedDb.
-    const tryIndexedDb = await indexeddb.getAsset(search.dir, filename)
-    if (tryIndexedDb) {
-      return tryIndexedDb.data
     }
   }
   sys.print('FindFile: can\'t find ' + filename + '\n');
-  draw.endDisc();
 };
+
+export const loadFile = async (filename: string) : Promise<ArrayBuffer> => {
+  draw.beginDisc(filename);
+
+  const data = await _loadFile(filename)
+  draw.endDisc();
+  return data
+}
 
 export const loadPackFile = async (dir: string, packName: string) : Promise<IPackedFile[]> => 
 {
