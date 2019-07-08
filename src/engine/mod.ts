@@ -514,7 +514,7 @@ export const loadFaces = function(buf)
     out =
     {
       plane: loadmodel.planes[view.getUint16(fileofs, true)],
-      firstedge: view.getUint16(fileofs + 4, true),
+      firstedge: view.getUint32(fileofs + 4, true),
       numedges: view.getUint16(fileofs + 8, true),
       texinfo: view.getUint16(fileofs + 10, true),
       styles: [],
