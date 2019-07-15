@@ -448,20 +448,30 @@ export const loadSubmodels = function(buf)
   }
 };
 
-export const loadEdges = function(buf, brushVersion)
+export const loadEdges = function(buf, bspVersion)
 {
+  var size = bspVersion === VERSION["2psb"] || bspVersion === VERSION['bsp2'] ? 8 : 4
   var view = new DataView(buf);
   var fileofs = view.getUint32((LUMP.edges << 3) + 4, true);
   var filelen = view.getUint32((LUMP.edges << 3) + 8, true);
-  if ((filelen & 3) !== 0)
+  if ((filelen % size) !== 0)
     sys.error('Mod.LoadEdges: funny lump size in ' + loadmodel.name);
-  var count = filelen >> 2;
+  var count = filelen / size;
   loadmodel.edges = [];
   var i;
-  for (i = 0; i < count; ++i)
-  {
-    loadmodel.edges[i] = [view.getUint16(fileofs, true), view.getUint16(fileofs + 2, true)];
-    fileofs += 4;
+
+  if (bspVersion === VERSION["2psb"] || bspVersion === VERSION['bsp2']) {
+    for (i = 0; i < count; ++i)
+    {
+      loadmodel.edges[i] = [view.getUint32(fileofs, true), view.getUint32(fileofs + 4, true)];
+      fileofs += 8;
+    }
+  } else {
+    for (i = 0; i < count; ++i)
+    {
+      loadmodel.edges[i] = [view.getUint16(fileofs, true), view.getUint16(fileofs + 2, true)];
+      fileofs += 4;
+    }
   }
 };
 
@@ -495,31 +505,44 @@ export const loadTexinfo = function(buf)
   }
 };
 
-export const loadFaces = function(buf)
+export const loadFaces = function(buf, bspVersion)
 {
+  var size = bspVersion === VERSION["2psb"] || bspVersion === VERSION['bsp2'] ? 28 : 20
   var view = new DataView(buf);
   var fileofs = view.getUint32((LUMP.faces << 3) + 4, true);
   var filelen = view.getUint32((LUMP.faces << 3) + 8, true);
-  if ((filelen % 20) !== 0)
+  if ((filelen % size) !== 0)
     sys.error('Mod.LoadFaces: funny lump size in ' + loadmodel.name);
-  var count = filelen / 20;
+  var count = filelen / size;
   loadmodel.firstface = 0;
   loadmodel.numfaces = count;
   loadmodel.faces = [];
   var i, styles, out;
   var mins, maxs, j, e, tex, v, val;
-  for (i = 0; i < count; ++i)
-  {
-    styles = new Uint8Array(buf, fileofs + 12, 4);
-    out =
-    {
-      plane: loadmodel.planes[view.getUint16(fileofs, true)],
-      firstedge: view.getUint32(fileofs + 4, true),
-      numedges: view.getUint16(fileofs + 8, true),
-      texinfo: view.getUint16(fileofs + 10, true),
-      styles: [],
-      lightofs: view.getInt32(fileofs + 16, true)
-    };
+  for (i = 0; i < count; ++i) {
+    if (bspVersion === VERSION["2psb"] || bspVersion === VERSION['bsp2']) {
+      styles = new Uint8Array(buf, fileofs + 20, 4);
+      out = {
+        plane: loadmodel.planes[view.getUint16(fileofs, true)],
+        firstedge: view.getUint32(fileofs + 8, true),
+        numedges: view.getUint32(fileofs + 12, true),
+        texinfo: view.getUint16(fileofs + 16, true),
+        styles: [],
+        lightofs: view.getInt32(fileofs + 24, true)
+      }
+      fileofs += 28;
+    } else {
+      styles = new Uint8Array(buf, fileofs + 12, 4);
+      out = {
+        plane: loadmodel.planes[view.getUint16(fileofs, true)],
+        firstedge: view.getUint32(fileofs + 4, true),
+        numedges: view.getUint16(fileofs + 8, true),
+        texinfo: view.getUint16(fileofs + 10, true),
+        styles: [],
+        lightofs: view.getInt32(fileofs + 16, true)
+      }
+      fileofs += 20;
+    }
     if (styles[0] !== 255)
       out.styles[0] = styles[0];
     if (styles[1] !== 255)
@@ -560,7 +583,6 @@ export const loadFaces = function(buf)
       out.sky = true;
 
     loadmodel.faces[i] = out;
-    fileofs += 20;
   }
 };
 
@@ -573,18 +595,33 @@ export const setParent = function(node, parent)
   setParent(node.children[1], node);
 };
 
-export const loadNodes = function(buf)
+export const loadNodes = function(buf, bspVersion)
 {
+  var size = bspVersion === VERSION["2psb"] ? 32 : 
+    bspVersion === VERSION.bsp2 ? 44 : 24
   var view = new DataView(buf);
   var fileofs = view.getUint32((LUMP.nodes << 3) + 4, true);
   var filelen = view.getUint32((LUMP.nodes << 3) + 8, true);
-  if ((filelen === 0) || ((filelen % 24) !== 0))
+  if ((filelen === 0) || ((filelen % size) !== 0))
     sys.error('Mod.LoadNodes: funny lump size in ' + loadmodel.name);
-  var count = filelen / 24;
+  var count = filelen / size;
+  loadmodel.nodes = [];
+
+  switch (bspVersion) {
+    case VERSION["2psb"]:
+      return loadNodes_2psb(view, count, fileofs)
+    case VERSION['bsp2']:
+      return loadNodes_bsp2(view, count, fileofs)
+    default:
+      return loadNodes_s(view, count, fileofs)
+  }
+};
+
+const loadNodes_s = (view, count, fileofs) => {
   loadmodel.nodes = [];
   var i, out;
-  for (i = 0; i < count; ++i)
-  {
+  
+  for (i = 0; i < count; ++i) {
     loadmodel.nodes[i] = {
       num: i,
       contents: 0,
@@ -602,6 +639,7 @@ export const loadNodes = function(buf)
   {
     out = loadmodel.nodes[i];
     out.plane = loadmodel.planes[out.planenum];
+    
     if (out.children[0] >= 0)
       out.children[0] = loadmodel.nodes[out.children[0]];
     else
@@ -612,44 +650,166 @@ export const loadNodes = function(buf)
       out.children[1] = loadmodel.leafs[-1 - out.children[1]];
   }
   setParent(loadmodel.nodes[0], undefined);
-};
+}
+const loadNodes_2psb = (view, count, fileofs) => {
+  loadmodel.nodes = [];
+  var i,j, out, p
+  
+  for (i = 0; i < count; ++i) {
+    loadmodel.nodes[i] = {
+      num: i,
+      contents: 0,
+      planenum: view.getUint32(fileofs, true),
+      children: [view.getInt32(fileofs + 4, true), view.getInt32(fileofs + 8, true)],
+      mins: [view.getInt16(fileofs + 12, true), view.getInt16(fileofs + 14, true), view.getInt16(fileofs + 16, true)],
+      maxs: [view.getInt16(fileofs + 18, true), view.getInt16(fileofs + 20, true), view.getInt16(fileofs + 22, true)],
+      firstface: view.getUint32(fileofs + 24, true),
+      numfaces: view.getUint32(fileofs + 28, true),
+      cmds: []
+    };
+    fileofs += 32;
+  }
 
-export const loadLeafs = function(buf)
+  for (i = 0; i < count; ++i) {
+    out = loadmodel.nodes[i];
+    out.plane = loadmodel.planes[out.planenum];
+    for (j = 0; j < 2; j++) {
+      
+      p = out.children[j]
+      if (p >= 0 && p < count) {
+        out.children[j] = loadmodel.nodes[p];
+      } else {
+        p = (new Uint32Array([0xffffffff - p]))[0];
+        if ( p >= 0 && p < loadmodel.leafs.length) {
+          out.children[j] = loadmodel.leafs[p]
+        } else {
+          con.print(`Mod_LoadNodes: invalid leaf index ${p} (file has only ${loadmodel.leafs.length} leafs)\n`)
+          out.children[j] = loadmodel.leafs[0]
+        }
+      }
+    }
+  }
+  setParent(loadmodel.nodes[0], undefined);
+}
+
+const loadNodes_bsp2 = (view, count, fileofs) => {
+
+  loadmodel.nodes = [];
+  var i,j, out, p
+  
+  for (i = 0; i < count; ++i) {
+    loadmodel.nodes[i] = {
+      num: i,
+      contents: 0,
+      planenum: view.getUint32(fileofs, true),
+      children: [view.getInt32(fileofs + 4, true), view.getInt32(fileofs + 8, true)],
+      mins: [view.getFloat32(fileofs + 12, true), view.getFloat32(fileofs + 16, true), view.getFloat32(fileofs + 20, true)],
+      maxs: [view.getFloat32(fileofs + 24, true), view.getFloat32(fileofs + 28, true), view.getFloat32(fileofs + 32, true)],
+      firstface: view.getUint32(fileofs + 36, true),
+      numfaces: view.getUint32(fileofs + 40, true),
+      cmds: []
+    };
+    fileofs += 44;
+  }
+  
+  for (i = 0; i < count; ++i) {
+    out = loadmodel.nodes[i];
+    out.plane = loadmodel.planes[out.planenum];
+    for (j = 0; j < 2; j++) {
+			//johnfitz -- hack to handle nodes > 32k, adapted from darkplaces
+      p = out.children[j]
+      if (p > 0 && p < count) {
+        out.children[j] = loadmodel.nodes[p];
+      } else {
+        p = (new Uint32Array([0xffffffff - p]))[0];
+        if ( p >= 0 && p < loadmodel.leafs.length) {
+          out.children[j] = loadmodel.leafs[p]
+        } else {
+          con.print(`Mod_LoadNodes: invalid leaf index ${p} (file has only ${loadmodel.leafs.length} leafs)\n`)
+          out.children[j] = loadmodel.leafs[0]
+        }
+      }
+    }
+  }
+  setParent(loadmodel.nodes[0], undefined);
+}
+export const loadLeafs = function(buf, bspVersion)
 {
+  var size = bspVersion === VERSION["2psb"] ? 32 :
+    bspVersion === VERSION.bsp2 ? 44 : 28
   var view = new DataView(buf);
   var fileofs = view.getUint32((LUMP.leafs << 3) + 4, true);
   var filelen = view.getUint32((LUMP.leafs << 3) + 8, true);
-  if ((filelen % 28) !== 0)
+  if ((filelen % size) !== 0)
     sys.error('Mod.LoadLeafs: funny lump size in ' + loadmodel.name);
-  var count = filelen / 28;
+  var count = filelen / size;
   loadmodel.leafs = [];
   var i, j, out;
   for (i = 0; i < count; ++i)
   {
-    out = {
-      num: i,
-      contents: view.getInt32(fileofs, true),
-      visofs: view.getInt32(fileofs + 4, true),
-      mins: [view.getInt16(fileofs + 8, true), view.getInt16(fileofs + 10, true), view.getInt16(fileofs + 12, true)],
-      maxs: [view.getInt16(fileofs + 14, true), view.getInt16(fileofs + 16, true), view.getInt16(fileofs + 18, true)],
-      firstmarksurface: view.getUint16(fileofs + 20, true),
-      nummarksurfaces: view.getUint16(fileofs + 22, true),
-      ambient_level: [view.getUint8(fileofs + 24), view.getUint8(fileofs + 25), view.getUint8(fileofs + 26), view.getUint8(fileofs + 27)],
-      cmds: [],
-      skychain: 0,
-      waterchain: 0
-    };
-    loadmodel.leafs[i] = out;
-    fileofs += 28;
+    switch (bspVersion) {
+      case VERSION["2psb"]:
+        out = {
+          num: i,
+          contents: view.getInt32(fileofs, true),
+          visofs: view.getInt32(fileofs + 4, true),
+          mins: [view.getInt16(fileofs + 8, true), view.getInt16(fileofs + 10, true), view.getInt16(fileofs + 12, true)],
+          maxs: [view.getInt16(fileofs + 14, true), view.getInt16(fileofs + 16, true), view.getInt16(fileofs + 18, true)],
+          firstmarksurface: view.getUint32(fileofs + 20, true),
+          nummarksurfaces: view.getUint32(fileofs + 24, true),
+          ambient_level: [view.getUint8(fileofs + 28), view.getUint8(fileofs + 29), view.getUint8(fileofs + 30), view.getUint8(fileofs + 31)],
+          cmds: [],
+          skychain: 0,
+          waterchain: 0
+        };
+        loadmodel.leafs[i] = out
+        fileofs += 32
+        break
+      case VERSION['bsp2']:
+          out = {
+            num: i,
+            contents: view.getInt32(fileofs, true),
+            visofs: view.getInt32(fileofs + 4, true),
+            mins: [view.getFloat32(fileofs + 8, true), view.getFloat32(fileofs + 12, true), view.getFloat32(fileofs + 16, true)],
+            maxs: [view.getFloat32(fileofs + 20, true), view.getFloat32(fileofs + 24, true), view.getFloat32(fileofs + 28, true)],
+            firstmarksurface: view.getUint32(fileofs + 32, true),
+            nummarksurfaces: view.getUint32(fileofs + 36, true),
+            ambient_level: [view.getUint8(fileofs + 40), view.getUint8(fileofs + 41), view.getUint8(fileofs + 42), view.getUint8(fileofs + 43)],
+            cmds: [],
+            skychain: 0,
+            waterchain: 0
+          }
+          loadmodel.leafs[i] = out
+          fileofs += 44
+        break
+      default:
+        out = {
+          num: i,
+          contents: view.getInt32(fileofs, true),
+          visofs: view.getInt32(fileofs + 4, true),
+          mins: [view.getInt16(fileofs + 8, true), view.getInt16(fileofs + 10, true), view.getInt16(fileofs + 12, true)],
+          maxs: [view.getInt16(fileofs + 14, true), view.getInt16(fileofs + 16, true), view.getInt16(fileofs + 18, true)],
+          firstmarksurface: view.getUint16(fileofs + 20, true),
+          nummarksurfaces: view.getUint16(fileofs + 22, true),
+          ambient_level: [view.getUint8(fileofs + 24), view.getUint8(fileofs + 25), view.getUint8(fileofs + 26), view.getUint8(fileofs + 27)],
+          cmds: [],
+          skychain: 0,
+          waterchain: 0
+        };
+        loadmodel.leafs[i] = out
+        fileofs += 28
+      break
+    }
   };
 };
 
-export const loadClipnodes = function(buf)
+export const loadClipnodes = function(buf, bspVersion)
 {
+  var size = bspVersion === VERSION["2psb"] || bspVersion === VERSION.bsp2 ? 12 : 8
   var view = new DataView(buf);
   var fileofs = view.getUint32((LUMP.clipnodes << 3) + 4, true);
   var filelen = view.getUint32((LUMP.clipnodes << 3) + 8, true);
-  var count = filelen >> 3;
+  var count = filelen / size;
   loadmodel.clipnodes = [];
 
   loadmodel.hulls = [];
@@ -672,11 +832,26 @@ export const loadClipnodes = function(buf)
   var i;
   for (i = 0; i < count; ++i)
   {
-    loadmodel.clipnodes[i] = {
-      planenum: view.getUint32(fileofs, true),
-      children: [view.getInt16(fileofs + 4, true), view.getInt16(fileofs + 6, true)]
-    };
-    fileofs += 8;
+    if (bspVersion === VERSION["2psb"] || bspVersion === VERSION.bsp2) {
+      loadmodel.clipnodes[i] = {
+        planenum: view.getUint32(fileofs, true),
+        children: [view.getInt32(fileofs + 4, true), view.getInt32(fileofs + 8, true)]
+      };
+      fileofs += size
+    } else {
+			//johnfitz -- support clipnodes > 32k
+      var out = {
+        planenum: view.getUint32(fileofs, true),
+        children: [view.getInt16(fileofs + 4, true), view.getInt16(fileofs + 6, true)]
+      };
+			if (out.children[0] >= count)
+				out.children[0] -= 65536;
+			if (out.children[1] >= count)
+        out.children[1] -= 65536;
+
+      loadmodel.clipnodes[i] = out
+      fileofs += size
+    }
   }
 };
 
@@ -703,17 +878,22 @@ export const makeHull0 = function()
   loadmodel.hulls[0] = hull;
 };
 
-export const loadMarksurfaces = function(buf)
+export const loadMarksurfaces = function(buf, bspVersion)
 {
+  var size = bspVersion === VERSION["2psb"] || bspVersion === VERSION['bsp2'] ? 4 : 2
   var view = new DataView(buf);
   var fileofs = view.getUint32((LUMP.marksurfaces << 3) + 4, true);
   var filelen = view.getUint32((LUMP.marksurfaces << 3) + 8, true);
-  var count = filelen >> 1;
+  var count = filelen / size;
   loadmodel.marksurfaces = [];
   var i, j;
   for (i = 0; i < count; ++i)
   {
-    j = view.getUint16(fileofs + (i << 1), true);
+    if (bspVersion === VERSION["2psb"] || bspVersion === VERSION['bsp2']) { 
+      j = view.getUint32(fileofs + (i << 2), true);
+    } else {
+      j = view.getUint16(fileofs + (i << 1), true);
+    }
     if (j > loadmodel.faces.length)
       sys.error('Mod.LoadMarksurfaces: bad surface number');
     loadmodel.marksurfaces[i] = j;
@@ -765,8 +945,16 @@ export const loadBrushModel = function(buffer)
 {
   loadmodel.type = TYPE.brush;
   var version = (new DataView(buffer)).getUint32(0, true);
-  if (version !== VERSION.brush) // && version !== VERSION.bsp2 && version !== VERSION["2psb"])
-    sys.error('Mod.LoadBrushModel: ' + loadmodel.name + ' has wrong version number (' + version + ' should be ' + VERSION.brush + ')');
+
+  switch (version) {
+    case VERSION.bsp2:
+    case VERSION["2psb"]:
+    case VERSION.brush:
+      break;
+    default:
+      throw new Error('Mod.LoadBrushModel: ' +  loadmodel.name  + ' has wrong version number (' + version + ')');
+  }
+  
   if (!host.state.dedicated) {
     loadVertexes(buffer);
     loadEdges(buffer, version);
@@ -777,13 +965,13 @@ export const loadBrushModel = function(buffer)
   loadPlanes(buffer);
   if (!host.state.dedicated) {
     loadTexinfo(buffer);
-    loadFaces(buffer);
-    loadMarksurfaces(buffer);
+    loadFaces(buffer, version);
+    loadMarksurfaces(buffer, version);
   }
   loadVisibility(buffer);
-  loadLeafs(buffer);
-  loadNodes(buffer);
-  loadClipnodes(buffer);
+  loadLeafs(buffer, version);
+  loadNodes(buffer, version);
+  loadClipnodes(buffer, version);
   makeHull0();
   loadEntities(buffer);
   loadSubmodels(buffer);
