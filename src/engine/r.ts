@@ -17,8 +17,10 @@ import * as q from './q'
 import * as vid from './vid'
 import * as msg from './msg'
 import * as def from './def'
-import * as draw from './draw'
+import * as batchRender from './batchRender'
 import * as s from './s'
+import * as lm from './lightmap'
+import * as tex from './texture'
 
 const LIGHTMAP_DIM = 1024
 export const LERP = {
@@ -899,11 +901,11 @@ export const renderScene = function()
 
 	setFrustum();
 	setupGL();
-	markLeaves();
+	markSurfaces();
 	gl.enable(gl.CULL_FACE);
 	drawSkyBox();
 	drawViewModel();
-	drawWorld();
+	drawTextureChains(gl, cl.clState.worldmodel, null, def.TEX_CHAIN.world);
 	drawEntitiesOnList();
 	gl.disable(gl.CULL_FACE);
 	renderDlights();
@@ -1026,139 +1028,6 @@ export const makeBrushModelDisplayLists = function(m)
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(cmds), gl.STATIC_DRAW);
 };
 
-export const makeWorldModelDisplayLists = function(m)
-{
-	if (m.cmds != null)
-		return;
-  const gl = GL.getContext()
-	var i, j, k, l;
-	var cmds = [];
-	var texture, leaf, chain, surf, vert, styles = [0.0, 0.0, 0.0, 0.0];
-	var verts = 0;
-	for (i = 0; i < m.textures.length; ++i)
-	{
-		texture = m.textures[i];
-		if ((texture.sky === true) || (texture.turbulent === true))
-			continue;
-		for (j = 0; j < m.leafs.length; ++j)
-		{
-			leaf = m.leafs[j];
-			chain = [i, verts, 0];
-			for (k = 0; k < leaf.nummarksurfaces; ++k)
-			{
-				surf = m.faces[m.marksurfaces[leaf.firstmarksurface + k]];
-				if (surf.texture !== i)
-					continue;
-				styles[0] = styles[1] = styles[2] = styles[3] = 0.0;
-				switch (surf.styles.length)
-				{
-				case 4:
-					styles[3] = surf.styles[3] * 0.015625 + 0.0078125;
-				case 3:
-					styles[2] = surf.styles[2] * 0.015625 + 0.0078125;
-				case 2:
-					styles[1] = surf.styles[1] * 0.015625 + 0.0078125;
-				case 1:
-					styles[0] = surf.styles[0] * 0.015625 + 0.0078125;
-				}
-				chain[2] += surf.verts.length;
-				for (l = 0; l < surf.verts.length; ++l)
-				{
-					vert = surf.verts[l];
-					cmds[cmds.length] = vert[0];
-					cmds[cmds.length] = vert[1];
-					cmds[cmds.length] = vert[2];
-					cmds[cmds.length] = vert[3];
-					cmds[cmds.length] = vert[4];
-					cmds[cmds.length] = vert[5];
-					cmds[cmds.length] = vert[6];
-					cmds[cmds.length] = styles[0];
-					cmds[cmds.length] = styles[1];
-					cmds[cmds.length] = styles[2];
-					cmds[cmds.length] = styles[3];
-				}
-			}
-			if (chain[2] !== 0)
-			{
-				leaf.cmds[leaf.cmds.length] = chain;
-				++leaf.skychain;
-				++leaf.waterchain;
-				verts += chain[2];
-			}
-		}
-	}
-	m.skychain = verts * 44;
-	verts = 0;
-	for (i = 0; i < m.textures.length; ++i)
-	{
-		texture = m.textures[i];
-		if (texture.sky !== true)
-			continue;
-		for (j = 0; j < m.leafs.length; ++j)
-		{
-			leaf = m.leafs[j];
-			chain = [verts, 0];
-			for (k = 0; k < leaf.nummarksurfaces; ++k)
-			{
-				surf = m.faces[m.marksurfaces[leaf.firstmarksurface + k]];
-				if (surf.texture !== i)
-					continue;
-				chain[1] += surf.verts.length;
-				for (l = 0; l < surf.verts.length; ++l)
-				{
-					vert = surf.verts[l];
-					cmds[cmds.length] = vert[0];
-					cmds[cmds.length] = vert[1];
-					cmds[cmds.length] = vert[2];
-				}
-			}
-			if (chain[1] !== 0)
-			{
-				leaf.cmds[leaf.cmds.length] = chain;
-				++leaf.waterchain;
-				verts += chain[1];
-			}
-		}
-	}
-	m.waterchain = m.skychain + verts * 12;
-	verts = 0;
-	for (i = 0; i < m.textures.length; ++i)
-	{
-		texture = m.textures[i];
-		if (texture.turbulent !== true)
-			continue;
-		for (j = 0; j < m.leafs.length; ++j)
-		{
-			leaf = m.leafs[j];
-			chain = [i, verts, 0];
-			for (k = 0; k < leaf.nummarksurfaces; ++k)
-			{
-				surf = m.faces[m.marksurfaces[leaf.firstmarksurface + k]];
-				if (surf.texture !== i)
-					continue;
-				chain[2] += surf.verts.length;
-				for (l = 0; l < surf.verts.length; ++l)
-				{
-					vert = surf.verts[l];
-					cmds[cmds.length] = vert[0];
-					cmds[cmds.length] = vert[1];
-					cmds[cmds.length] = vert[2];
-					cmds[cmds.length] = vert[3];
-					cmds[cmds.length] = vert[4];
-				}
-			}
-			if (chain[2] !== 0)
-			{
-				leaf.cmds[leaf.cmds.length] = chain;
-				verts += chain[2];
-			}
-		}
-	}
-	m.cmds = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, m.cmds);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(cmds), gl.STATIC_DRAW);
-};
-
 // misc
 
 export const initTextures = function()
@@ -1232,6 +1101,8 @@ export const init = function()
 	cvr.polyblend = cvar.registerVariable('gl_polyblend', '1');
 	cvr.flashblend = cvar.registerVariable('gl_flashblend', '0');
 	cvr.nocolors = cvar.registerVariable('gl_nocolors', '0');
+	cvr.overbright = cvar.registerVariable('gl_overbright', '1');
+	cvr.fullbrights = cvar.registerVariable('gl_fullbrights', '1');
 
 	initParticles();
 
@@ -1239,6 +1110,19 @@ export const init = function()
 		['uOrigin', 'uAngles', 'uViewOrigin', 'uViewAngles', 'uPerspective', 'uLightVec', 'uGamma', 'uAmbientLight', 'uShadeLight'],
 		[['aPosition', gl.FLOAT, 3], ['aNormal', gl.FLOAT, 3], ['aTexCoord', gl.FLOAT, 2]],
 		['tTexture']);
+		
+	GL.createProgram(
+		'World', 
+		['uUseFullbrightTex','uUseOverbright','uUseAlphaTest',
+		'uAlpha','uPerspective', 'uViewAngles', 'uViewOrigin', 
+		'uOrigin', 'uAngles', 'uFogDensity', 'uFogColor'],
+		[
+			['Vert', gl.FLOAT, 3, false],
+			['TexCoords', gl.FLOAT, 2, false],
+			['LMCoords', gl.FLOAT, 2, false],
+		],
+		['Tex', 'LMTex', 'FullbrightTex'])
+
 	GL.createProgram('Brush',
 		['uOrigin', 'uAngles', 'uViewOrigin', 'uViewAngles', 'uPerspective', 'uGamma'],
 		[['aPosition', gl.FLOAT, 3], ['aTexCoord', gl.FLOAT, 4], ['aLightStyle', gl.FLOAT, 4]],
@@ -1314,7 +1198,10 @@ export const newMap = function()
 		state.lightstylevalue[i] = 12;
 
 	clearParticles();
-	buildLightmaps();
+	lm.init()
+	lm.buildLightmaps(gl, cl.clState.worldmodel);
+	buildSurfaceDisplayLists(cl.clState.worldmodel)
+	buildModelVertexBuffer(gl, cl.clState.worldmodel)
 
 	for (i = 0; i <= 1048575; ++i)
 		state.dlightmaps[i] = 0;
@@ -1921,8 +1808,12 @@ export const buildLightMap = function(surf)
 	}
 };
 
-export const textureAnimation = function(base)
+export const textureAnimation = function(model, base, entFrame)
 {
+	if (entFrame)
+		if (base.alternate_anims)
+			base = base.alternate_anims;
+
 	var frame = 0;
 	if (base.anim_base != null)
 	{
@@ -1992,7 +1883,7 @@ export const drawBrushModel = function(e)
 	for (i = 0; i < clmodel.chains.length; ++i)
 	{
 		chain = clmodel.chains[i];
-		texture = textureAnimation(clmodel.textures[chain[0]]);
+		texture = textureAnimation(clmodel, clmodel.textures[chain[0]], null);
 		if (texture.turbulent === true)
 			continue;
 		state.c_brush_verts += chain[2];
@@ -2035,67 +1926,229 @@ export const recursiveWorldNode = function(node)
 	recursiveWorldNode(node.children[1]);
 };
 
-export const drawWorld = function()
-{
-  const gl = GL.getContext()
-	var clmodel = cl.clState.worldmodel;
-	state.currententity = cl.state.entities[0];
-	gl.bindBuffer(gl.ARRAY_BUFFER, clmodel.cmds);
+const drawTextureChains = (gl, model, ent, chain) => {
+	var entalpha = 1
+	
+	// if (ent != NULL)
+	// 	entalpha = ENTALPHA_DECODE(ent->alpha);
+	// else
+	// 	entalpha = 1;
 
-	var program = GL.useProgram('Brush');
-	gl.uniform3f(program.uOrigin, 0.0, 0.0, 0.0);
-	gl.uniformMatrix3fv(program.uAngles, false, GL.identity);
-	gl.vertexAttribPointer(program.aPosition.location, 3, gl.FLOAT, false, 44, 0);
-	gl.vertexAttribPointer(program.aTexCoord.location, 4, gl.FLOAT, false, 44, 12);
-	gl.vertexAttribPointer(program.aLightStyle.location, 4, gl.FLOAT, false, 44, 28);
-	if ((cvr.fullbright.value !== 0) || (clmodel.lightdata == null))
-		GL.bind(program.tLightmap, state.fullbright_texture);
-	else
-		GL.bind(program.tLightmap, state.lightmap_texture);
-	if (cvr.flashblend.value === 0)
-		GL.bind(program.tDlight, state.dlightmap_texture);
-	else
-		GL.bind(program.tDlight, state.null_texture);
-	GL.bind(program.tLightStyle, state.lightstyle_texture);
-	var i, j, leaf, cmds;
-	for (i = 0; i < clmodel.leafs.length; ++i)
+	// TODO Dynamic LMs
+// ericw -- the mh dynamic lightmap speedup: make a first pass through all
+// surfaces we are going to draw, and rebuild any lightmaps that need it.
+// this also chains surfaces by lightmap which is used by r_lightmap 1.
+// the previous implementation of the speedup uploaded lightmaps one frame
+// late which was visible under some conditions, this method avoids that.
+	//buildLightmapChains (model, chain);
+	//uploadLightmaps (gl);
+
+	// if (r_drawflat_cheatsafe)
+	// {
+	// 	glDisable (GL_TEXTURE_2D);
+	// 	R_DrawTextureChains_Drawflat (model, chain);
+	// 	glEnable (GL_TEXTURE_2D);
+	// 	return;
+	// }
+
+	// if (r_fullbright_cheatsafe)
+	// {
+	// 	R_BeginTransparentDrawing (entalpha);
+	// 	R_DrawTextureChains_TextureOnly (model, ent, chain);
+	// 	R_EndTransparentDrawing (entalpha);
+	// 	goto fullbrights;
+	// }
+
+	// if (r_lightmap_cheatsafe)
+	// {
+	// 	if (!gl_overbright.value)
+	// 	{
+	// 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	// 		glColor3f(0.5, 0.5, 0.5);
+	// 	}
+	// 	R_DrawLightmapChains ();
+	// 	if (!gl_overbright.value)
+	// 	{
+	// 		glColor3f(1,1,1);
+	// 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	// 	}
+	// 	R_DrawTextureChains_White (model, chain);
+	// 	return;
+	// }
+
+	// R_BeginTransparentDrawing (entalpha);
+
+	// R_DrawTextureChains_NoTexture (model, chain);
+
+
+	// R_EndTransparentDrawing (entalpha);
+	
+	var	fullbright = null
+	
+	// enable blending / disable depth writes
+	if (entalpha < 1)
 	{
-		leaf = clmodel.leafs[i];
-		if ((leaf.visframe !== state.visframecount) || (leaf.skychain === 0))
-			continue;
-		if (cullBox(leaf.mins, leaf.maxs) === true)
-			continue;
-		for (j = 0; j < leaf.skychain; ++j)
-		{
-			cmds = leaf.cmds[j];
-			state.c_brush_verts += cmds[2];
-			GL.bind(program.tTexture, textureAnimation(clmodel.textures[cmds[0]]).texturenum);
-			gl.drawArrays(gl.TRIANGLES, cmds[1], cmds[2]);
-		}
+		gl.depthMask (gl.FALSE);
+		gl.enable (gl.BLEND);
 	}
 
-	program = GL.useProgram('Turbulent');
-	gl.uniform3f(program.uOrigin, 0.0, 0.0, 0.0);
-	gl.uniformMatrix3fv(program.uAngles, false, GL.identity);
-	gl.uniform1f(program.uTime, host.state.realtime % (Math.PI * 2.0));
-	gl.vertexAttribPointer(program.aPosition.location, 3, gl.FLOAT, false, 20, clmodel.waterchain);
-	gl.vertexAttribPointer(program.aTexCoord.location, 2, gl.FLOAT, false, 20, clmodel.waterchain + 12);
-	for (i = 0; i < clmodel.leafs.length; ++i)
+	const worldProgram = GL.useProgram('World')
+	
+	// Bind the buffers
+	gl.bindBuffer (gl.ARRAY_BUFFER, state.model_vbo);
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null)// indices come from client memory!
+	
+	gl.vertexAttribPointer (0, 3, gl.FLOAT, gl.FALSE, def.VERTEXSIZE * 4, 0);
+	gl.vertexAttribPointer (1, 2, gl.FLOAT, gl.FALSE, def.VERTEXSIZE * 4, 4 * 3);
+	gl.vertexAttribPointer (2, 2, gl.FLOAT, gl.FALSE, def.VERTEXSIZE * 4, 4 * 5);
+	
+	// set uniforms
+	// gl.uniform1i (uniforms.tex, 0);
+	// gl.uniform1i (uniforms.LMTex, 1);
+	// gl.uniform1i (uniforms.fullbrightTex, 2);
+	gl.uniform1i (worldProgram.uUseFullbrightTex, 0);
+	gl.uniform1i (worldProgram.uUseOverbright, cvr.overbright.value);
+	gl.uniform1i (worldProgram.uUseAlphaTest, 0);
+	gl.uniform1f (worldProgram.uAlpha, entalpha);
+	gl.uniform1f (worldProgram.uFogDensity, 0.0 / 64)
+	gl.uniform4f (worldProgram.uFogColor, .2, .16, .15, 1)
+
+	// gl.uniform1i (worldProgram.tex, 0)
+	// gl.uniform1i (worldProgram.LMTex, 1)
+	// //gl.uniform1i (uniforms.fullbrightTex, 2)
+
+	gl.uniform3f(worldProgram.uOrigin, 0.0, 0.0, 0.0);
+	gl.uniformMatrix3fv(worldProgram.uAngles, false, GL.identity);
+	
+	for (var i = 0; i < model.textures.length; i++)
 	{
-		leaf = clmodel.leafs[i];
-		if ((leaf.visframe !== state.visframecount) || (leaf.waterchain === leaf.cmds.length))
+		var t = model.textures[i];
+
+		if (!t || !t.texturechains || !t.texturechains[chain] || t.texturechains[chain].flags & (def.SURF.drawtiled | def.SURF.notexture | def.SURF.drawtub))
 			continue;
-		if (cullBox(leaf.mins, leaf.maxs) === true)
-			continue;
-		for (j = leaf.waterchain; j < leaf.cmds.length; ++j)
+
+		var animatedTexture = textureAnimation(model, t, ent != null ? ent.frame : 0)
+	// Enable/disable TMU 2 (fullbrights)
+	// FIXME: Move below to where we bind GL_TEXTURE0
+		if (cvr.fullbrights.value && (fullbright = animatedTexture.fullbright))
 		{
-			cmds = leaf.cmds[j];
-			state.c_brush_verts += cmds[2];
-			GL.bind(program.tTexture, clmodel.textures[cmds[0]].texturenum);
-			gl.drawArrays(gl.TRIANGLES, cmds[1], cmds[2]);
+			//gl.activeTexture (gl.TEXTURE2);
+			GL.bind (gl, 2, fullbright);
+			gl.uniform1i(worldProgram.uUseFullbrightTex, 1);
 		}
+		else {
+			gl.uniform1i(worldProgram.uUseFullbrightTex, 0);
+			GL.bind(gl, 2, tex.state.null_texture)
+		}
+
+		batchRender.clearBatch ();
+
+		var bound = false;
+		var lastlightmap = 0; // avoid compiler warning
+		for (var s = t.texturechains[chain]; !!s; s = s.texturechain)
+			if (!s.culled)
+			{
+				if (!bound) //only bind once we are sure we need this texture
+				{
+					// gl.activeTexture(gl.TEXTURE0);
+					tex.bind (gl, 0, animatedTexture.texturenum);
+					
+					if (t.texturechains[chain].flags & def.SURF.drawfence)
+						gl.uniform1i(worldProgram.uUseAlphaTest, 1); // Flip alpha test back on
+										
+					bound = true;
+					lastlightmap = s.lightmaptexturenum;
+				}
+				
+				if (s.lightmaptexturenum !== lastlightmap)
+				batchRender.flushBatch(gl);
+
+				//gl.activeTexture (gl.TEXTURE1);
+				tex.bind (gl, 1, tex.state.lightmap_textures[s.lightmaptexturenum].texnum);
+				// gl.activeTexture(gl.TEXTURE1)
+				// gl.bindTexture(gl.TEXTURE_2D, txState.lightmap_textures[s.lightmaptexturenum].texnum);
+				lastlightmap = s.lightmaptexturenum;
+				batchRender.batchSurface (gl, s);
+
+				// rs_brushpasses++; // stats
+			}
+
+			batchRender.flushBatch(gl);
+
+		if (bound && t.texturechains[chain].flags & def.SURF.drawfence)
+			gl.uniform1i (worldProgram.useAlphaTest, 0); // Flip alpha test back off
 	}
-};
+	
+	GL.unbindProgram()
+	//gl.selectTexture(gl.TEXTURE0);
+	
+	if (entalpha < 1)
+	{
+		gl.depthMask(gl.TRUE);
+		gl.disable(gl.BLEND);
+	}
+}
+// export const drawWorld = function()
+// {
+//   const gl = GL.getContext()
+// 	var clmodel = cl.clState.worldmodel;
+// 	state.currententity = cl.state.entities[0];
+// 	gl.bindBuffer(gl.ARRAY_BUFFER, clmodel.cmds);
+
+// 	var program = GL.useProgram('Brush');
+// 	gl.uniform3f(program.uOrigin, 0.0, 0.0, 0.0);
+// 	gl.uniformMatrix3fv(program.uAngles, false, GL.identity);
+// 	gl.vertexAttribPointer(program.aPosition.location, 3, gl.FLOAT, false, 44, 0);
+// 	gl.vertexAttribPointer(program.aTexCoord.location, 4, gl.FLOAT, false, 44, 12);
+// 	gl.vertexAttribPointer(program.aLightStyle.location, 4, gl.FLOAT, false, 44, 28);
+// 	if ((cvr.fullbright.value !== 0) || (clmodel.lightdata == null))
+// 		GL.bind(program.tLightmap, state.fullbright_texture);
+// 	else
+// 		GL.bind(program.tLightmap, state.lightmap_texture);
+// 	if (cvr.flashblend.value === 0)
+// 		GL.bind(program.tDlight, state.dlightmap_texture);
+// 	else
+// 		GL.bind(program.tDlight, state.null_texture);
+// 	GL.bind(program.tLightStyle, state.lightstyle_texture);
+// 	var i, j, leaf, cmds;
+// 	for (i = 0; i < clmodel.leafs.length; ++i)
+// 	{
+// 		leaf = clmodel.leafs[i];
+// 		if ((leaf.visframe !== state.visframecount) || (leaf.skychain === 0))
+// 			continue;
+// 		if (cullBox(leaf.mins, leaf.maxs) === true)
+// 			continue;
+// 		for (j = 0; j < leaf.skychain; ++j)
+// 		{
+// 			cmds = leaf.cmds[j];
+// 			state.c_brush_verts += cmds[2];
+// 			GL.bind(program.tTexture, textureAnimation(clmodel.textures[cmds[0]]).texturenum);
+// 			gl.drawArrays(gl.TRIANGLES, cmds[1], cmds[2]);
+// 		}
+// 	}
+
+// 	program = GL.useProgram('Turbulent');
+// 	gl.uniform3f(program.uOrigin, 0.0, 0.0, 0.0);
+// 	gl.uniformMatrix3fv(program.uAngles, false, GL.identity);
+// 	gl.uniform1f(program.uTime, host.state.realtime % (Math.PI * 2.0));
+// 	gl.vertexAttribPointer(program.aPosition.location, 3, gl.FLOAT, false, 20, clmodel.waterchain);
+// 	gl.vertexAttribPointer(program.aTexCoord.location, 2, gl.FLOAT, false, 20, clmodel.waterchain + 12);
+// 	for (i = 0; i < clmodel.leafs.length; ++i)
+// 	{
+// 		leaf = clmodel.leafs[i];
+// 		if ((leaf.visframe !== state.visframecount) || (leaf.waterchain === leaf.cmds.length))
+// 			continue;
+// 		if (cullBox(leaf.mins, leaf.maxs) === true)
+// 			continue;
+// 		for (j = leaf.waterchain; j < leaf.cmds.length; ++j)
+// 		{
+// 			cmds = leaf.cmds[j];
+// 			state.c_brush_verts += cmds[2];
+// 			GL.bind(program.tTexture, clmodel.textures[cmds[0]].texturenum);
+// 			gl.drawArrays(gl.TRIANGLES, cmds[1], cmds[2]);
+// 		}
+// 	}
+// };
 
 export const markLeaves = function()
 {
@@ -2153,111 +2206,235 @@ export const markLeaves = function()
 	recursiveWorldNode(cl.clState.worldmodel.nodes[0]);
 };
 
-export const allocBlock = function(surf)
-{
-	var w = (surf.extents[0] >> 4) + 1, h = (surf.extents[1] >> 4) + 1;
-	var x, y, i, j, best = LIGHTMAP_DIM, best2;
-	for (i = 0; i < (LIGHTMAP_DIM - w); ++i)
+const noVisPVS = (model) => {
+	const pvsbytes = (model.numleafs+7) >> 3;
+	if (state.mod_novis === null || pvsbytes > state.mod_novis_capacity)
 	{
-		best2 = 0;
-		for (j = 0; j < w; ++j)
+		state.mod_novis_capacity = pvsbytes;
+		state.mod_novis = new Uint8Array(new ArrayBuffer(state.mod_novis_capacity)) 
+		state.mod_novis.fill(0xFF)
+	}
+	return state.mod_novis;
+}
+
+const leafPVS = (leaf, model) => {
+	if (leaf == model.leafs)
+		return noVisPVS (model);
+	return mod.decompressVis (leaf.compressed_vis, model);
+}
+
+// The PVS must include a small area around the client to allow head bobbing
+// or other small motion on the client side.  Otherwise, a bob might cause an
+// entity that should be visible to not show up, especially when the bob
+// crosses a waterline.
+var	fatbytes;
+var fatpvs;
+var fatpvs_capacity;
+const addToFatPVS = (org, node, worldmodel) => { // johnfitz -- added worldmodel as a parameter
+
+	while (1)
+	{
+		// if this is a leaf, accumulate the pvs bits
+		if (node.contents < 0)
 		{
-			if (state.allocated[i + j] >= best)
-				break;
-			if (state.allocated[i + j] > best2)
-				best2 = state.allocated[i + j];
+			if (node.contents !== mod.CONTENTS.solid)
+			{
+				var pvs = leafPVS (node, worldmodel); //johnfitz -- worldmodel as a parameter
+				for (var i = 0 ; i < fatbytes ; i++)
+					fatpvs[i] |= pvs[i];
+			}
+			return; 
 		}
-		if (j === w)
-		{
-			x = i;
-			y = best = best2;
+
+		var plane = node.plane;
+		var d = vec.dotProduct (org, plane.normal) - plane.dist;
+		if (d > 8)
+			node = node.children[0];
+		else if (d < -8)
+			node = node.children[1];
+		else
+		{	// go down both
+			addToFatPVS (org, node.children[0], worldmodel); //johnfitz -- worldmodel as a parameter
+			node = node.children[1];
 		}
 	}
-	best += h;
-	if (best > LIGHTMAP_DIM)
-		sys.error('AllocBlock: full');
-	for (i = 0; i < w; ++i)
-		state.allocated[x + i] = best;
-	surf.light_s = x;
-	surf.light_t = y;
-};
+}
 
-// Based on Quake 2 polygon generation algorithm by Toji - http://blog.tojicode.com/2010/06/quake-2-bsp-quite-possibly-worst-format.html
-export const buildSurfaceDisplayList = function(fa)
+// Calculates a PVS that is the inclusive or of all leafs within 8 pixels of the
+// given point.
+const fatPVS = (org, worldmodel) => //johnfitz -- added worldmodel as a parameter
 {
-	fa.verts = [];
-	if (fa.numedges <= 2)
+	fatbytes = (worldmodel.numleafs+7)>>3; // ericw -- was +31, assumed to be a bug/typo
+	if (fatpvs == null || fatbytes > fatpvs_capacity)
+	{
+		fatpvs_capacity = fatbytes;
+		fatpvs = new Uint8Array(new ArrayBuffer(fatpvs_capacity)).fill(0)
+	}
+	addToFatPVS (org, worldmodel.nodes, worldmodel); //johnfitz -- worldmodel as a parameter
+	return fatpvs;
+}
+
+const chainSurface = (model, surf, chain) => {
+	const texture = model.textures[model.texinfo[surf.texinfo].texture]
+	surf.texturechain = texture.texturechains[chain];
+	texture.texturechains[chain] = surf;
+}
+
+const markSurfaces = () => {
+	var vis = []
+
+	// // clear lightmap chains
+	// state.lightmap_polys = Array.apply(null, new Array(MAXLIGHTMAPS)).map(() => {})
+
+	// check this leaf for water portals
+	// TODO: loop through all water surfs and use distance to leaf cullbox
+	var nearwaterportal = false;
+	for (var i = 0, mark = state.viewleaf.firstmarksurface; i <  state.viewleaf.nummarksurfaces; i++, mark++)
+		if (mark.flags & def.SURF.drawtub)
+			nearwaterportal = true;
+
+	// choose vis data
+	if (cvr.novis.value || state.viewleaf.contents === mod.CONTENTS.solid || state.viewleaf.contents === mod.CONTENTS.sky)
+		vis = noVisPVS (cl.clState.worldmodel);
+	else if (nearwaterportal)
+		vis = fatPVS (state.origin, cl.clState.worldmodel);
+	else
+		vis = leafPVS (state.viewleaf, cl.clState.worldmodel);
+
+	// if surface chains don't need regenerating, just add static entities and return
+	if (state.oldviewleaf == state.viewleaf && !state.vis_changed && !nearwaterportal)
+	{
+		// TODO: efrags
+		// var leaf = state.cl_worldmodel.leafs[1];
+		// for (i = 0 ; i < state.cl_worldmodel.leafs.length ; i++, leaf++)
+		// 	if (vis[i>>3] & (1<<(i&7)))
+		// 		if (leaf.efrags)
+		// 			R_StoreEfrags (&leaf->efrags);
 		return;
-	var i, index, _vec, vert, s, t;
-	var texinfo = state.currentmodel.texinfo[fa.texinfo];
-	var texture = state.currentmodel.textures[texinfo.texture];
-	for (i = 0; i < fa.numedges; ++i)
-	{
-		index = state.currentmodel.surfedges[fa.firstedge + i];
-		if (index > 0)
-			_vec = state.currentmodel.vertexes[state.currentmodel.edges[index][0]];
-		else
-			_vec = state.currentmodel.vertexes[state.currentmodel.edges[-index][1]];
-		vert = [_vec[0], _vec[1], _vec[2]];
-		if (fa.sky !== true)
-		{
-			s = vec.dotProduct(_vec, texinfo.vecs[0]) + texinfo.vecs[0][3];
-			t = vec.dotProduct(_vec, texinfo.vecs[1]) + texinfo.vecs[1][3];
-			vert[3] = s / texture.width;
-			vert[4] = t / texture.height;
-			if (fa.turbulent !== true)
-			{
-				vert[5] = (s - fa.texturemins[0] + (fa.light_s << 4) + 8.0) / 16384.0;
-				vert[6] = (t - fa.texturemins[1] + (fa.light_t << 4) + 8.0) / 16384.0;
-			}
-		}
-		if (i >= 3)
-		{
-			fa.verts[fa.verts.length] = fa.verts[0];
-			fa.verts[fa.verts.length] = fa.verts[fa.verts.length - 2];
-		}
-		fa.verts[fa.verts.length] = vert;
 	}
-};
 
-export const buildLightmaps = function()
-{
-  const gl = GL.getContext()
-	var i, j;
+	state.vis_changed = false
+	state.visframecount++;
+	state.oldviewleaf = state.viewleaf
 
-	state.allocated = [];
-	for (i = 0; i < LIGHTMAP_DIM; ++i)
-		state.allocated[i] = 0;
-
-	var surf;
-	for (i = 1; i < cl.clState.model_precache.length; ++i)
+	// iterate through leaves, marking surfaces
+	for (i=0; i < cl.clState.worldmodel.numleafs - 1; i++)
 	{
-		state.currentmodel = cl.clState.model_precache[i];
-		if (state.currentmodel.type !== mod.TYPE.brush)
-			continue;
-		if (state.currentmodel.name.charCodeAt(0) !== 42)
+		var leaf = cl.clState.worldmodel.leafs[i + 1];
+		if (vis[i>>3] & (1<<(i&7)))
 		{
-			for (j = 0; j < state.currentmodel.faces.length; ++j)
-			{
-				surf = state.currentmodel.faces[j];
-				if ((surf.sky !== true) && (surf.turbulent !== true))
-				{
-					allocBlock(surf);
-					if (state.currentmodel.lightdata != null)
-						buildLightMap(surf);
+			if (cvr.oldskyleaf.value || leaf.contents != mod.CONTENTS.sky)
+				for (var j = 0; j < leaf.nummarksurfaces; j++) {
+					const surf = cl.clState.worldmodel.faces[cl.clState.worldmodel.marksurfaces[leaf.firstmarksurface + j]]
+					surf.visframe = state.visframecount;
 				}
-				buildSurfaceDisplayList(surf);
-			}
+
+			// add static models // TODO: efrags
+			// if (leaf->efrags)
+			// 	R_StoreEfrags (&leaf->efrags);
 		}
-		if (i === 1)
-			makeWorldModelDisplayLists(state.currentmodel);
-		else
-			makeBrushModelDisplayLists(state.currentmodel);
 	}
 
-	GL.bind(0, state.lightmap_texture);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, LIGHTMAP_DIM, LIGHTMAP_DIM, 0, gl.RGBA, gl.UNSIGNED_BYTE, state.lightmaps);
-};
+	// set all chains to null
+	for (i=0 ; i<cl.clState.worldmodel.textures.length ; i++)
+		if (cl.clState.worldmodel.textures[i] && cl.clState.worldmodel.textures[i].texturechains)
+			cl.clState.worldmodel.textures[i].texturechains[def.TEX_CHAIN.world] = null;
+
+	// rebuild chains
+	//iterate through surfaces one node at a time to rebuild chains
+	//need to do it this way if we want to work with tyrann's skip removal tool
+	//becuase his tool doesn't actually remove the surfaces from the bsp surfaces lump
+	//nor does it remove references to them in each leaf's marksurfaces list
+	for (i=0; i<cl.clState.worldmodel.nodes.length ; i++)
+		for (j=0; j<cl.clState.worldmodel.nodes[i].numfaces ; j++) {
+			var surf = cl.clState.worldmodel.faces[cl.clState.worldmodel.nodes[i].firstface + j]
+			if (surf.visframe === state.visframecount) {
+				chainSurface(cl.clState.worldmodel, surf, def.TEX_CHAIN.world);
+			}
+		}
+}
+
+const buildSurfaceDisplayLists = (model) => {
+	for ( var i = 0; i < model.numfaces; i++) {
+		
+		if ((model.faces[i].flags & def.SURF.drawtiled) && !(model.faces[i].flags & def.SURF.drawtub))
+			continue;
+
+		var fa = model.faces[i]
+		fa.polys = {
+			next: fa.polys,
+			numverts: fa.numedges,
+			verts: []
+		}
+
+		const texInfo = model.texinfo[fa.texinfo]
+		const texture = model.textures[texInfo.texture]
+
+		for (var j = 0 ; j < fa.numedges; j++)
+		{
+			var lindex = model.surfedges[fa.firstedge + j];
+			var _vec, s, t
+			if (lindex > 0)
+			{
+				_vec = model.vertexes[model.edges[lindex][0]];
+			}
+			else
+			{
+				_vec = model.vertexes[model.edges[-lindex][1]];
+			}
+			s = vec.dotProduct (_vec, texInfo.vecs[0]) + texInfo.vecs[0][3];
+			s /= texture.width;
+
+			t = vec.dotProduct (_vec, texInfo.vecs[1]) + texInfo.vecs[1][3];
+			t /= texture.height;
+
+			fa.polys.verts[j] = []
+
+			vec.copy (_vec, fa.polys.verts[j]);
+			fa.polys.verts[j][3] = s;
+			fa.polys.verts[j][4] = t;
+
+			//
+			// lightmap texture coordinates
+			//
+			s = vec.dotProduct (_vec, texInfo.vecs[0]) + texInfo.vecs[0][3];
+			s -= fa.texturemins[0];
+			s += fa.light_s*16;
+			s += 8;
+			s /= lm.LM_BLOCK_WIDTH*16; //fa->texinfo->texture->width;
+
+			t = vec.dotProduct (_vec, texInfo.vecs[1]) + texInfo.vecs[1][3];
+			t -= fa.texturemins[1];
+			t += fa.light_t*16;
+			t += 8;
+			t /= lm.LM_BLOCK_HEIGHT*16; //fa->texinfo->texture->height;
+
+			fa.polys.verts[j][5] = s;
+			fa.polys.verts[j][6] = t;
+		}
+
+		//johnfitz -- removed gl_keeptjunctions code
+	}
+}
+
+const buildModelVertexBuffer = (gl : WebGLRenderingContext, model) => {
+	var v_buffer = []
+	var v_index = 0
+	
+	for (var i = 0; i < model.faces.length; i++)  {
+		const surf = model.faces[i]
+		surf.vbo_firstvert = v_index
+		for (var j = 0; j < surf.polys.verts.length; j++) 
+			for (var k = 0; k < 7; k++)
+				v_buffer.push(surf.polys.verts[j][k] || 0)
+
+		v_index += surf.polys.verts.length
+	}
+
+	state.model_vbo = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, state.model_vbo);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(v_buffer), gl.STATIC_DRAW);
+}
 
 // scan
 
@@ -2416,4 +2593,4 @@ export const initSky = function(src)
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 128, 128, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(trans));
 		gl.generateMipmap(gl.TEXTURE_2D);
 	}
-};
+}

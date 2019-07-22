@@ -7,6 +7,7 @@ import * as GL from './GL'
 import * as q from './q'
 import * as vec from './vec'
 import * as host from './host'
+import * as def from './def'
 
 export const EFFECTS = {
   brightfield: 1,
@@ -108,6 +109,69 @@ export const decompressVis = function(i, model)
   }
   return decompressed;
 };
+
+export const calcSurfaceBounds = (model, surf) => {
+	// int			i, e;
+	// mvertex_t	*v;
+
+	surf.mins[0] = surf.mins[1] = surf.mins[2] = 9999;
+	surf.maxs[0] = surf.maxs[1] = surf.maxs[2] = -9999;
+
+	for (var i = 0 ; i < surf.numedges ; i++)
+	{
+		var v, e = model.surfedges[surf.firstedge + i];
+		if (e >= 0)
+			v = model.vertexes[model.edges[e][0]];
+		else
+			v = model.vertexes[model.edges[-e][1]];
+
+		if (surf.mins[0] > v[0])
+			surf.mins[0] = v[0];
+		if (surf.mins[1] > v[1])
+			surf.mins[1] = v[1];
+		if (surf.mins[2] > v[2])
+			surf.mins[2] = v[2];
+
+		if (surf.maxs[0] < v[0])
+			surf.maxs[0] = v[0];
+		if (surf.maxs[1] < v[1])
+			surf.maxs[1] = v[1];
+		if (surf.maxs[2] < v[2])
+			surf.maxs[2] = v[2];
+	}
+}
+
+const polyForUnlitSurface = (loadmodel, fa) => {
+  var texscale, _vec;
+  
+	if (fa.flags & (def.SURF.drawtub | def.SURF.drawsky))
+		texscale = (1.0/128.0); //warp animation repeats every 128
+	else
+		texscale = (1.0/32.0); //to match r_notexture_mip
+
+  fa.polys = {
+    next: null,
+    numverts: fa.numedges,
+    verts: []
+  }
+  const texinfo = loadmodel.texinfo[fa.texinfo]
+	// convert edges back to a normal polygon
+	for (var i = 0 ; i < fa.numedges; i++)
+	{
+		var lindex = loadmodel.surfedges[fa.firstedge + i];
+
+		if (lindex > 0)
+			_vec = loadmodel.vertexes[loadmodel.edges[lindex][0]];
+		else
+      _vec = loadmodel.vertexes[loadmodel.edges[-lindex][1]];
+
+    fa.polys.verts[i] = []
+    vec.copy (_vec, fa.polys.verts[i]);
+    
+		fa.polys.verts[i][3] = vec.dotProduct(_vec, texinfo.vecs[0]) * texscale;
+		fa.polys.verts[i][4] = vec.dotProduct(_vec, texinfo.vecs[1]) * texscale;
+  }
+}
 
 export const leafPVS = function(leaf, model)
 {
@@ -254,7 +318,8 @@ export const loadTextures = function(buf)
     {
       name: q.memstr(new Uint8Array(buf, miptexofs, 16)),
       width: view.getUint32(miptexofs + 16, true),
-      height: view.getUint32(miptexofs + 20, true)
+      height: view.getUint32(miptexofs + 20, true),
+      texturechains: []
     }
     if (tx.name.substring(0, 3).toLowerCase() === 'sky')
     {
@@ -387,6 +452,9 @@ export const loadSubmodels = function(buf)
     sys.error('Mod.LoadSubmodels: funny lump size in ' + loadmodel.name);
   loadmodel.submodels = [];
 
+  loadmodel.visleafs = view.getUint32(fileofs + 52, true);
+  loadmodel.numleafs = loadmodel.visleafs
+
   loadmodel.mins = [view.getFloat32(fileofs, true) - 1.0,
     view.getFloat32(fileofs + 4, true) - 1.0,
     view.getFloat32(fileofs + 8, true) - 1.0];
@@ -441,6 +509,7 @@ export const loadSubmodels = function(buf)
     out.textures = loadmodel.textures;
     out.lightdata = loadmodel.lightdata;
     out.faces = loadmodel.faces;
+    out.visleafs = view.getUint32(fileofs + 52, true);
     out.firstface = view.getUint32(fileofs + 56, true);
     out.numfaces = view.getUint32(fileofs + 60, true);
     loadmodel.submodels[i - 1] = out;
@@ -523,23 +592,31 @@ export const loadFaces = function(buf, bspVersion)
     if (bspVersion === VERSION["2psb"] || bspVersion === VERSION['bsp2']) {
       styles = new Uint8Array(buf, fileofs + 20, 4);
       out = {
-        plane: loadmodel.planes[view.getUint16(fileofs, true)],
+        plane: loadmodel.planes[view.getUint32(fileofs, true)],
+        side: view.getUint32(fileofs + 4, true),
         firstedge: view.getUint32(fileofs + 8, true),
         numedges: view.getUint32(fileofs + 12, true),
-        texinfo: view.getUint16(fileofs + 16, true),
+        texinfo: view.getUint32(fileofs + 16, true),
         styles: [],
-        lightofs: view.getInt32(fileofs + 24, true)
+        lightofs: view.getInt32(fileofs + 24, true),
+        mins: [],
+        maxs: [],
+        cached_light: []
       }
       fileofs += 28;
     } else {
       styles = new Uint8Array(buf, fileofs + 12, 4);
       out = {
         plane: loadmodel.planes[view.getUint16(fileofs, true)],
+        side: view.getUint16(fileofs + 2, true),
         firstedge: view.getUint32(fileofs + 4, true),
         numedges: view.getUint16(fileofs + 8, true),
         texinfo: view.getUint16(fileofs + 10, true),
         styles: [],
-        lightofs: view.getInt32(fileofs + 16, true)
+        lightofs: view.getInt32(fileofs + 16, true),
+        mins: [],
+        maxs: [],
+        cached_light: []
       }
       fileofs += 20;
     }
@@ -556,6 +633,42 @@ export const loadFaces = function(buf, bspVersion)
     maxs = [-99999, -99999];
     tex = loadmodel.texinfo[out.texinfo];
     out.texture = tex.texture;
+		out.flags = 0;
+
+		if (out.side) // side
+      out.flags |= def.SURF.planeback
+    
+    if (loadmodel.textures[tex.texture].sky){
+      out.flags |= (def.SURF.drawsky | def.SURF.drawtiled)
+      out.sky = true;
+      polyForUnlitSurface(loadmodel, out);
+    }
+    else if (loadmodel.textures[tex.texture].turbulent) {
+      out.flags |= (def.SURF.drawtub | def.SURF.drawtiled)
+      out.turbulent = true; 
+      
+      // detect special liquid types
+      
+      if (loadmodel.textures[tex.texture].name.substring(0, 5).toLowerCase() === '*lava')
+        out.flags |= def.SURF.drawlava
+      else if (loadmodel.textures[tex.texture].name.substring(0, 6).toLowerCase() === '*slime')
+        out.flags |= def.SURF.drawslime
+      else if (loadmodel.textures[tex.texture].name.substring(0, 5).toLowerCase() === '*tele')
+        out.flags |= def.SURF.drawtele
+      else out.flags |= def.SURF.drawwater;
+      
+      polyForUnlitSurface(loadmodel, out);
+      // GL_SubdivideSurface (out);
+    } else if (loadmodel.textures[tex.texture].name[0] === '{') {
+      out.flags |= def.SURF.drawfence
+    } else if (tex.flags & def.TEX.missing) {
+      if (out.lightofs < 0) {
+        out.flags |= (def.SURF.notexture | def.SURF.drawtiled);
+        polyForUnlitSurface(loadmodel, out);
+      } else {
+        out.flags |= def.SURF.notexture
+      }
+    }
     for (j = 0; j < out.numedges; ++j)
     {
       e = loadmodel.surfedges[out.firstedge + j];
@@ -574,9 +687,16 @@ export const loadFaces = function(buf, bspVersion)
       if (val > maxs[1])
         maxs[1] = val;
     }
+    
+    calcSurfaceBounds(loadmodel, out)
+
     out.texturemins = [Math.floor(mins[0] / 16) * 16, Math.floor(mins[1] / 16) * 16];
     out.extents = [Math.ceil(maxs[0] / 16) * 16 - out.texturemins[0], Math.ceil(maxs[1] / 16) * 16 - out.texturemins[1]];
 
+    if (!(tex.flags & def.TEX.special) && 
+      (out.extents[0] > 2000 || out.extents[1] > 2000))
+      throw new Error("Bad surface extents")
+      
     if (loadmodel.textures[tex.texture].turbulent === true)
       out.turbulent = true;
     else if (loadmodel.textures[tex.texture].sky === true)

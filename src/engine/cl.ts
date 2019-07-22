@@ -1464,7 +1464,7 @@ export const parseStatic = function(version) {
     dlightbits: 0,
     leafs: []
   } as any;
-  // state.static_entities[clState.num_statics++] = ent;
+  state.static_entities[clState.num_statics++] = ent;
   parseBaseline(ent, version);
   ent.model = clState.model_precache[ent.baseline.modelindex];
   ent.lerpflags |= r.LERP.resetanim | r.LERP.resetmove
