@@ -28,6 +28,7 @@ import * as ed from './ed'
 import * as q from './q'
 import * as vec from './vec'
 import * as sz from './sz'
+import * as tx from './texture'
 import IAssetStore from './interfaces/store/IAssetStore';
 import INetworkDriver from './interfaces/net/INetworkDriver';
 
@@ -1487,6 +1488,7 @@ export const init = async function(
     await vid.init();
     await draw.init();
     await scr.init();
+    tx.init();
     r.init();
     await s.init();
     await m.init();

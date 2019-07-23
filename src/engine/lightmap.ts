@@ -33,7 +33,11 @@ export const init = () => {
 	state.lightmap_modified = Array.apply(null, new Array(MAXLIGHTMAPS)).map(() => false)
 	state.lightmap_rectchange = Array.apply(null, new Array(MAXLIGHTMAPS)).map(() => ({l:0, t:0, w:0, h:0}))
 
-	state.allocated = Array.apply(null, new Array(MAXLIGHTMAPS)).map(() => [])
+	state.allocated = Array.apply(null, new Array(MAXLIGHTMAPS)).map(() => 
+		Array.apply(null, new Array(LM_BLOCK_WIDTH)).map(() => 0))
+	state.last_lightmap_allocated = 0;
+
+	state.framecount = 1; // no dlightcache
 }
 
 /*
@@ -96,11 +100,6 @@ export const createSurfaceLightmap = (model, surf) => {
 }
 
 export const buildLightmaps = (gl: WebGLRenderingContext, model) => {
-	state.allocated = Array.apply(null, new Array(MAXLIGHTMAPS)).map(() => 
-		Array.apply(null, new Array(LM_BLOCK_WIDTH)).map(() => 0))
-	state.last_lightmap_allocated = 0;
-
-	state.framecount = 1; // no dlightcache
 
 	//johnfitz -- null out array (the gltexture objects themselves were already freed by Mod_ClearAll)
 	

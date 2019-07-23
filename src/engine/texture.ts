@@ -3,6 +3,7 @@ import { d_8to24table, d_8to24table_fbright_fence, d_8to24table_fbright,
   d_8to24table_conchars, d_8to24table_nobright, d_8to24table_nobright_fence
 } from './pallete'
 import * as defs from './def'
+import * as GL from './GL'
 
 export const state = {
   maxtexturesize: -1,
@@ -67,7 +68,8 @@ export const loadSky = (gl: WebGLRenderingContext, src) => {
   gl.generateMipmap(gl.TEXTURE_2D);
 }
 
-export const init = (gl: WebGLRenderingContext) => {
+export const init = () => {
+  const gl = GL.getContext()
   state.filter_min = gl.LINEAR_MIPMAP_NEAREST
   state.filter_max = gl.LINEAR
   state.maxtexturesize = gl.getParameter(gl.MAX_TEXTURE_SIZE);

@@ -509,6 +509,7 @@ export const loadSubmodels = function(buf)
     out.textures = loadmodel.textures;
     out.lightdata = loadmodel.lightdata;
     out.faces = loadmodel.faces;
+    out.texinfo = loadmodel.texinfo;
     out.visleafs = view.getUint32(fileofs + 52, true);
     out.firstface = view.getUint32(fileofs + 56, true);
     out.numfaces = view.getUint32(fileofs + 60, true);
