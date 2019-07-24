@@ -532,8 +532,10 @@ export const init = function()
   }
   try
   {
-    const context = vid.state.mainwindow.getContext('webgl') || vid.state.mainwindow.getContext('experimental-webgl')
-    //const opengl = WebGLDebugUtils.default.makeDebugContext( context, onError, null, null);
+    const context = vid.state.mainwindow.getContext('webgl2')
+     || vid.state.mainwindow.getContext('webgl')
+     || vid.state.mainwindow.getContext('experimental-webgl')
+    // const opengl = WebGLDebugUtils.default.makeDebugContext( context, onError, null, null);
     gl = context
   }
   catch (e) {

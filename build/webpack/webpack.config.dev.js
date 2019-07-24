@@ -3,7 +3,7 @@ const merge = require('webpack-merge')
 const webpack = require('webpack')
 
 module.exports = merge({
-  devtool: 'eval-source-map',
+  devtool: 'none',
   entry: {
     app: ['webpack-hot-middleware/client', "./src/app/web/index.js"]
   },
