@@ -908,6 +908,7 @@ export const renderScene = function()
 	drawViewModel();
 	drawTextureChains(gl, cl.clState.worldmodel, null, def.TEX_CHAIN.world);
 	drawEntitiesOnList();
+	drawTextureChains_water(gl, cl.clState.worldmodel, null, def.TEX_CHAIN.world);
 	gl.disable(gl.CULL_FACE);
 	renderDlights();
 	drawParticles();
@@ -1138,7 +1139,7 @@ export const init = function()
 		[['aPosition', gl.FLOAT, 3], ['aTexCoord', gl.FLOAT, 2]],
 		['tTexture']);
 	GL.createProgram('Turbulent',
-		['uOrigin', 'uAngles', 'uViewOrigin', 'uViewAngles', 'uPerspective', 'uGamma', 'uTime'],
+		['uOrigin', 'uAngles', 'uViewOrigin', 'uViewAngles', 'uPerspective', 'uGamma', 'uTime', 'uAlpha'],
 		[['aPosition', gl.FLOAT, 3], ['aTexCoord', gl.FLOAT, 2]],
 		['tTexture']);
 	GL.createProgram('Warp',
@@ -1838,10 +1839,6 @@ const cullSurfaces = (model, chain) => {
 
 export const textureAnimation = function(model, base, entFrame)
 {
-	if (entFrame)
-		if (base.alternate_anims)
-			base = base.alternate_anims;
-
 	var frame = 0;
 	if (base.anim_base != null)
 	{
@@ -1851,8 +1848,8 @@ export const textureAnimation = function(model, base, entFrame)
 	var anims = base.anims;
 	if (anims == null)
 		return base;
-	// if ((model.frame !== 0) && (base.alternate_anims.length !== 0))
-	// 	anims = base.alternate_anims;
+	if ((entFrame !== 0) && (base.alternate_anims.length !== 0))
+		anims = base.alternate_anims;
 	return model.textures[anims[(Math.floor(cl.clState.time * 5.0) + frame) % anims.length]];
 };
 
@@ -1926,51 +1923,9 @@ export const drawBrushModel = function(e)
 			chainSurface(clmodel, surf, def.TEX_CHAIN.model);
 		}
 	}
+
 	drawTextureChains(gl, e.model, e, def.TEX_CHAIN.model)
 
-	// gl.bindBuffer(gl.ARRAY_BUFFER, clmodel.cmds);
-	// var viewMatrix = GL.rotationMatrix(e.angles[0], e.angles[1], e.angles[2]);
-
-	// var program = GL.useProgram('Brush');
-	// gl.uniform3fv(program.uOrigin, e.origin);
-	// gl.uniformMatrix3fv(program.uAngles, false, viewMatrix);
-	// gl.vertexAttribPointer(program.aPosition.location, 3, gl.FLOAT, false, 44, 0);
-	// gl.vertexAttribPointer(program.aTexCoord.location, 4, gl.FLOAT, false, 44, 12);
-	// gl.vertexAttribPointer(program.aLightStyle.location, 4, gl.FLOAT, false, 44, 28);
-	// if ((cvr.fullbright.value !== 0) || (clmodel.lightdata == null))
-	// 	GL.bind(program.tLightmap, state.fullbright_texture);
-	// else
-	// 	GL.bind(program.tLightmap, state.lightmap_texture);
-	// GL.bind(program.tDlight, ((cvr.flashblend.value === 0) && (clmodel.submodel === true)) ? state.dlightmap_texture : state.null_texture);
-	// GL.bind(program.tLightStyle, state.lightstyle_texture);
-	// var i, chain, texture;
-	// for (i = 0; i < clmodel.chains.length; ++i)
-	// {
-	// 	chain = clmodel.chains[i];
-	// 	texture = textureAnimation(clmodel, clmodel.textures[chain[0]], null);
-	// 	if (texture.turbulent === true)
-	// 		continue;
-	// 	state.c_brush_verts += chain[2];
-	// 	GL.bind(program.tTexture, texture.texturenum);
-	// 	gl.drawArrays(gl.TRIANGLES, chain[1], chain[2]);
-	// }
-
-	// program = GL.useProgram('Turbulent');
-	// gl.uniform3f(program.uOrigin, 0.0, 0.0, 0.0);
-	// gl.uniformMatrix3fv(program.uAngles, false, viewMatrix);
-	// gl.uniform1f(program.uTime, host.state.realtime % (Math.PI * 2.0));
-	// gl.vertexAttribPointer(program.aPosition.location, 3, gl.FLOAT, false, 20, e.model.waterchain);
-	// gl.vertexAttribPointer(program.aTexCoord.location, 2, gl.FLOAT, false, 20, e.model.waterchain + 12);
-	// for (i = 0; i < clmodel.chains.length; ++i)
-	// {
-	// 	chain = clmodel.chains[i];
-	// 	texture = clmodel.textures[chain[0]];
-	// 	if (texture.turbulent !== true)
-	// 		continue;
-	// 	state.c_brush_verts += chain[2];
-	// 	GL.bind(program.tTexture, texture.texturenum);
-	// 	gl.drawArrays(gl.TRIANGLES, chain[1], chain[2]);
-	// }
 };
 
 export const recursiveWorldNode = function(node)
@@ -1990,6 +1945,111 @@ export const recursiveWorldNode = function(node)
 	recursiveWorldNode(node.children[1]);
 };
 
+
+/*
+================
+R_DrawTextureChains_Water -- johnfitz
+================
+*/
+const drawTextureChains_water = (gl: WebGLRenderingContext, model, ent, chain) => {
+	
+	const turbulentProgram = GL.useProgram('Turbulent')
+
+	// Bind the buffers
+	gl.bindBuffer (gl.ARRAY_BUFFER, state.model_vbo);
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null)// indices come from client memory!
+	
+	gl.vertexAttribPointer(turbulentProgram.aPosition.location, 3, gl.FLOAT, false, def.VERTEXSIZE * 4, 0);
+	gl.vertexAttribPointer(turbulentProgram.aTexCoord.location, 2, gl.FLOAT, false, def.VERTEXSIZE * 4, 4 * 3);
+
+	// set uniforms
+	gl.uniform1i (turbulentProgram.uUseOverbright, cvr.overbright.value);
+	gl.uniform1i (turbulentProgram.uUseAlphaTest, 0);
+
+	gl.uniform3f(turbulentProgram.uOrigin, 0.0, 0.0, 0.0);
+	gl.uniformMatrix3fv(turbulentProgram.uAngles, false, GL.identity);
+	gl.uniform1f(turbulentProgram.uTime, host.state.realtime % (Math.PI * 2.0))
+	gl.uniform1f(turbulentProgram.uAlpha, .5);
+
+		for (var i=0 ; i<model.textures.length ; i++)
+		{
+			var t = model.textures[i];
+			if (!t || !t.texturechains || !t.texturechains[chain] || !(t.texturechains[chain].flags & def.SURF.drawtub))
+				continue;
+			var animatedTexture = textureAnimation(state.cl_worldmodel, t, ent != null ? ent.frame : 0)
+			batchRender.clearBatch ();
+			var bound = false;
+			var entalpha = .5;
+			for (var s = t.texturechains[chain]; s; s = s.texturechain)
+				if (!s.culled)
+				{
+					if (!bound) //only bind once we are sure we need this texture
+					{
+						//entalpha = GL_WaterAlphaForEntitySurface (ent, s);
+						//R_BeginTransparentDrawing (entalpha);
+						// TODO
+						gl.depthMask (false);
+						gl.enable (gl.BLEND);
+						gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+					//	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+						GL.bind (0, animatedTexture.texturenum);
+						bound = true;
+					}
+					batchRender.batchSurface (gl, s);
+				}
+			
+			//R_EndTransparentDrawing (entalpha);
+			batchRender.flushBatch(gl)
+
+			gl.depthMask (true);
+			gl.disable (gl.BLEND);
+		}
+
+
+	GL.unbindProgram()
+
+	// }
+	// else
+	// {
+		// for (var i=0 ; i < model.textures.length ; i++)
+		// {
+		// 	var t = model.textures[i];
+
+		// 	if (!t || !t.texturechains[chain] || !(t.texturechains[chain].flags & defs.SURF.drawtub))
+		// 		continue;
+
+		// 	var bound = false;
+		// 	var entalpha = 1.0;
+
+		// 	for (var s = t.texturechains[chain]; !!s; s = s.texturechain)
+		// 		if (!s.culled)
+		// 		{
+		// 			if (!bound) //only bind once we are sure we need this texture
+		// 			{
+		// 				// entalpha = GL_WaterAlphaForEntitySurface (ent, s);
+		// 				// R_BeginTransparentDrawing (entalpha);
+		// 				GL_Bind (t->warpimage);
+
+		// 				if (model !== state.cl_worldmodel)
+		// 				{
+		// 					// ericw -- this is copied from R_DrawSequentialPoly.
+		// 					// If the poly is not part of the world we have to
+		// 					// set this flag
+		// 					// Joe - Mutating in render is smelly
+		// 					t.update_warp = true; // FIXME: one frame too late!
+		// 				}
+
+		// 				bound = true;
+		// 			}
+		// 			DrawGLPoly (s->polys);
+		// 			rs_brushpasses++;
+		// 		}
+		// 	R_EndTransparentDrawing (entalpha);
+		// }
+	//} // oldwater
+}
+
 const drawTextureChains = (gl, model, ent, chain) => {
 	var entalpha = 1
 	
@@ -1999,49 +2059,17 @@ const drawTextureChains = (gl, model, ent, chain) => {
 	// 	entalpha = 1;
 
 	// TODO Dynamic LMs
-// ericw -- the mh dynamic lightmap speedup: make a first pass through all
-// surfaces we are going to draw, and rebuild any lightmaps that need it.
-// this also chains surfaces by lightmap which is used by r_lightmap 1.
-// the previous implementation of the speedup uploaded lightmaps one frame
-// late which was visible under some conditions, this method avoids that.
+	// ericw -- the mh dynamic lightmap speedup: make a first pass through all
+	// surfaces we are going to draw, and rebuild any lightmaps that need it.
+	// this also chains surfaces by lightmap which is used by r_lightmap 1.
+	// the previous implementation of the speedup uploaded lightmaps one frame
+	// late which was visible under some conditions, this method avoids that.
 	//buildLightmapChains (model, chain);
 	//uploadLightmaps (gl);
 
-	// if (r_drawflat_cheatsafe)
-	// {
-	// 	glDisable (GL_TEXTURE_2D);
-	// 	R_DrawTextureChains_Drawflat (model, chain);
-	// 	glEnable (GL_TEXTURE_2D);
-	// 	return;
-	// }
-
-	// if (r_fullbright_cheatsafe)
-	// {
-	// 	R_BeginTransparentDrawing (entalpha);
-	// 	R_DrawTextureChains_TextureOnly (model, ent, chain);
-	// 	R_EndTransparentDrawing (entalpha);
-	// 	goto fullbrights;
-	// }
-
-	// if (r_lightmap_cheatsafe)
-	// {
-	// 	if (!gl_overbright.value)
-	// 	{
-	// 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	// 		glColor3f(0.5, 0.5, 0.5);
-	// 	}
-	// 	R_DrawLightmapChains ();
-	// 	if (!gl_overbright.value)
-	// 	{
-	// 		glColor3f(1,1,1);
-	// 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	// 	}
-	// 	R_DrawTextureChains_White (model, chain);
-	// 	return;
-	// }
-
 	// R_BeginTransparentDrawing (entalpha);
 
+	// TODO: Missing texture support.
 	// R_DrawTextureChains_NoTexture (model, chain);
 
 
@@ -2052,27 +2080,27 @@ const drawTextureChains = (gl, model, ent, chain) => {
 	// enable blending / disable depth writes
 	if (entalpha < 1)
 	{
-		gl.depthMask (gl.FALSE);
-		gl.enable (gl.BLEND);
+		gl.depthMask(gl.FALSE);
+		gl.enable(gl.BLEND);
 	}
 
 	const brushProgram = GL.useProgram('Brush')
 	
 	// Bind the buffers
-	gl.bindBuffer (gl.ARRAY_BUFFER, state.model_vbo);
+	gl.bindBuffer(gl.ARRAY_BUFFER, state.model_vbo);
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null) // indices come from client memory!
 	
-	gl.vertexAttribPointer (brushProgram.Vert.location, 3, gl.FLOAT, gl.FALSE, def.VERTEXSIZE * 4, 0);
-	gl.vertexAttribPointer (brushProgram.TexCoords.location, 2, gl.FLOAT, gl.FALSE, def.VERTEXSIZE * 4, 4 * 3);
-	gl.vertexAttribPointer (brushProgram.LMCoords.location, 2, gl.FLOAT, gl.FALSE, def.VERTEXSIZE * 4, 4 * 5);
+	gl.vertexAttribPointer(brushProgram.Vert.location, 3, gl.FLOAT, gl.FALSE, def.VERTEXSIZE * 4, 0);
+	gl.vertexAttribPointer(brushProgram.TexCoords.location, 2, gl.FLOAT, gl.FALSE, def.VERTEXSIZE * 4, 4 * 3);
+	gl.vertexAttribPointer(brushProgram.LMCoords.location, 2, gl.FLOAT, gl.FALSE, def.VERTEXSIZE * 4, 4 * 5);
 	
 	// set uniforms
-	gl.uniform1i (brushProgram.uUseFullbrightTex, 0);
-	gl.uniform1i (brushProgram.uUseOverbright, cvr.overbright.value);
-	gl.uniform1i (brushProgram.uUseAlphaTest, 0);
-	gl.uniform1f (brushProgram.uAlpha, entalpha);
-	gl.uniform1f (brushProgram.uFogDensity, 0.0 / 64)
-	gl.uniform4f (brushProgram.uFogColor, .2, .16, .15, 1)
+	gl.uniform1i(brushProgram.uUseFullbrightTex, 0);
+	gl.uniform1i(brushProgram.uUseOverbright, cvr.overbright.value);
+	gl.uniform1i(brushProgram.uUseAlphaTest, 0);
+	gl.uniform1f(brushProgram.uAlpha, entalpha);
+	gl.uniform1f(brushProgram.uFogDensity, 0.0 / 64)
+	gl.uniform4f(brushProgram.uFogColor, .2, .16, .15, 1)
 
 	if (ent !== null) {
 		var viewMatrix = GL.rotationMatrix(ent.angles[0], ent.angles[1], ent.angles[2]);
@@ -2097,7 +2125,6 @@ const drawTextureChains = (gl, model, ent, chain) => {
 	// FIXME: Move below to where we bind GL_TEXTURE0
 		if (cvr.fullbrights.value && (fullbright = animatedTexture.fullbright))
 		{
-			//gl.activeTexture (gl.TEXTURE2);
 			GL.bind (2, fullbright);
 			gl.uniform1i(brushProgram.uUseFullbrightTex, 1);
 		}
@@ -2109,29 +2136,26 @@ const drawTextureChains = (gl, model, ent, chain) => {
 		batchRender.clearBatch ();
 
 		var bound = false;
-		var lastlightmap = 0; // avoid compiler warning
+		var lastlightmap = 0;
+
 		for (var s = t.texturechains[chain]; !!s; s = s.texturechain)
 			if (!s.culled)
 			{
 				if (!bound) //only bind once we are sure we need this texture
 				{
-					// gl.activeTexture(gl.TEXTURE0);
 					GL.bind(0, animatedTexture.texturenum);
 					
 					if (t.texturechains[chain].flags & def.SURF.drawfence)
-						gl.uniform1i(brushProgram.uUseAlphaTest, 1); // Flip alpha test back on
+						gl.uniform1i(brushProgram.uUseAlphaTest, 1);
 										
 					bound = true;
 					lastlightmap = s.lightmaptexturenum;
 				}
 				
 				if (s.lightmaptexturenum !== lastlightmap)
-				batchRender.flushBatch(gl);
+					batchRender.flushBatch(gl);
 
-				//gl.activeTexture (gl.TEXTURE1);
 				GL.bind(1, tex.state.lightmap_textures[s.lightmaptexturenum].texnum);
-				// gl.activeTexture(gl.TEXTURE1)
-				// gl.bindTexture(gl.TEXTURE_2D, txState.lightmap_textures[s.lightmaptexturenum].texnum);
 				lastlightmap = s.lightmaptexturenum;
 				batchRender.batchSurface (gl, s);
 
@@ -2145,7 +2169,6 @@ const drawTextureChains = (gl, model, ent, chain) => {
 	}
 	
 	GL.unbindProgram()
-	//gl.selectTexture(gl.TEXTURE0);
 	
 	if (entalpha < 1)
 	{
@@ -2212,7 +2235,7 @@ export const markLeaves = function()
 
 const noVisPVS = (model) => {
 	const pvsbytes = (model.numleafs+7) >> 3;
-	if (state.mod_novis === null || pvsbytes > state.mod_novis_capacity)
+	if (!state.mod_novis || pvsbytes > state.mod_novis_capacity)
 	{
 		state.mod_novis_capacity = pvsbytes;
 		state.mod_novis = new Uint8Array(new ArrayBuffer(state.mod_novis_capacity)) 

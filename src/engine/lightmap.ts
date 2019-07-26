@@ -172,12 +172,13 @@ const buildLightMap = (model, surf, buffofs: number, stride: number) => {
 		// add all the lightmaps
 		if (surf.lightofs > -1)
 		{
-			for (var maps = 0; maps < 4 && surf.styles[maps] !== 255;
+			for (var maps = 0; maps < surf.styles.length && surf.styles[maps] !== 255;
 				 maps++)
 			{
 				const scale = state.lightstylevalue[surf.styles[maps]];
 				surf.cached_light[maps] = scale;	// 8.8 fraction
 
+				blockidx = 0
 				//johnfitz -- lit support via lordhavoc
 
 				for (var i = 0; i < size; i++)
