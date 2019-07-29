@@ -2345,7 +2345,7 @@ const markSurfaces = () => {
 	state.oldviewleaf = state.viewleaf
 
 	// iterate through leaves, marking surfaces
-	for (i=0; i < cl.clState.worldmodel.numleafs - 1; i++)
+	for (i=0; i < cl.clState.worldmodel.numleafs; i++)
 	{
 		var leaf = cl.clState.worldmodel.leafs[i + 1];
 		if (vis[i>>3] & (1<<(i&7)))

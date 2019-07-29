@@ -1,8 +1,11 @@
 import {loadLightmapTexture, bind, state as txState} from './texture'
+import * as cl from './cl'
+import * as vec from './vec'
 
 export const LM_BLOCK_WIDTH = 128
 export const LM_BLOCK_HEIGHT = 128
 export const MAXLIGHTMAPS = 512
+export const MAX_DLIGHTS = 64 // original quake: 32
 
 const cvr = {
 	gl_overbright: {value: 1},
@@ -99,6 +102,92 @@ export const createSurfaceLightmap = (model, surf) => {
 	buildLightMap (model, surf, bufOfs, LM_BLOCK_WIDTH * state.lightmap_bytes);
 }
 
+const addDynamicLights = (model, surf) => {
+
+	// int			lnum;
+	// int			sd, td;
+	// float		dist, rad, minlight;
+	// vec3_t		impact, local;
+	// int			s, t;
+	// int			i;
+	// int			smax, tmax;
+	// mtexinfo_t	*tex;
+	// //johnfitz -- lit support via lordhavoc
+	// float		cred, cgreen, cblue, brightness;
+	// unsigned	*bl;
+	// //johnfitz
+
+	var smax = (surf.extents[0] >> 4) + 1;
+	var tmax = (surf.extents[1] >> 4) + 1;
+	var tex = model.texinfo[surf.texinfo];
+	var impact = [], local = []
+	var sd, td, brightness, blidx;
+
+	for (var i = 0; i < MAX_DLIGHTS; i++)
+	{
+		if (! (surf.dlightbits[i >> 5] & (1 << (i & 31))))
+			continue;		// not lit by this light
+
+		var rad = cl.state.dlights[i].radius;
+		var dist = vec.dotProduct (cl.state.dlights[i].origin, surf.plane.normal) -
+				surf.plane.dist;
+
+		rad -= Math.abs(dist);
+
+		var minlight = cl.state.dlights[i].minlight;
+		if (rad < minlight)
+			continue;
+
+		minlight = rad - minlight;
+
+		for (var j=0 ; j<3 ; j++)
+		{
+			impact[i] = cl.state.dlights[i].origin[j] -
+					surf.plane.normal[j] * dist;
+		}
+
+		local[0] = vec.dotProduct (impact, tex.vecs[0]) + tex.vecs[0][3];
+		local[1] = vec.dotProduct (impact, tex.vecs[1]) + tex.vecs[1][3];
+
+		local[0] -= surf.texturemins[0];
+		local[1] -= surf.texturemins[1];
+
+		//johnfitz -- lit support via lordhavoc
+		var bl = state.blocklights;
+		var cred = cl.state.dlights[i].color[0] * 256.0;
+		var cgreen = cl.state.dlights[i].color[1] * 256.0;
+		var cblue = cl.state.dlights[i].color[2] * 256.0;
+		//johnfitz
+		for (var t = 0; t < tmax; t++)
+		{
+			td = local[1] - t << 4;
+			if (td < 0)
+				td = -td;
+			td = Math.floor(td)
+			for (var s = 0 ; s < smax ; s++)
+			{
+				sd = local[0] - s << 4;
+				if (sd < 0)
+					sd = -sd;
+				sd = Math.floor(sd)
+				if (sd > td)
+					dist = sd + (td>>1);
+				else
+					dist = td + (sd>>1);
+				if (dist < minlight)
+				//johnfitz -- lit support via lordhavoc
+				{
+					brightness = rad - dist;
+					blidx = t * smax + s * 3
+					bl[blidx] += Math.floor(brightness * cred);
+					bl[blidx + 1] += Math.floor(brightness * cgreen);
+					bl[blidx + 2] += Math.floor(brightness * cblue);
+				}
+				//johnfitz
+			}
+		}
+	}
+}
 export const buildLightmaps = (gl: WebGLRenderingContext, model) => {
 
 	//johnfitz -- null out array (the gltexture objects themselves were already freed by Mod_ClearAll)
@@ -195,8 +284,8 @@ const buildLightMap = (model, surf, buffofs: number, stride: number) => {
 		}
 
 		// add all the dynamic lights
-		// if (surf.dlightframe == state.framecount)
-		// 	addDynamicLights (surf);
+		if (surf.dlightframe == state.framecount)
+			addDynamicLights (model, surf);
 	}
 	else
 	{
@@ -263,4 +352,74 @@ const buildLightMap = (model, surf, buffofs: number, stride: number) => {
 // 		bind (gl, 0, txState.lightmap_textures[lmapIdx].texnum);
 // 		uploadLightmap(gl, lmapIdx);
 // 	}
+// }
+
+
+
+/*
+=============
+R_MarkLights -- johnfitz -- rewritten to use LordHavoc's lighting speedup
+=============
+*/
+// export const markLights (dlight_t *light, int num, mnode_t *node)
+// {
+// 	mplane_t	*splitplane;
+// 	msurface_t	*surf;
+// 	vec3_t		impact;
+// 	float		dist, l, maxdist;
+// 	int			i, j, s, t;
+
+// start:
+
+// 	if (node->contents < 0)
+// 		return;
+
+// 	splitplane = node->plane;
+// 	if (splitplane->type < 3)
+// 		dist = light->origin[splitplane->type] - splitplane->dist;
+// 	else
+// 		dist = DotProduct (light->origin, splitplane->normal) - splitplane->dist;
+
+// 	if (dist > light->radius)
+// 	{
+// 		node = node->children[0];
+// 		goto start;
+// 	}
+// 	if (dist < -light->radius)
+// 	{
+// 		node = node->children[1];
+// 		goto start;
+// 	}
+
+// 	maxdist = light->radius*light->radius;
+// // mark the polygons
+// 	surf = cl.worldmodel->surfaces + node->firstsurface;
+// 	for (i=0 ; i<node->numsurfaces ; i++, surf++)
+// 	{
+// 		for (j=0 ; j<3 ; j++)
+// 			impact[j] = light->origin[j] - surf->plane->normal[j]*dist;
+// 		// clamp center of light to corner and check brightness
+// 		l = DotProduct (impact, surf->texinfo->vecs[0]) + surf->texinfo->vecs[0][3] - surf->texturemins[0];
+// 		s = l+0.5;if (s < 0) s = 0;else if (s > surf->extents[0]) s = surf->extents[0];
+// 		s = l - s;
+// 		l = DotProduct (impact, surf->texinfo->vecs[1]) + surf->texinfo->vecs[1][3] - surf->texturemins[1];
+// 		t = l+0.5;if (t < 0) t = 0;else if (t > surf->extents[1]) t = surf->extents[1];
+// 		t = l - t;
+// 		// compare to minimum light
+// 		if ((s*s+t*t+dist*dist) < maxdist)
+// 		{
+// 			if (surf->dlightframe != r_dlightframecount) // not dynamic until now
+// 			{
+// 				surf->dlightbits[num >> 5] = 1U << (num & 31);
+// 				surf->dlightframe = r_dlightframecount;
+// 			}
+// 			else // already dynamic
+// 				surf->dlightbits[num >> 5] |= 1U << (num & 31);
+// 		}
+// 	}
+
+// 	if (node->children[0]->contents >= 0)
+// 		R_MarkLights (light, num, node->children[0]);
+// 	if (node->children[1]->contents >= 0)
+// 		R_MarkLights (light, num, node->children[1]);
 // }
