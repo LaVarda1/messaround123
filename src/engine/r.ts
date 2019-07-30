@@ -20,7 +20,7 @@ import * as def from './def'
 import * as batchRender from './batchRender'
 import * as s from './s'
 import * as lm from './lightmap'
-import * as tex from './texture'
+import * as texture from './texture'
 
 const LIGHTMAP_DIM = 1024
 export const LERP = {
@@ -154,59 +154,17 @@ export const markLights = function(light, bit, node)
 	markLights(light, bit, node.children[1]);
 };
 
-export const pushDlights = function()
-{
-  const gl = GL.getContext()
+export const pushDlights = () => {
 	if (cvr.flashblend.value !== 0)
 		return;
-	var i;
-	for (i = 0; i <= 1023; ++i)
-		state.lightmap_modified[i] = false;
 
-	var l, bit = 1, j, ent;
-	for (i = 0; i <= 31; ++i)
+	for (var i = 0; i < cl.state.dlights.length; ++i)
 	{
-		l = cl.state.dlights[i];
+		var l = cl.state.dlights[i];
 		if ((l.die >= cl.clState.time) && (l.radius !== 0.0))
 		{
-			markLights(l, bit, cl.clState.worldmodel.nodes[0]);
-			for (j = 0; j < cl.state.numvisedicts; ++j)
-			{
-				ent = cl.state.visedicts[j];
-				if (ent.model == null)
-					continue;
-				if ((ent.model.type !== mod.TYPE.brush) || (ent.model.submodel !== true))
-					continue;
-				markLights(l, bit, cl.clState.worldmodel.nodes[ent.model.hulls[0].firstclipnode]);
-			}
+			markLights(l, i, cl.clState.worldmodel.nodes[0])
 		}
-		bit += bit;
-	}
-
-	var surf;
-	for (i = 0; i < cl.clState.worldmodel.faces.length; ++i)
-	{
-		surf = cl.clState.worldmodel.faces[i];
-		if (surf.dlightframe === state.dlightframecount)
-			removeDynamicLights(surf);
-		else if (surf.dlightframe === (state.dlightframecount + 1))
-			addDynamicLights(surf);
-	}
-
-	GL.bind(0, state.dlightmap_texture);
-	for (i = 0; i <= 1023; ++i)
-	{
-		if (state.lightmap_modified[i] !== true)
-			continue;
-		for (j = 1023; j >= i; --j)
-		{
-			if (state.lightmap_modified[j] !== true)
-				continue;
-			gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, i, 1024, j - i + 1, gl.ALPHA, gl.UNSIGNED_BYTE,
-				state.dlightmaps.subarray(i << 10, (j + 1) << 10));
-			break;
-		}
-		break;
 	}
 
 	++state.dlightframecount;
@@ -1704,72 +1662,72 @@ state.lightmap_modified = [];
 state.lightmaps = new Uint8Array(new ArrayBuffer(4096 *LIGHTMAP_DIM));
 state.dlightmaps = new Uint8Array(new ArrayBuffer(1024 * LIGHTMAP_DIM));
 
-export const addDynamicLights = function(surf)
-{
-	var smax = (surf.extents[0] >> 4) + 1;
-	var tmax = (surf.extents[1] >> 4) + 1;
-	var size = smax * tmax;
-	var tex = cl.clState.worldmodel.texinfo[surf.texinfo];
-	var i, light, s, t;
-	var dist, rad, minlight, impact = [], local = [], sd, td;
+// export const addDynamicLights = function(surf)
+// {
+// 	var smax = (surf.extents[0] >> 4) + 1;
+// 	var tmax = (surf.extents[1] >> 4) + 1;
+// 	var size = smax * tmax;
+// 	var tex = cl.clState.worldmodel.texinfo[surf.texinfo];
+// 	var i, light, s, t;
+// 	var dist, rad, minlight, impact = [], local = [], sd, td;
 
-	var blocklights = [];
-	for (i = 0; i < size; ++i)
-		blocklights[i] = 0;
+// 	var blocklights = [];
+// 	for (i = 0; i < size; ++i)
+// 		blocklights[i] = 0;
 
-	for (i = 0; i <= 31; ++i)
-	{
-		if (((surf.dlightbits >>> i) & 1) === 0)
-			continue;
-		light = cl.state.dlights[i];
-		dist = vec.dotProduct(light.origin, surf.plane.normal) - surf.plane.dist;
-		rad = light.radius - Math.abs(dist);
-		minlight = light.minlight;
-		if (rad < minlight)
-			continue;
-		minlight = rad - minlight;
-		impact[0] = light.origin[0] - surf.plane.normal[0] * dist;
-		impact[1] = light.origin[1] - surf.plane.normal[1] * dist;
-		impact[2] = light.origin[2] - surf.plane.normal[2] * dist;
-		local[0] = vec.dotProduct(impact, tex.vecs[0]) + tex.vecs[0][3] - surf.texturemins[0];
-		local[1] = vec.dotProduct(impact, tex.vecs[1]) + tex.vecs[1][3] - surf.texturemins[1];
-		for (t = 0; t < tmax; ++t)
-		{
-			td = local[1] - (t << 4);
-			if (td < 0.0)
-				td = -td;
-			td = Math.floor(td);
-			for (s = 0; s < smax; ++s)
-			{
-				sd = local[0] - (s << 4);
-				if (sd < 0)
-					sd = -sd;
-				sd = Math.floor(sd);
-				if (sd > td)
-					dist = sd + (td >> 1);
-				else
-					dist = td + (sd >> 1);
-				if (dist < minlight)
-					blocklights[t * smax + s] += Math.floor((rad - dist) * 256.0);
-			}
-		}
-	}
+// 	for (i = 0; i <= 31; ++i)
+// 	{
+// 		if (((surf.dlightbits >>> i) & 1) === 0)
+// 			continue;
+// 		light = cl.state.dlights[i];
+// 		dist = vec.dotProduct(light.origin, surf.plane.normal) - surf.plane.dist;
+// 		rad = light.radius - Math.abs(dist);
+// 		minlight = light.minlight;
+// 		if (rad < minlight)
+// 			continue;
+// 		minlight = rad - minlight;
+// 		impact[0] = light.origin[0] - surf.plane.normal[0] * dist;
+// 		impact[1] = light.origin[1] - surf.plane.normal[1] * dist;
+// 		impact[2] = light.origin[2] - surf.plane.normal[2] * dist;
+// 		local[0] = vec.dotProduct(impact, tex.vecs[0]) + tex.vecs[0][3] - surf.texturemins[0];
+// 		local[1] = vec.dotProduct(impact, tex.vecs[1]) + tex.vecs[1][3] - surf.texturemins[1];
+// 		for (t = 0; t < tmax; ++t)
+// 		{
+// 			td = local[1] - (t << 4);
+// 			if (td < 0.0)
+// 				td = -td;
+// 			td = Math.floor(td);
+// 			for (s = 0; s < smax; ++s)
+// 			{
+// 				sd = local[0] - (s << 4);
+// 				if (sd < 0)
+// 					sd = -sd;
+// 				sd = Math.floor(sd);
+// 				if (sd > td)
+// 					dist = sd + (td >> 1);
+// 				else
+// 					dist = td + (sd >> 1);
+// 				if (dist < minlight)
+// 					blocklights[t * smax + s] += Math.floor((rad - dist) * 256.0);
+// 			}
+// 		}
+// 	}
 
-	i = 0;
-	var dest, bl;
-	for (t = 0; t < tmax; ++t)
-	{
-		state.lightmap_modified[surf.light_t + t] = true;
-		dest = ((surf.light_t + t) << 10) + surf.light_s;
-		for (s = 0; s < smax; ++s)
-		{
-			bl = blocklights[i++] >> 7;
-			if (bl > 255)
-				bl = 255;
-			state.dlightmaps[dest + s] = bl;
-		}
-	}
-};
+// 	i = 0;
+// 	var dest, bl;
+// 	for (t = 0; t < tmax; ++t)
+// 	{
+// 		state.lightmap_modified[surf.light_t + t] = true;
+// 		dest = ((surf.light_t + t) << 10) + surf.light_s;
+// 		for (s = 0; s < smax; ++s)
+// 		{
+// 			bl = blocklights[i++] >> 7;
+// 			if (bl > 255)
+// 				bl = 255;
+// 			state.dlightmaps[dest + s] = bl;
+// 		}
+// 	}
+// };
 
 export const removeDynamicLights = function(surf)
 {
@@ -1912,6 +1870,18 @@ export const drawBrushModel = function(e)
 		modelOrg[1] = -vec.dotProduct(temp, right);
 		modelOrg[2] = vec.dotProduct(temp, up);
 	}
+	if (clmodel.firstmodelsurface != 0 && !cvr.flashblend.value)
+	{
+		for (var k = 0; k < cl.state.dlights.length; k++)
+		{
+			if ((cl.state.dlights[k].die < cl.state.time) ||
+				(!cl.state.dlights[k].radius))
+				continue;
+
+			markLights(cl.state.dlights[k], k, cl.clState.worldmodel.nodes[clmodel.hulls[0].firstclipnode]);
+		}
+	}
+
 	for (var i = 0; i < clmodel.numfaces; i++)
 	{
 		var surf = clmodel.faces[clmodel.firstface + i]
@@ -2064,8 +2034,8 @@ const drawTextureChains = (gl, model, ent, chain) => {
 	// this also chains surfaces by lightmap which is used by r_lightmap 1.
 	// the previous implementation of the speedup uploaded lightmaps one frame
 	// late which was visible under some conditions, this method avoids that.
-	//buildLightmapChains (model, chain);
-	//uploadLightmaps (gl);
+	lm.buildLightmapChains (model, chain);
+	lm.uploadLightmaps (gl);
 
 	// R_BeginTransparentDrawing (entalpha);
 
@@ -2130,7 +2100,7 @@ const drawTextureChains = (gl, model, ent, chain) => {
 		}
 		else {
 			gl.uniform1i(brushProgram.uUseFullbrightTex, 0);
-			GL.bind(2, tex.state.null_texture)
+			GL.bind(2, texture.state.null_texture)
 		}
 
 		batchRender.clearBatch ();
@@ -2155,7 +2125,7 @@ const drawTextureChains = (gl, model, ent, chain) => {
 				if (s.lightmaptexturenum !== lastlightmap)
 					batchRender.flushBatch(gl);
 
-				GL.bind(1, tex.state.lightmap_textures[s.lightmaptexturenum].texnum);
+				GL.bind(1, texture.state.lightmap_textures[s.lightmaptexturenum].texnum);
 				lastlightmap = s.lightmaptexturenum;
 				batchRender.batchSurface (gl, s);
 
@@ -2379,6 +2349,7 @@ const markSurfaces = () => {
 				chainSurface(cl.clState.worldmodel, surf, def.TEX_CHAIN.world);
 			}
 		}
+	state.drawsky = true
 }
 
 const buildSurfaceDisplayLists = (model) => {

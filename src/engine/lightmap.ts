@@ -1,11 +1,13 @@
 import {loadLightmapTexture, bind, state as txState} from './texture'
 import * as cl from './cl'
 import * as vec from './vec'
+import * as def from './def'
+import * as GL from './GL'
+import * as texture from './texture'
 
 export const LM_BLOCK_WIDTH = 128
 export const LM_BLOCK_HEIGHT = 128
 export const MAXLIGHTMAPS = 512
-export const MAX_DLIGHTS = 64 // original quake: 32
 
 const cvr = {
 	gl_overbright: {value: 1},
@@ -102,7 +104,7 @@ export const createSurfaceLightmap = (model, surf) => {
 	buildLightMap (model, surf, bufOfs, LM_BLOCK_WIDTH * state.lightmap_bytes);
 }
 
-const addDynamicLights = (model, surf) => {
+export const addDynamicLights = (blocklights, model, surf) => {
 
 	// int			lnum;
 	// int			sd, td;
@@ -121,11 +123,11 @@ const addDynamicLights = (model, surf) => {
 	var tmax = (surf.extents[1] >> 4) + 1;
 	var tex = model.texinfo[surf.texinfo];
 	var impact = [], local = []
-	var sd, td, brightness, blidx;
+	var sd, td, brightness, blidx = 0;
 
-	for (var i = 0; i < MAX_DLIGHTS; i++)
+	for (var i = 0; i < cl.state.dlights.length; i++)
 	{
-		if (! (surf.dlightbits[i >> 5] & (1 << (i & 31))))
+		if (((surf.dlightbits >>> i) & 1) === 0)
 			continue;		// not lit by this light
 
 		var rad = cl.state.dlights[i].radius;
@@ -142,7 +144,7 @@ const addDynamicLights = (model, surf) => {
 
 		for (var j=0 ; j<3 ; j++)
 		{
-			impact[i] = cl.state.dlights[i].origin[j] -
+			impact[j] = cl.state.dlights[i].origin[j] -
 					surf.plane.normal[j] * dist;
 		}
 
@@ -153,20 +155,20 @@ const addDynamicLights = (model, surf) => {
 		local[1] -= surf.texturemins[1];
 
 		//johnfitz -- lit support via lordhavoc
-		var bl = state.blocklights;
-		var cred = cl.state.dlights[i].color[0] * 256.0;
-		var cgreen = cl.state.dlights[i].color[1] * 256.0;
-		var cblue = cl.state.dlights[i].color[2] * 256.0;
+		var bl = blocklights;
+		var cred = 256 // cl.state.dlights[i].color[0] * 256.0;
+		var cgreen = 256 // cl.state.dlights[i].color[1] * 256.0;
+		var cblue = 256 // cl.state.dlights[i].color[2] * 256.0;
 		//johnfitz
 		for (var t = 0; t < tmax; t++)
 		{
-			td = local[1] - t << 4;
+			td = local[1] - (t << 4);
 			if (td < 0)
 				td = -td;
 			td = Math.floor(td)
 			for (var s = 0 ; s < smax ; s++)
 			{
-				sd = local[0] - s << 4;
+				sd = local[0] - (s << 4);
 				if (sd < 0)
 					sd = -sd;
 				sd = Math.floor(sd)
@@ -178,10 +180,9 @@ const addDynamicLights = (model, surf) => {
 				//johnfitz -- lit support via lordhavoc
 				{
 					brightness = rad - dist;
-					blidx = t * smax + s * 3
-					bl[blidx] += Math.floor(brightness * cred);
-					bl[blidx + 1] += Math.floor(brightness * cgreen);
-					bl[blidx + 2] += Math.floor(brightness * cblue);
+					bl[blidx++] += Math.floor(brightness * cred);
+					bl[blidx++] += Math.floor(brightness * cgreen);
+					bl[blidx++] += Math.floor(brightness * cblue);
 				}
 				//johnfitz
 			}
@@ -285,7 +286,7 @@ const buildLightMap = (model, surf, buffofs: number, stride: number) => {
 
 		// add all the dynamic lights
 		if (surf.dlightframe == state.framecount)
-			addDynamicLights (model, surf);
+			addDynamicLights (state.blocklights, model, surf);
 	}
 	else
 	{
@@ -323,26 +324,103 @@ const buildLightMap = (model, surf, buffofs: number, stride: number) => {
 	}
 }
 
+
+const renderDynamicLightmaps = (model, surf) => {
+	if (surf.flags & def.SURF.drawtiled) //johnfitz -- not a lightmapped surface
+		return;
+
+	// add to lightmap chain
+	surf.polys.chain = state.lightmap_polys[surf.lightmaptexturenum];
+	state.lightmap_polys[surf.lightmaptexturenum] = surf.polys;
+
+	var doDynamic = false
+
+	// check for lightmap modification
+	for (var maps=0; maps < MAXLIGHTMAPS && surf.styles[maps]; maps++)
+		if (state.lightstylevalue[surf.styles[maps]] != surf.cached_light[maps]){
+			doDynamic= true
+			break
+		}
+
+	if (doDynamic 
+		|| surf.dlightframe == state.framecount	// dynamic this frame
+		|| surf.cached_dlight)			// dynamic previously
+	{
+		if (true) // (r_dynamic.value)
+		{
+			state.lightmap_modified[surf.lightmaptexturenum] = true;
+			var theRect = state.lightmap_rectchange[surf.lightmaptexturenum];
+			if (surf.light_t < theRect.t) {
+				if (theRect.h)
+					theRect.h += theRect.t - surf.light_t;
+				theRect.t = surf.light_t;
+			}
+			if (surf.light_s < theRect.l) {
+				if (theRect.w)
+					theRect.w += theRect.l - surf.light_s;
+				theRect.l = surf.light_s;
+			}
+			var smax = (surf.extents[0]>>4)+1;
+			var tmax = (surf.extents[1]>>4)+1;
+			if ((theRect.w + theRect.l) < (surf.light_s + smax))
+				theRect.w = (surf.light_s-theRect.l)+smax;
+			if ((theRect.h + theRect.t) < (surf.light_t + tmax))
+				theRect.h = (surf.light_t-theRect.t)+tmax;
+			var bufOfs = surf.lightmaptexturenum * state.lightmap_bytes * LM_BLOCK_WIDTH * LM_BLOCK_HEIGHT;
+			bufOfs += surf.light_t * LM_BLOCK_WIDTH * state.lightmap_bytes + surf.light_s * state.lightmap_bytes;
+			buildLightMap (model, surf, bufOfs, LM_BLOCK_WIDTH * state.lightmap_bytes);
+		}
+	}
+}
+
+
+export const buildLightmapChains = (model, chain) => {
+	// clear lightmap chains (already done in r_marksurfaces, but clearing them here to be safe becuase of r_stereo)
+	state.lightmap_polys = []
+
+	// now rebuild them
+	for (var i = 0; i < model.textures.length; i++)
+	{
+		var t = model.textures[i];
+
+		if (!t || !t.texturechains || !t.texturechains[chain])
+			continue;
+
+		for (var s = t.texturechains[chain]; s; s = s.texturechain)
+			if (!s.culled)
+				renderDynamicLightmaps (model, s);
+	}
+}
+
 // Dynamic lights
-// const uploadLightmap = (gl: WebGLRenderingContext, lmapIdx: number) => {
+const uploadLightmap = (gl: WebGLRenderingContext, lmapIdx: number) => {
 
-// 	if (!state.lightmap_modified[lmapIdx])
-// 		return;
+	if (!state.lightmap_modified[lmapIdx])
+		return;
 
-// 	state.lightmap_modified[lmapIdx] = false
+	state.lightmap_modified[lmapIdx] = false
 	
-// 	debugger
+	const theRect = state.lightmap_rectchange[lmapIdx]
+	const lightmap = state.lightmaps.subarray((lmapIdx * LM_BLOCK_HEIGHT + theRect.t) * LM_BLOCK_WIDTH * state.lightmap_bytes)
+	gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, theRect.t, LM_BLOCK_WIDTH, theRect.h, gl.RGBA, gl.UNSIGNED_BYTE, lightmap);
+	theRect.l = LM_BLOCK_WIDTH;
+	theRect.t = LM_BLOCK_HEIGHT;
+	theRect.h = 0;
+	theRect.w = 0;
 
-// 	const theRect = state.lightmap_rectchange[lmapIdx]
-// 	const lightmap = state.lightmaps.subarray((lmapIdx * LM_BLOCK_HEIGHT + theRect.t) * LM_BLOCK_WIDTH * state.lightmap_bytes)
-// 	gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, theRect.t, LM_BLOCK_WIDTH, theRect.h, gl.RGBA, gl.UNSIGNED_BYTE, lightmap);
-// 	theRect.l = LM_BLOCK_WIDTH;
-// 	theRect.t = LM_BLOCK_HEIGHT;
-// 	theRect.h = 0;
-// 	theRect.w = 0;
+	// rs_dynamiclightmaps++; // stats
+}
 
-// 	// rs_dynamiclightmaps++; // stats
-// }
+export const uploadLightmaps = (gl: WebGLRenderingContext) => {
+	for (var i = 0; i < MAXLIGHTMAPS; i++)
+	{
+		if (!state.lightmap_modified[i])
+			continue;
+
+		GL.bind(0, texture.state.lightmap_textures[i].texnum);
+		uploadLightmap(gl, i);
+	}
+}
 // const uploadLightmaps = (gl: WebGLRenderingContext) => {
 // 	for (var lmapIdx = 0; lmapIdx < MAXLIGHTMAPS; lmapIdx++)
 // 	{
@@ -355,71 +433,3 @@ const buildLightMap = (model, surf, buffofs: number, stride: number) => {
 // }
 
 
-
-/*
-=============
-R_MarkLights -- johnfitz -- rewritten to use LordHavoc's lighting speedup
-=============
-*/
-// export const markLights (dlight_t *light, int num, mnode_t *node)
-// {
-// 	mplane_t	*splitplane;
-// 	msurface_t	*surf;
-// 	vec3_t		impact;
-// 	float		dist, l, maxdist;
-// 	int			i, j, s, t;
-
-// start:
-
-// 	if (node->contents < 0)
-// 		return;
-
-// 	splitplane = node->plane;
-// 	if (splitplane->type < 3)
-// 		dist = light->origin[splitplane->type] - splitplane->dist;
-// 	else
-// 		dist = DotProduct (light->origin, splitplane->normal) - splitplane->dist;
-
-// 	if (dist > light->radius)
-// 	{
-// 		node = node->children[0];
-// 		goto start;
-// 	}
-// 	if (dist < -light->radius)
-// 	{
-// 		node = node->children[1];
-// 		goto start;
-// 	}
-
-// 	maxdist = light->radius*light->radius;
-// // mark the polygons
-// 	surf = cl.worldmodel->surfaces + node->firstsurface;
-// 	for (i=0 ; i<node->numsurfaces ; i++, surf++)
-// 	{
-// 		for (j=0 ; j<3 ; j++)
-// 			impact[j] = light->origin[j] - surf->plane->normal[j]*dist;
-// 		// clamp center of light to corner and check brightness
-// 		l = DotProduct (impact, surf->texinfo->vecs[0]) + surf->texinfo->vecs[0][3] - surf->texturemins[0];
-// 		s = l+0.5;if (s < 0) s = 0;else if (s > surf->extents[0]) s = surf->extents[0];
-// 		s = l - s;
-// 		l = DotProduct (impact, surf->texinfo->vecs[1]) + surf->texinfo->vecs[1][3] - surf->texturemins[1];
-// 		t = l+0.5;if (t < 0) t = 0;else if (t > surf->extents[1]) t = surf->extents[1];
-// 		t = l - t;
-// 		// compare to minimum light
-// 		if ((s*s+t*t+dist*dist) < maxdist)
-// 		{
-// 			if (surf->dlightframe != r_dlightframecount) // not dynamic until now
-// 			{
-// 				surf->dlightbits[num >> 5] = 1U << (num & 31);
-// 				surf->dlightframe = r_dlightframecount;
-// 			}
-// 			else // already dynamic
-// 				surf->dlightbits[num >> 5] |= 1U << (num & 31);
-// 		}
-// 	}
-
-// 	if (node->children[0]->contents >= 0)
-// 		R_MarkLights (light, num, node->children[0]);
-// 	if (node->children[1]->contents >= 0)
-// 		R_MarkLights (light, num, node->children[1]);
-// }
