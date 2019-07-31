@@ -602,6 +602,7 @@ export const loadFaces = function(buf, bspVersion)
         lightofs: view.getInt32(fileofs + 24, true),
         mins: [],
         maxs: [],
+        dlightbits: [],
         cached_light: []
       }
       fileofs += 28;
@@ -617,6 +618,7 @@ export const loadFaces = function(buf, bspVersion)
         lightofs: view.getInt32(fileofs + 16, true),
         mins: [],
         maxs: [],
+        dlightbits: [],
         cached_light: []
       }
       fileofs += 20;

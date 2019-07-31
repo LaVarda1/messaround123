@@ -25,7 +25,7 @@ export const state = {
 	lightmap_bytes: 4,
 	lightmaps: new Uint8Array(new ArrayBuffer(4 * MAXLIGHTMAPS * LM_BLOCK_HEIGHT * LM_BLOCK_WIDTH)),
   allocated: Array.apply(null, new Array(MAXLIGHTMAPS)).map(() => []),
-  framecount: 0,
+  dlightframecount: 0,
   last_lightmap_allocated: 0
 }
 
@@ -42,7 +42,7 @@ export const init = () => {
 		Array.apply(null, new Array(LM_BLOCK_WIDTH)).map(() => 0))
 	state.last_lightmap_allocated = 0;
 
-	state.framecount = 1; // no dlightcache
+	state.dlightframecount = 0; // no dlightcache
 }
 
 /*
@@ -105,19 +105,7 @@ export const createSurfaceLightmap = (model, surf) => {
 }
 
 export const addDynamicLights = (blocklights, model, surf) => {
-
-	// int			lnum;
-	// int			sd, td;
-	// float		dist, rad, minlight;
-	// vec3_t		impact, local;
-	// int			s, t;
-	// int			i;
-	// int			smax, tmax;
-	// mtexinfo_t	*tex;
-	// //johnfitz -- lit support via lordhavoc
-	// float		cred, cgreen, cblue, brightness;
-	// unsigned	*bl;
-	// //johnfitz
+	//johnfitz
 
 	var smax = (surf.extents[0] >> 4) + 1;
 	var tmax = (surf.extents[1] >> 4) + 1;
@@ -127,7 +115,7 @@ export const addDynamicLights = (blocklights, model, surf) => {
 
 	for (var i = 0; i < cl.state.dlights.length; i++)
 	{
-		if (((surf.dlightbits >>> i) & 1) === 0)
+		if (! (surf.dlightbits[i >> 5] & (1 << (i & 31))))
 			continue;		// not lit by this light
 
 		var rad = cl.state.dlights[i].radius;
@@ -212,8 +200,8 @@ export const buildLightmaps = (gl: WebGLRenderingContext, model) => {
 		for (var i=0 ; i<model.numfaces ; i++)
 		{
 			//johnfitz -- rewritten to use SURF_DRAWTILED instead of the sky/water flags
-			// if (model.faces[i].flags & defs.SURF.drawtiled)
-			// 	continue;
+			if (model.faces[i].flags & def.SURF.drawtiled)
+				continue;
 			createSurfaceLightmap (model, model.faces[i]);
 			//johnfitz
 		}
@@ -248,7 +236,7 @@ export const buildLightmaps = (gl: WebGLRenderingContext, model) => {
 }
 
 const buildLightMap = (model, surf, buffofs: number, stride: number) => {
-	// surf.cached_dlight = surf.dlightframe === state.framecount
+	surf.cached_dlight = surf.dlightframe === state.dlightframecount
 
 	const smax = (surf.extents[0]>>4)+1;
 	const tmax = (surf.extents[1]>>4)+1;
@@ -285,7 +273,7 @@ const buildLightMap = (model, surf, buffofs: number, stride: number) => {
 		}
 
 		// add all the dynamic lights
-		if (surf.dlightframe == state.framecount)
+		if (surf.dlightframe == state.dlightframecount)
 			addDynamicLights (state.blocklights, model, surf);
 	}
 	else
@@ -343,7 +331,7 @@ const renderDynamicLightmaps = (model, surf) => {
 		}
 
 	if (doDynamic 
-		|| surf.dlightframe == state.framecount	// dynamic this frame
+		|| surf.dlightframe === state.dlightframecount	// dynamic this frame
 		|| surf.cached_dlight)			// dynamic previously
 	{
 		if (true) // (r_dynamic.value)
@@ -401,8 +389,12 @@ const uploadLightmap = (gl: WebGLRenderingContext, lmapIdx: number) => {
 	state.lightmap_modified[lmapIdx] = false
 	
 	const theRect = state.lightmap_rectchange[lmapIdx]
-	const lightmap = state.lightmaps.subarray((lmapIdx * LM_BLOCK_HEIGHT + theRect.t) * LM_BLOCK_WIDTH * state.lightmap_bytes)
-	gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, theRect.t, LM_BLOCK_WIDTH, theRect.h, gl.RGBA, gl.UNSIGNED_BYTE, lightmap);
+
+	const lightmapSize = LM_BLOCK_WIDTH * LM_BLOCK_HEIGHT * state.lightmap_bytes
+	const lightmapOffset = lightmapSize * lmapIdx
+	const data = state.lightmaps.subarray(lightmapOffset, lightmapOffset + lightmapSize)
+
+	gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, theRect.t, LM_BLOCK_WIDTH, theRect.h, gl.RGBA, gl.UNSIGNED_BYTE, data);
 	theRect.l = LM_BLOCK_WIDTH;
 	theRect.t = LM_BLOCK_HEIGHT;
 	theRect.h = 0;

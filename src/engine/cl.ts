@@ -1125,7 +1125,7 @@ export const entityNum = function(num)
       skinnum: 0,
       visframe: 0,
       dlightframe: 0,
-      dlightbits: 0
+      dlightbits: []
     };
   }
   return state.entities[num];
@@ -1461,7 +1461,7 @@ export const parseStatic = function(version) {
     syncbase: 0.0,
     visframe: 0,
     dlightframe: 0,
-    dlightbits: 0,
+    dlightbits: [],
     leafs: []
   } as any;
   state.static_entities[clState.num_statics++] = ent;

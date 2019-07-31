@@ -33,7 +33,7 @@ export const LERP = {
 export const state = {
 	// efrag
 	// light
-	dlightframecount: 0,
+	framecount: 0,
 	lightstylevalue: new Uint8Array(new ArrayBuffer(64))
 } as any
 
@@ -94,7 +94,7 @@ export const renderDlights = function()
   const gl = GL.getContext()
 	if (cvr.flashblend.value === 0)
 		return;
-	++state.dlightframecount;
+	++lm.state.dlightframecount;
 	gl.enable(gl.BLEND);
 	var program = GL.useProgram('Dlight'), l, a;
 	gl.bindBuffer(gl.ARRAY_BUFFER, state.dlightvecs);
@@ -141,14 +141,16 @@ export const markLights = function(light, bit, node)
 	for (i = 0; i < node.numfaces; ++i)
 	{
 		surf = cl.clState.worldmodel.faces[node.firstface + i];
+		
 		if ((surf.sky === true) || (surf.turbulent === true))
 			continue;
-		if (surf.dlightframe !== (state.dlightframecount + 1))
+		if (surf.dlightframe !== lm.state.dlightframecount)
 		{
-			surf.dlightbits = 0;
-			surf.dlightframe = state.dlightframecount + 1;
+			surf.dlightbits[bit >> 5] = 1 << (bit & 31)
+			surf.dlightframe = lm.state.dlightframecount;
+		} else {
+			surf.dlightbits[bit >> 5] |= 1 << (bit & 31)
 		}
-		surf.dlightbits += bit;
 	}
 	markLights(light, bit, node.children[0]);
 	markLights(light, bit, node.children[1]);
@@ -158,6 +160,7 @@ export const pushDlights = () => {
 	if (cvr.flashblend.value !== 0)
 		return;
 
+	lm.state.dlightframecount = state.framecount + 1
 	for (var i = 0; i < cl.state.dlights.length; ++i)
 	{
 		var l = cl.state.dlights[i];
@@ -166,8 +169,6 @@ export const pushDlights = () => {
 			markLights(l, i, cl.clState.worldmodel.nodes[0])
 		}
 	}
-
-	++state.dlightframecount;
 };
 
 export const recursiveLightPoint = function(node, start, end)

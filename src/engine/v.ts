@@ -413,7 +413,7 @@ export const renderView = function()
 	else if (cl.clState.paused !== true)
 		calcRefdef();
 	r.pushDlights();
-	lm.state.framecount++
+	r.state.framecount++
 	r.renderView();
 };
 
