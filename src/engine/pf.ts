@@ -183,7 +183,7 @@ export const vectoangles = function()
 
 export const random = function()
 {
-	pr.state.globals_float[1] = Math.random();
+	pr.state.globals_float[1] = (1024 & 0x7fff) / (0x7fff)/// Math.random();
 };
 
 export const particle = function()

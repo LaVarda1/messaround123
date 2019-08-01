@@ -125,8 +125,16 @@ export const markLights = function(light, bit, node)
 {
 	if (node.contents < 0)
 		return;
-	var normal = node.plane.normal;
-	var dist = light.origin[0] * normal[0] + light.origin[1] * normal[1] + light.origin[2] * normal[2] - node.plane.dist;
+	var worldmodel = cl.clState.worldmodel
+	var dist = 0, impact = []
+	var l, i, j, s, t;
+	
+	var splitplane = node.plane;
+	if (splitplane.type < 3)
+		dist = light.origin[splitplane.type] - splitplane.dist;
+	else
+		dist = vec.dotProduct (light.origin, splitplane.normal) - splitplane.dist;
+
 	if (dist > light.radius)
 	{
 		markLights(light, bit, node.children[0]);
@@ -137,13 +145,27 @@ export const markLights = function(light, bit, node)
 		markLights(light, bit, node.children[1]);
 		return;
 	}
-	var i, surf;
+	var surf;
+	var maxdist = light.radius * light.radius;
 	for (i = 0; i < node.numfaces; ++i)
 	{
 		surf = cl.clState.worldmodel.faces[node.firstface + i];
-		
 		if ((surf.sky === true) || (surf.turbulent === true))
 			continue;
+		
+		for (j=0 ; j<3 ; j++)
+			impact[j] = light.origin[j] - surf.plane.normal[j] * dist;
+		var texvecs = worldmodel.texinfo[surf.texinfo].vecs
+		// clamp center of light to corner and check brightness
+		l = vec.dotProduct (impact, texvecs[0]) + texvecs[0][3] - surf.texturemins[0];
+		s = l+0.5;if (s < 0) s = 0;else if (s > surf.extents[0]) s = surf.extents[0];
+		s = l - s;
+		l = vec.dotProduct (impact, texvecs[1]) + texvecs[1][3] - surf.texturemins[1];
+		t = l+0.5;if (t < 0) t = 0;else if (t > surf.extents[1]) t = surf.extents[1];
+		t = l - t;
+
+		if ((s*s+t*t+dist*dist) >= maxdist) 
+			continue
 		if (surf.dlightframe !== lm.state.dlightframecount)
 		{
 			surf.dlightbits[bit >> 5] = 1 << (bit & 31)
@@ -266,16 +288,49 @@ state.refdef = {
 	viewangles: [0.0, 0.0, 0.0]
 };
 
-export const cullBox = function(mins, maxs)
+export const cullBox = function(emins, emaxs)
 {
-	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[0]) === 2)
-		return true;
-	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[1]) === 2)
-		return true;
-	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[2]) === 2)
-		return true;
-	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[3]) === 2)
-		return true;
+	for (var i = 0; i < 4; i++)
+	{
+		var p = state.frustum[i];
+		switch(p.signbits)
+		{
+			default:
+			case 0:
+				if (p.normal[0]*emaxs[0] + p.normal[1]*emaxs[1] + p.normal[2]*emaxs[2] < p.dist)
+					return true;
+				break;
+			case 1:
+				if (p.normal[0]*emins[0] + p.normal[1]*emaxs[1] + p.normal[2]*emaxs[2] < p.dist)
+					return true;
+				break;
+			case 2:
+				if (p.normal[0]*emaxs[0] + p.normal[1]*emins[1] + p.normal[2]*emaxs[2] < p.dist)
+					return true;
+				break;
+			case 3:
+				if (p.normal[0]*emins[0] + p.normal[1]*emins[1] + p.normal[2]*emaxs[2] < p.dist)
+					return true;
+				break;
+			case 4:
+				if (p.normal[0]*emaxs[0] + p.normal[1]*emaxs[1] + p.normal[2]*emins[2] < p.dist)
+					return true;
+				break;
+			case 5:
+				if (p.normal[0]*emins[0] + p.normal[1]*emaxs[1] + p.normal[2]*emins[2] < p.dist)
+					return true;
+				break;
+			case 6:
+				if (p.normal[0]*emaxs[0] + p.normal[1]*emins[1] + p.normal[2]*emins[2] < p.dist)
+					return true;
+				break;
+			case 7:
+				if (p.normal[0]*emins[0] + p.normal[1]*emins[1] + p.normal[2]*emins[2] < p.dist)
+					return true;
+				break;
+		}
+	}
+	return false;
 };
 
 export const drawSpriteModel = function(e)

@@ -147,6 +147,7 @@ export const addDynamicLights = (blocklights, model, surf) => {
 		var cred = 256 // cl.state.dlights[i].color[0] * 256.0;
 		var cgreen = 256 // cl.state.dlights[i].color[1] * 256.0;
 		var cblue = 256 // cl.state.dlights[i].color[2] * 256.0;
+
 		//johnfitz
 		for (var t = 0; t < tmax; t++)
 		{
@@ -154,6 +155,7 @@ export const addDynamicLights = (blocklights, model, surf) => {
 			if (td < 0)
 				td = -td;
 			td = Math.floor(td)
+
 			for (var s = 0 ; s < smax ; s++)
 			{
 				sd = local[0] - (s << 4);
@@ -241,14 +243,16 @@ const buildLightMap = (model, surf, buffofs: number, stride: number) => {
 	const smax = (surf.extents[0]>>4)+1;
 	const tmax = (surf.extents[1]>>4)+1;
 	const size = smax * tmax;
+
 	var blockidx = 0
+	var buffidx = surf.lightofs
 
 	if (model) //if (cl.worldmodel->lightdata)
 	{
 		state.blocklights.fill(0)
 
 		// add all the lightmaps
-		if (surf.lightofs > -1)
+		if (buffidx > -1)
 		{
 			for (var maps = 0; maps < surf.styles.length && surf.styles[maps] !== 255;
 				 maps++)
@@ -261,7 +265,7 @@ const buildLightMap = (model, surf, buffofs: number, stride: number) => {
 
 				for (var i = 0; i < size; i++)
 				{
-					const rgbVal = model.lightdata[surf.lightofs + i + (size * maps)] * scale;
+					const rgbVal = model.lightdata[buffidx++] * scale;
 
 					state.blocklights[blockidx++] += rgbVal
 					state.blocklights[blockidx++] += rgbVal
@@ -286,7 +290,7 @@ const buildLightMap = (model, surf, buffofs: number, stride: number) => {
 	stride -= smax * 4;
 	blockidx = 0
 	
-	var buffidx = buffofs
+	buffidx = buffofs
 	var r, g, b
 	for (var i=0 ; i<tmax ; i++, buffidx += stride)
 	{
@@ -390,9 +394,9 @@ const uploadLightmap = (gl: WebGLRenderingContext, lmapIdx: number) => {
 	
 	const theRect = state.lightmap_rectchange[lmapIdx]
 
-	const lightmapSize = LM_BLOCK_WIDTH * LM_BLOCK_HEIGHT * state.lightmap_bytes
-	const lightmapOffset = lightmapSize * lmapIdx
-	const data = state.lightmaps.subarray(lightmapOffset, lightmapOffset + lightmapSize)
+	const offset =  (lmapIdx * LM_BLOCK_HEIGHT + theRect.t) * LM_BLOCK_WIDTH * 4
+	const length = LM_BLOCK_WIDTH * theRect.h * 4
+	const data = state.lightmaps.subarray(offset, offset + length)
 
 	gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, theRect.t, LM_BLOCK_WIDTH, theRect.h, gl.RGBA, gl.UNSIGNED_BYTE, data);
 	theRect.l = LM_BLOCK_WIDTH;
