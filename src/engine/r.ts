@@ -286,7 +286,7 @@ export const recursiveLightPoint = function(node, start, end)
 		size = ((surf.extents[0] >> 4) + 1) * ((surf.extents[1] >> 4) + 1);
 		for (maps = 0; maps < surf.styles.length; ++maps)
 		{
-			r += cl.clState.worldmodel.lightdata[lightmap] * lm.state.lightstylevalue[surf.styles[maps]] * .5;
+			r += cl.clState.worldmodel.lightdata[lightmap] * lm.state.lightstylevalue[surf.styles[maps]] * .3; // Joe - .3 hack to soften light
 			lightmap += size;
 		}
 		return r >> 8;

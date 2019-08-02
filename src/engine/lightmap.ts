@@ -280,7 +280,7 @@ const buildLightMap = (model, surf, buffofs: number, stride: number) => {
 		}
 
 		// add all the dynamic lights
-		if (surf.dlightframe == state.dlightframecount)
+		if (surf.dlightframe === state.dlightframecount)
 			addDynamicLights (state.blocklights, model, surf);
 	}
 	else
@@ -331,7 +331,7 @@ const renderDynamicLightmaps = (model, surf) => {
 	var doDynamic = false
 
 	// check for lightmap modification
-	for (var maps=0; maps < surf.styles.length && surf.styles[maps]; maps++)
+	for (var maps=0; maps < surf.styles.length && surf.styles[maps] !== 255; maps++)
 		if (state.lightstylevalue[surf.styles[maps]] !== surf.cached_light[maps]){
 			doDynamic= true
 			break
