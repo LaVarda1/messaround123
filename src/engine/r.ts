@@ -33,8 +33,7 @@ export const LERP = {
 export const state = {
 	// efrag
 	// light
-	framecount: 0,
-	lightstylevalue: new Uint8Array(new ArrayBuffer(64))
+	framecount: 0
 } as any
 
 export const cvr = {
@@ -62,32 +61,64 @@ export const splitEntityOnNode = function(node)
 };
 
 // light
-
-export const animateLight = function()
-{
-  const gl = GL.getContext()
-	var j;
-	if (cvr.fullbright.value === 0)
-	{
-		var i = Math.floor(cl.clState.time * 10.0);
-		for (j = 0; j < 64; ++j)
-		{
-			if (cl.state.lightstyle[j].length === 0)
-			{
-				state.lightstylevalue[j] = 12;
-				continue;
-			}
-			state.lightstylevalue[j] = cl.state.lightstyle[j].charCodeAt(i % cl.state.lightstyle[j].length) - 97;
+/*
+==================
+R_AnimateLight
+==================
+*/
+const animateLight = () => {
+	if (cvr.fullbright.value === 1){
+		for (var j = 0; j < lm.MAX_LIGHTSTYLES; j++) {
+			lm.state.lightstylevalue[j] = 264;
 		}
+		return
 	}
-	else
+		
+//
+// light animations
+// 'm' is normal light, 'a' is no light, 'z' is double bright
+	var i = Math.floor(cl.clState.time*10)
+	for (var j = 0; j < lm.MAX_LIGHTSTYLES; j++)
 	{
-		for (j = 0; j < 64; ++j)
-			state.lightstylevalue[j] = 12;
+		if (cl.state.lightstyle[j].length === 0)
+		{
+			lm.state.lightstylevalue[j] = 264;
+			continue;
+		}
+		
+		var	k = i % cl.state.lightstyle[j].length;
+		k = cl.state.lightstyle[j].charCodeAt(k) - 97; // 'a'
+	
+		lm.state.lightstylevalue[j] = k*22;
+		//johnfitz
 	}
-	GL.bind(0, state.lightstyle_texture);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 64, 1, 0, gl.ALPHA, gl.UNSIGNED_BYTE, state.lightstylevalue);
-};
+}
+
+// export const animateLight = function()
+// {
+//   const gl = GL.getContext()
+// 	var j;
+// 	if (cvr.fullbright.value === 0)
+// 	{
+// 		var i = Math.floor(cl.clState.time * 10.0);
+// 		for (j = 0; j < 64; ++j)
+// 		{
+// 			if (cl.state.lightstyle[j].length === 0)
+// 			{
+// 				state.lightstylevalue[j] = 12;
+// 				continue;
+// 			}
+// 			state.lightstylevalue[j] = cl.state.lightstyle[j].charCodeAt(i % cl.state.lightstyle[j].length) - 97;
+// 		}
+// 	}
+// 	else
+// 	{
+// 		for (j = 0; j < 64; ++j)
+// 			state.lightstylevalue[j] = 12;
+// 	}
+// 	GL.bind(0, state.lightstyle_texture);
+// 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 64, 1, 0, gl.ALPHA, gl.UNSIGNED_BYTE, state.lightstylevalue);
+// };
 
 export const renderDlights = function()
 {
@@ -166,6 +197,7 @@ export const markLights = function(light, bit, node)
 
 		if ((s*s+t*t+dist*dist) >= maxdist) 
 			continue
+		
 		if (surf.dlightframe !== lm.state.dlightframecount)
 		{
 			surf.dlightbits[bit >> 5] = 1 << (bit & 31)
@@ -254,7 +286,7 @@ export const recursiveLightPoint = function(node, start, end)
 		size = ((surf.extents[0] >> 4) + 1) * ((surf.extents[1] >> 4) + 1);
 		for (maps = 0; maps < surf.styles.length; ++maps)
 		{
-			r += cl.clState.worldmodel.lightdata[lightmap] * state.lightstylevalue[surf.styles[maps]] * 22;
+			r += cl.clState.worldmodel.lightdata[lightmap] * lm.state.lightstylevalue[surf.styles[maps]] * .5;
 			lightmap += size;
 		}
 		return r >> 8;
@@ -1118,9 +1150,10 @@ export const init = function()
 	cvr.polyblend = cvar.registerVariable('gl_polyblend', '1');
 	cvr.flashblend = cvar.registerVariable('gl_flashblend', '0');
 	cvr.nocolors = cvar.registerVariable('gl_nocolors', '0');
-	cvr.overbright = cvar.registerVariable('gl_overbright', '1');
+	cvr.overbright = cvar.registerVariable('gl_overbright', '0');
 	cvr.fullbrights = cvar.registerVariable('gl_fullbrights', '1');
 	cvr.oldskyleaf = cvar.registerVariable('oldskyleaf', '0')
+	cvr.flatlightstyles = cvar.registerVariable('r_flatlightstyles', '0')
 
 	initParticles();
 
@@ -1208,7 +1241,7 @@ export const newMap = function()
   const gl = GL.getContext()
 	var i;
 	for (i = 0; i < 64; ++i)
-		state.lightstylevalue[i] = 12;
+		lm.state.lightstylevalue[i] = 264;
 
 	clearParticles();
 	lm.init()

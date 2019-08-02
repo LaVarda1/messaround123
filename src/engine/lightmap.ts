@@ -8,6 +8,7 @@ import * as texture from './texture'
 export const LM_BLOCK_WIDTH = 128
 export const LM_BLOCK_HEIGHT = 128
 export const MAXLIGHTMAPS = 512
+export const MAX_LIGHTSTYLES = 64
 
 const cvr = {
 	gl_overbright: {value: 1},
@@ -173,6 +174,8 @@ export const addDynamicLights = (blocklights, model, surf) => {
 					bl[blidx++] += Math.floor(brightness * cred);
 					bl[blidx++] += Math.floor(brightness * cgreen);
 					bl[blidx++] += Math.floor(brightness * cblue);
+				} else {
+					blidx += 3
 				}
 				//johnfitz
 			}
@@ -328,8 +331,8 @@ const renderDynamicLightmaps = (model, surf) => {
 	var doDynamic = false
 
 	// check for lightmap modification
-	for (var maps=0; maps < MAXLIGHTMAPS && surf.styles[maps]; maps++)
-		if (state.lightstylevalue[surf.styles[maps]] != surf.cached_light[maps]){
+	for (var maps=0; maps < surf.styles.length && surf.styles[maps]; maps++)
+		if (state.lightstylevalue[surf.styles[maps]] !== surf.cached_light[maps]){
 			doDynamic= true
 			break
 		}
@@ -396,7 +399,7 @@ const uploadLightmap = (gl: WebGLRenderingContext, lmapIdx: number) => {
 
 	const offset =  (lmapIdx * LM_BLOCK_HEIGHT + theRect.t) * LM_BLOCK_WIDTH * 4
 	const length = LM_BLOCK_WIDTH * theRect.h * 4
-	const data = state.lightmaps.subarray(offset, offset + length)
+	const data = state.lightmaps.subarray(offset)
 
 	gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, theRect.t, LM_BLOCK_WIDTH, theRect.h, gl.RGBA, gl.UNSIGNED_BYTE, data);
 	theRect.l = LM_BLOCK_WIDTH;
