@@ -18,7 +18,6 @@ const cvr = {
 }
 
 export const state = {
-	lightmap_polys: [],
 	lightmap_modified: [],
 	lightmap_rectchange: [],
 	lightstylevalue: new Uint32Array(new ArrayBuffer(256 * 4)),
@@ -31,8 +30,6 @@ export const state = {
 }
 
 export const init = () => {	
-	state.lightmap_polys = Array.apply(null, new Array(MAXLIGHTMAPS)).map(() => {})
-
 	for (var i=0 ; i<256 ; i++)
 		state.lightstylevalue[i] = 264;	
 
@@ -324,10 +321,6 @@ const renderDynamicLightmaps = (model, surf) => {
 	if (surf.flags & def.SURF.drawtiled) //johnfitz -- not a lightmapped surface
 		return;
 
-	// add to lightmap chain
-	surf.polys.chain = state.lightmap_polys[surf.lightmaptexturenum];
-	state.lightmap_polys[surf.lightmaptexturenum] = surf.polys;
-
 	var doDynamic = false
 
 	// check for lightmap modification
@@ -370,10 +363,6 @@ const renderDynamicLightmaps = (model, surf) => {
 
 
 export const buildLightmapChains = (model, chain) => {
-	// clear lightmap chains (already done in r_marksurfaces, but clearing them here to be safe becuase of r_stereo)
-	state.lightmap_polys = []
-
-	// now rebuild them
 	for (var i = 0; i < model.textures.length; i++)
 	{
 		var t = model.textures[i];

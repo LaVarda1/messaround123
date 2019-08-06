@@ -286,7 +286,7 @@ export const recursiveLightPoint = function(node, start, end)
 		size = ((surf.extents[0] >> 4) + 1) * ((surf.extents[1] >> 4) + 1);
 		for (maps = 0; maps < surf.styles.length; ++maps)
 		{
-			r += cl.clState.worldmodel.lightdata[lightmap] * lm.state.lightstylevalue[surf.styles[maps]] * .3; // Joe - .3 hack to soften light
+			r += cl.clState.worldmodel.lightdata[lightmap] * lm.state.lightstylevalue[surf.styles[maps]];
 			lightmap += size;
 		}
 		return r >> 8;
@@ -1091,7 +1091,7 @@ export const initTextures = function()
 			data[8 + (i << 4) + j] = data[128 + (i << 4) + j] = 0;
 		}
 	}
-	state.notexture_mip = {name: 'notexture', width: 16, height: 16, texturenum: gl.createTexture()};
+	state.notexture_mip = {name: 'notexture', width: 16, height: 16, texturenum: gl.createTexture(), texturechains: [null, null]};
 	GL.bind(0, state.notexture_mip.texturenum);
 	GL.upload(data, 16, 16);
 
@@ -1905,9 +1905,6 @@ const clearTextureChains = (model, chain) => {
 	for (var i=0 ; i<model.textures.length; i++)
 		if (model.textures[i] && model.textures[i].texturechains)
 			model.textures[i].texturechains[chain] = null;
-			
-	// clear lightmap chains
-	lm.state.lightmap_polys = []
 }
 
 export const drawBrushModel = function(e)
@@ -2110,13 +2107,8 @@ const drawTextureChains_water = (gl: WebGLRenderingContext, model, ent, chain) =
 }
 
 const drawTextureChains = (gl, model, ent, chain) => {
-	var entalpha = 1
+	var entalpha = ent ? pr.decodeAlpha(ent.alpha) : 1
 	
-	// if (ent != NULL)
-	// 	entalpha = ENTALPHA_DECODE(ent->alpha);
-	// else
-	// 	entalpha = 1;
-
 	// TODO Dynamic LMs
 	// ericw -- the mh dynamic lightmap speedup: make a first pass through all
 	// surfaces we are going to draw, and rebuild any lightmaps that need it.
@@ -2368,10 +2360,6 @@ const chainSurface = (model, surf, chain) => {
 
 const markSurfaces = () => {
 	var vis = []
-
-	// // clear lightmap chains
-	// state.lightmap_polys = Array.apply(null, new Array(MAXLIGHTMAPS)).map(() => {})
-
 	// check this leaf for water portals
 	// TODO: loop through all water surfs and use distance to leaf cullbox
 	var nearwaterportal = false;

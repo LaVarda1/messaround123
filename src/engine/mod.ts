@@ -965,7 +965,9 @@ export const loadClipnodes = function(buf, bspVersion)
 			//johnfitz -- support clipnodes > 32k
       var out = {
         planenum: view.getUint32(fileofs, true),
-        children: [view.getInt16(fileofs + 4, true), view.getInt16(fileofs + 6, true)]
+        children: [
+          view.getUint16(fileofs + 4, true), 
+          view.getUint16(fileofs + 6, true)]
       };
 			if (out.children[0] >= count)
 				out.children[0] -= 65536;
@@ -1013,7 +1015,7 @@ export const loadMarksurfaces = function(buf, bspVersion)
   for (i = 0; i < count; ++i)
   {
     if (bspVersion === VERSION["2psb"] || bspVersion === VERSION['bsp2']) { 
-      j = view.getUint32(fileofs + (i << 2), true);
+      j = view.getInt32(fileofs + (i << 2), true);
     } else {
       j = view.getUint16(fileofs + (i << 1), true);
     }

@@ -19,26 +19,26 @@ import * as v from './v'
 import * as pf from './pf'
 
 export let state = {
-  fatpvs: [],
-  fatbytes: 0,
-  clientdatagram: {data: new ArrayBuffer(1024), cursize: 0},
-  server: {
-    num_edicts: 0,
-    datagram: {data: new ArrayBuffer(1024), cursize: 0},
-    reliable_datagram: {data: new ArrayBuffer(1024), cursize: 0},
-    signon: {data: new ArrayBuffer(def.max_message), cursize: 0},
-    active: false,
-    loading: false
-  },
-  nop: {
-    data: new ArrayBuffer(4),
-    cursize: 1
-  },
+	fatpvs: [],
+	fatbytes: 0,
+	clientdatagram: { data: new ArrayBuffer(1024), cursize: 0 },
+	server: {
+		num_edicts: 0,
+		datagram: { data: new ArrayBuffer(1024), cursize: 0 },
+		reliable_datagram: { data: new ArrayBuffer(1024), cursize: 0 },
+		signon: { data: new ArrayBuffer(def.max_message), cursize: 0 },
+		active: false,
+		loading: false
+	},
+	nop: {
+		data: new ArrayBuffer(4),
+		cursize: 1
+	},
 	reconnect: {
-    data: new ArrayBuffer(128),
-    cursize: 0
-  },
-  svs: {}
+		data: new ArrayBuffer(128),
+		cursize: 0
+	},
+	svs: {}
 } as any;
 
 export const cvr = {
@@ -92,12 +92,12 @@ const initState = () => {
 	state = {
 		fatpvs: [],
 		fatbytes: 0,
-		clientdatagram: {data: new ArrayBuffer(1024), cursize: 0},
+		clientdatagram: { data: new ArrayBuffer(1024), cursize: 0 },
 		server: {
 			num_edicts: 0,
-			datagram: {data: new ArrayBuffer(1024), cursize: 0},
-			reliable_datagram: {data: new ArrayBuffer(1024), cursize: 0},
-			signon: {data: new ArrayBuffer(def.max_message), cursize: 0},
+			datagram: { data: new ArrayBuffer(1024), cursize: 0 },
+			reliable_datagram: { data: new ArrayBuffer(1024), cursize: 0 },
+			signon: { data: new ArrayBuffer(def.max_message), cursize: 0 },
 			active: false,
 			loading: false
 		},
@@ -114,8 +114,7 @@ const initState = () => {
 }
 // main
 
-export const startParticle = function(org, dir, color, count)
-{
+export const startParticle = function (org, dir, color, count) {
 	var datagram = state.server.datagram;
 	if (datagram.cursize >= 1009)
 		return;
@@ -124,8 +123,7 @@ export const startParticle = function(org, dir, color, count)
 	msg.writeCoord(datagram, org[1]);
 	msg.writeCoord(datagram, org[2]);
 	var i, v;
-	for (i = 0; i <= 2; ++i)
-	{
+	for (i = 0; i <= 2; ++i) {
 		v = (dir[i] * 16.0) >> 0;
 		if (v > 127)
 			v = 127;
@@ -137,8 +135,7 @@ export const startParticle = function(org, dir, color, count)
 	msg.writeByte(datagram, color);
 };
 
-export const startSound = function(entity, channel, sample, volume, attenuation)
-{
+export const startSound = function (entity, channel, sample, volume, attenuation) {
 	if ((volume < 0) || (volume > 255))
 		sys.error('SV.StartSound: volume = ' + volume);
 	if ((attenuation < 0.0) || (attenuation > 4.0))
@@ -151,13 +148,11 @@ export const startSound = function(entity, channel, sample, volume, attenuation)
 		return;
 
 	var i;
-	for (i = 1; i < state.server.sound_precache.length; ++i)
-	{
+	for (i = 1; i < state.server.sound_precache.length; ++i) {
 		if (sample === state.server.sound_precache[i])
 			break;
 	}
-	if (i >= state.server.sound_precache.length)
-	{
+	if (i >= state.server.sound_precache.length) {
 		con.print('SV.StartSound: ' + sample + ' not precached\n');
 		return;
 	}
@@ -184,8 +179,7 @@ export const startSound = function(entity, channel, sample, volume, attenuation)
 		(entity.v_float[pr.entvars.mins2] + entity.v_float[pr.entvars.maxs2]));
 };
 
-const sendServerinfo = function(client)
-{
+const sendServerinfo = function (client) {
 	var message = client.message;
 	msg.writeByte(message, protocol.SVC.print);
 	msg.writeString(message, '\x02\nVERSION 1.09 SERVER (' + pr.state.crc + ' CRC)');
@@ -212,15 +206,12 @@ const sendServerinfo = function(client)
 	client.spawned = false;
 };
 
-const connectClient = async function(clientnum: number)
-{
+const connectClient = async function (clientnum: number) {
 	var client = state.svs.clients[clientnum];
 	var i, spawn_parms;
-	if (state.server.loadgame === true)
-	{
+	if (state.server.loadgame === true) {
 		spawn_parms = [];
-		if (client.spawn_parms == null)
-		{
+		if (client.spawn_parms == null) {
 			client.spawn_parms = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 				0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
 		}
@@ -231,7 +222,7 @@ const connectClient = async function(clientnum: number)
 	client.active = true;
 	client.dropasap = false;
 	client.last_message = 0.0;
-	client.cmd = {forwardmove: 0.0, sidemove: 0.0, upmove: 0.0};
+	client.cmd = { forwardmove: 0.0, sidemove: 0.0, upmove: 0.0 };
 	client.wishdir = [0.0, 0.0, 0.0];
 	client.message.cursize = 0;
 	client.edict = state.server.edicts[clientnum + 1];
@@ -241,19 +232,16 @@ const connectClient = async function(clientnum: number)
 	client.ping_times = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 		0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
 	client.num_pings = 0;
-	if (state.server.loadgame !== true)
-	{
+	if (state.server.loadgame !== true) {
 		client.spawn_parms = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 			0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
 	}
 	client.old_frags = 0;
-	if (state.server.loadgame === true)
-	{
+	if (state.server.loadgame === true) {
 		for (i = 0; i <= 15; ++i)
 			client.spawn_parms[i] = spawn_parms[i];
 	}
-	else
-	{
+	else {
 		await pr.executeProgram(pr.state.globals_int[pr.globalvars.SetNewParms]);
 		for (i = 0; i <= 15; ++i)
 			client.spawn_parms[i] = pr.state.globals_float[pr.globalvars.parms + i];
@@ -261,15 +249,11 @@ const connectClient = async function(clientnum: number)
 	sendServerinfo(client);
 };
 
-const addToFatPVS = function(org, node)
-{
+const addToFatPVS = function (org, node) {
 	var pvs, i, normal, d;
-	for (;;)
-	{
-		if (node.contents < 0)
-		{
-			if (node.contents !== mod.CONTENTS.solid)
-			{
+	for (; ;) {
+		if (node.contents < 0) {
+			if (node.contents !== mod.CONTENTS.solid) {
 				pvs = mod.leafPVS(node, state.server.worldmodel);
 				for (i = 0; i < state.fatbytes; ++i)
 					state.fatpvs[i] |= pvs[i];
@@ -280,8 +264,7 @@ const addToFatPVS = function(org, node)
 		d = org[0] * normal[0] + org[1] * normal[1] + org[2] * normal[2] - node.plane.dist;
 		if (d > 8.0)
 			node = node.children[0];
-		else
-		{
+		else {
 			if (d >= -8.0)
 				addToFatPVS(org, node.children[0]);
 			node = node.children[1];
@@ -289,8 +272,7 @@ const addToFatPVS = function(org, node)
 	}
 };
 
-const fatPVS = function(org)
-{
+const fatPVS = function (org) {
 	state.fatbytes = (state.server.worldmodel.leafs.length + 31) >> 3;
 	var i;
 	for (i = 0; i < state.fatbytes; ++i)
@@ -298,37 +280,31 @@ const fatPVS = function(org)
 	addToFatPVS(org, state.server.worldmodel.nodes[0]);
 };
 
-const writeEntitiesToClient = function(clent, message)
-{
+const writeEntitiesToClient = function (clent, message) {
 	fatPVS([
 		clent.v_float[pr.entvars.origin] + clent.v_float[pr.entvars.view_ofs],
 		clent.v_float[pr.entvars.origin1] + clent.v_float[pr.entvars.view_ofs1],
 		clent.v_float[pr.entvars.origin2] + clent.v_float[pr.entvars.view_ofs2]
 	]);
 	var pvs = state.fatpvs, ent, e, i, bits, miss;
-	for (e = 1; e < state.server.num_edicts; ++e)
-	{
+	for (e = 1; e < state.server.num_edicts; ++e) {
 		ent = state.server.edicts[e];
-		if (ent !== clent)
-		{
+		if (ent !== clent) {
 			if ((ent.v_float[pr.entvars.modelindex] === 0.0) || (pr.state.strings[ent.v_int[pr.entvars.model]] === 0))
 				continue;
-			for (i = 0; i < ent.leafnums.length; ++i)
-			{
+			for (i = 0; i < ent.leafnums.length; ++i) {
 				if ((pvs[ent.leafnums[i] >> 3] & (1 << (ent.leafnums[i] & 7))) !== 0)
 					break;
 			}
 			if (i === ent.leafnums.length)
 				continue;
 		}
-		if ((message.data.byteLength - message.cursize) < 16)
-		{
+		if ((message.data.byteLength - message.cursize) < 16) {
 			con.print('packet overflow\n');
 			return;
 		}
 		bits = 0;
-		for (i = 0; i <= 2; ++i)
-		{
+		for (i = 0; i <= 2; ++i) {
 			miss = ent.v_float[pr.entvars.origin + i] - ent.baseline.origin[i];
 			if ((miss < -0.1) || (miss > 0.1))
 				bits |= protocol.U.origin1 << i;
@@ -352,10 +328,19 @@ const writeEntitiesToClient = function(clent, message)
 		if (ent.baseline.modelindex !== ent.v_float[pr.entvars.modelindex])
 			bits |= protocol.U.model;
 
+		ent.alpha = ent.baseline.alpha
+		if (pr.state.alpha_supported) {
+			// TODO: find a cleaner place to put this code
+			var val = ed.getEdictFieldValue(ent, "alpha");
+			if (val) {
+				ent.alpha = pr.encodeAlpha(val)
+			}
+		}
+
 		// Fitzquake additions
 		if (state.server.protocol === protocol.fitzquake) {
-			// if (ent.baseline.alpha != ent.alpha) // TODO: Alpha
-			// 	bits |= protocol.U.alpha
+			if (ent.baseline.alpha != ent.alpha) // TODO: Alpha
+				bits |= protocol.U.alpha
 			if (bits & protocol.U.frame && ent.v_float[pr.entvars.frame] & 0xFF00)
 				bits |= protocol.U.frame2
 			if (bits & protocol.U.frame && ent.v_float[pr.entvars.modelindex] & 0xFF00)
@@ -408,23 +393,22 @@ const writeEntitiesToClient = function(clent, message)
 			msg.writeCoord(message, ent.v_float[pr.entvars.origin2]);
 		if ((bits & protocol.U.angle3) !== 0)
 			msg.writeAngle(message, ent.v_float[pr.entvars.angles2]);
-			
+
 		//johnfitz -- PROTOCOL_FITZQUAKE
-		// if (bits & protocol.U.alpha)
-		// 	msg.writeByte(message,  ); // TODO Alpha
+		if (bits & protocol.U.alpha)
+			msg.writeByte(message, ent.alpha);
 		if (bits & protocol.U.frame2)
 			msg.writeByte(message, ent.v_float[pr.entvars.frame] >> 8);
 		if (bits & protocol.U.model2)
 			msg.writeByte(message, ent.v_float[pr.entvars.modelindex] >> 8);
 		if (bits & protocol.U.lerpfinish)
-			msg.writeByte(message, 
-				Math.round((ent.v_float[pr.entvars.nextthink]-state.server.time) * 255))
+			msg.writeByte(message,
+				Math.round((ent.v_float[pr.entvars.nextthink] - state.server.time) * 255))
 	}
 };
 
 
-const sendClientDatagram = async function()
-{
+const sendClientDatagram = async function () {
 	var client = host.state.client;
 	var message = state.clientdatagram;
 	message.cursize = 0;
@@ -434,27 +418,23 @@ const sendClientDatagram = async function()
 	writeEntitiesToClient(client.edict, message);
 	if ((message.cursize + state.server.datagram.cursize) < message.data.byteLength)
 		sz.write(message, new Uint8Array(state.server.datagram.data), state.server.datagram.cursize);
-	if (net.sendUnreliableMessage(client.netconnection, message) === -1)
-	{
+	if (net.sendUnreliableMessage(client.netconnection, message) === -1) {
 		await host.dropClient(true);
 		return;
 	}
 	return true;
 };
 
-const updateToReliableMessages = function()
-{
+const updateToReliableMessages = function () {
 	var i, frags, j, client;
 
-	for (i = 0; i < state.svs.maxclients; ++i)
-	{
+	for (i = 0; i < state.svs.maxclients; ++i) {
 		host.state.client = state.svs.clients[i];
 		host.state.client.edict.v_float[pr.entvars.frags] >>= 0;
 		frags = host.state.client.edict.v_float[pr.entvars.frags];
 		if (host.state.client.old_frags === frags)
 			continue;
-		for (j = 0; j < state.svs.maxclients; ++j)
-		{
+		for (j = 0; j < state.svs.maxclients; ++j) {
 			client = state.svs.clients[j];
 			if (client.active !== true)
 				continue;
@@ -465,8 +445,7 @@ const updateToReliableMessages = function()
 		host.state.client.old_frags = frags;
 	}
 
-	for (i = 0; i < state.svs.maxclients; ++i)
-	{
+	for (i = 0; i < state.svs.maxclients; ++i) {
 		client = state.svs.clients[i];
 		if (client.active === true)
 			sz.write(client.message, new Uint8Array(state.server.reliable_datagram.data), state.server.reliable_datagram.cursize);
@@ -475,28 +454,24 @@ const updateToReliableMessages = function()
 	state.server.reliable_datagram.cursize = 0;
 };
 
-export const modelIndex = function(name)
-{
+export const modelIndex = function (name) {
 	if (name == null)
 		return 0;
 	if (name.length === 0)
 		return 0;
 	var i;
-	for (i = 0; i < state.server.model_precache.length; ++i)
-	{
+	for (i = 0; i < state.server.model_precache.length; ++i) {
 		if (state.server.model_precache[i] === name)
 			return i;
 	}
 	sys.error('SV.ModelIndex: model ' + name + ' not precached');
 };
 
-const createBaseline = function()
-{
+const createBaseline = function () {
 	var i, svent, baseline;
 	var player = modelIndex('progs/player.mdl');
 	var signon = state.server.signon;
-	for (i = 0; i < state.server.num_edicts; ++i)
-	{
+	for (i = 0; i < state.server.num_edicts; ++i) {
 		svent = state.server.edicts[i];
 		if (svent.free === true)
 			continue;
@@ -508,46 +483,45 @@ const createBaseline = function()
 		baseline.frame = svent.v_float[pr.entvars.frame] >> 0;
 		baseline.skin = svent.v_float[pr.entvars.skin] >> 0;
 		// TODO: Alpha
-		baseline.alpha = protocol.ENT_ALPHA.default
-		if ((i > 0) && (i <= state.server.maxclients))
-		{
+		if ((i > 0) && (i <= state.server.maxclients)) {
 			baseline.colormap = i
 			baseline.modelindex = player;
+			baseline.alpha = protocol.ENT_ALPHA.default
 		}
-		else
-		{
+		else {
 			baseline.colormap = 0;
 			baseline.modelindex = modelIndex(pr.getString(svent.v_int[pr.entvars.model]));
+			baseline.alpha = svent.alpha
 		}
 
 		// fitzquake
 		var bits = 0
 		if (state.server.protocol === protocol.netquake) {
-			if (baseline.modelindex & 0xFF00) 
+			if (baseline.modelindex & 0xFF00)
 				baseline.modelindex = 0
-			if (baseline.frame & 0xFF00) 
+			if (baseline.frame & 0xFF00)
 				baseline.frame = 0
 
 			baseline.alpha = protocol.ENT_ALPHA.default
 		} else {
-			if (baseline.modelindex & 0xFF00) 
+			if (baseline.modelindex & 0xFF00)
 				bits |= protocol.BASE.largemodel
 			if (baseline.frame & 0xFF00)
 				bits |= protocol.BASE.largeframe
-			if (baseline.alpha !== protocol.ENT_ALPHA.default) 
+			if (baseline.alpha !== protocol.ENT_ALPHA.default)
 				bits |= protocol.BASE.alpha
 		}
 
 		if (bits)
 			msg.writeByte(signon, protocol.SVC.spawnbaseline2)
-		else 
+		else
 			msg.writeByte(signon, protocol.SVC.spawnbaseline)
 
 		msg.writeShort(signon, i);
 
 		if (bits)
 			msg.writeByte(signon, bits)
-		
+
 		if (bits & protocol.BASE.largemodel)
 			msg.writeShort(signon, baseline.modelindex)
 		else
@@ -556,7 +530,7 @@ const createBaseline = function()
 			msg.writeShort(signon, baseline.frame)
 		else
 			msg.writeByte(signon, baseline.frame)
-		
+
 		msg.writeByte(signon, baseline.colormap);
 		msg.writeByte(signon, baseline.skin);
 		msg.writeCoord(signon, baseline.origin[0]);
@@ -573,8 +547,7 @@ const createBaseline = function()
 
 // move
 
-export const checkBottom = function(ent)
-{
+export const checkBottom = function (ent) {
 	var mins = [
 		ent.v_float[pr.entvars.origin] + ent.v_float[pr.entvars.mins],
 		ent.v_float[pr.entvars.origin1] + ent.v_float[pr.entvars.mins1],
@@ -585,8 +558,7 @@ export const checkBottom = function(ent)
 		ent.v_float[pr.entvars.origin1] + ent.v_float[pr.entvars.maxs1],
 		ent.v_float[pr.entvars.origin2] + ent.v_float[pr.entvars.maxs2]
 	];
-	for (;;)
-	{
+	for (; ;) {
 		if (pointContents([mins[0], mins[1], mins[2] - 1.0]) !== mod.CONTENTS.solid)
 			break;
 		if (pointContents([mins[0], maxs[1], mins[2] - 1.0]) !== mod.CONTENTS.solid)
@@ -605,10 +577,8 @@ export const checkBottom = function(ent)
 	var mid, bottom;
 	mid = bottom = trace.endpos[2];
 	var x, y;
-	for (x = 0; x <= 1; ++x)
-	{
-		for (y = 0; y <= 1; ++y)
-		{
+	for (x = 0; x <= 1; ++x) {
+		for (y = 0; y <= 1; ++y) {
 			start[0] = stop[0] = (x !== 0) ? maxs[0] : mins[0];
 			start[1] = stop[1] = (y !== 0) ? maxs[1] : mins[1];
 			trace = move(start, vec.origin, vec.origin, stop, 1, ent);
@@ -621,22 +591,18 @@ export const checkBottom = function(ent)
 	return true;
 };
 
-export const movestep = async function(ent, _move, relink)
-{
+export const movestep = async function (ent, _move, relink) {
 	var oldorg = ed.vector(ent, pr.entvars.origin);
 	var neworg = [];
 	var mins = ed.vector(ent, pr.entvars.mins), maxs = ed.vector(ent, pr.entvars.maxs);
 	var trace;
-	if ((ent.v_float[pr.entvars.flags] & (FL.swim + FL.fly)) !== 0)
-	{
+	if ((ent.v_float[pr.entvars.flags] & (FL.swim + FL.fly)) !== 0) {
 		var i, enemy = ent.v_int[pr.entvars.enemy], dz;
-		for (i = 0; i <= 1; ++i)
-		{
+		for (i = 0; i <= 1; ++i) {
 			neworg[0] = ent.v_float[pr.entvars.origin] + _move[0];
 			neworg[1] = ent.v_float[pr.entvars.origin1] + _move[1];
 			neworg[2] = ent.v_float[pr.entvars.origin2];
-			if ((i === 0) && (enemy !== 0))
-			{
+			if ((i === 0) && (enemy !== 0)) {
 				dz = ent.v_float[pr.entvars.origin2] - state.server.edicts[enemy].v_float[pr.entvars.origin2];
 				if (dz > 40.0)
 					neworg[2] -= 8.0;
@@ -644,8 +610,7 @@ export const movestep = async function(ent, _move, relink)
 					neworg[2] += 8.0;
 			}
 			trace = move(ed.vector(ent, pr.entvars.origin), mins, maxs, neworg, 0, ent);
-			if (trace.fraction === 1.0)
-			{
+			if (trace.fraction === 1.0) {
 				if (((ent.v_float[pr.entvars.flags] & FL.swim) !== 0) && (pointContents(trace.endpos) === mod.CONTENTS.empty))
 					return 0;
 				ent.v_float[pr.entvars.origin] = trace.endpos[0];
@@ -667,15 +632,13 @@ export const movestep = async function(ent, _move, relink)
 	trace = move(neworg, mins, maxs, end, 0, ent);
 	if (trace.allsolid === true)
 		return 0;
-	if (trace.startsolid === true)
-	{
+	if (trace.startsolid === true) {
 		neworg[2] -= 18.0;
 		trace = move(neworg, mins, maxs, end, 0, ent);
 		if ((trace.allsolid === true) || (trace.startsolid === true))
 			return 0;
 	}
-	if (trace.fraction === 1.0)
-	{
+	if (trace.fraction === 1.0) {
 		if ((ent.v_float[pr.entvars.flags] & FL.partialground) === 0)
 			return 0;
 		ent.v_float[pr.entvars.origin] += _move[0];
@@ -688,10 +651,8 @@ export const movestep = async function(ent, _move, relink)
 	ent.v_float[pr.entvars.origin] = trace.endpos[0];
 	ent.v_float[pr.entvars.origin1] = trace.endpos[1];
 	ent.v_float[pr.entvars.origin2] = trace.endpos[2];
-	if (checkBottom(ent) !== true)
-	{
-		if ((ent.v_float[pr.entvars.flags] & FL.partialground) !== 0)
-		{
+	if (checkBottom(ent) !== true) {
+		if ((ent.v_float[pr.entvars.flags] & FL.partialground) !== 0) {
 			if (relink === true)
 				await linkEdict(ent, true);
 			return 1;
@@ -708,14 +669,12 @@ export const movestep = async function(ent, _move, relink)
 	return 1;
 };
 
-export const stepDirection = async function(ent, yaw, dist)
-{
+export const stepDirection = async function (ent, yaw, dist) {
 	ent.v_float[pr.entvars.ideal_yaw] = yaw;
 	pf.changeyaw();
 	yaw *= Math.PI / 180.0;
 	var oldorigin = ed.vector(ent, pr.entvars.origin);
-	if (await movestep(ent, [Math.cos(yaw) * dist, Math.sin(yaw) * dist], false) === 1)
-	{
+	if (await movestep(ent, [Math.cos(yaw) * dist, Math.sin(yaw) * dist], false) === 1) {
 		var delta = ent.v_float[pr.entvars.angles1] - ent.v_float[pr.entvars.ideal_yaw];
 		if ((delta > 45.0) && (delta < 315.0))
 			ed.setVector(ent, pr.entvars.origin, oldorigin);
@@ -725,8 +684,7 @@ export const stepDirection = async function(ent, yaw, dist)
 	await linkEdict(ent, true);
 };
 
-export const newChaseDir = async function(actor, enemy, dist)
-{
+export const newChaseDir = async function (actor, enemy, dist) {
 	var olddir = vec.anglemod(((actor.v_float[pr.entvars.ideal_yaw] / 45.0) >> 0) * 45.0);
 	var turnaround = vec.anglemod(olddir - 180.0);
 	var deltax = enemy.v_float[pr.entvars.origin] - actor.v_float[pr.entvars.origin];
@@ -745,8 +703,7 @@ export const newChaseDir = async function(actor, enemy, dist)
 	else
 		dy = -1;
 	var tdir;
-	if ((dx !== -1) && (dy !== -1))
-	{
+	if ((dx !== -1) && (dy !== -1)) {
 		if (dx === 0.0)
 			tdir = (dy === 90.0) ? 45.0 : 315.0;
 		else
@@ -754,8 +711,7 @@ export const newChaseDir = async function(actor, enemy, dist)
 		if ((tdir !== turnaround) && (await stepDirection(actor, tdir, dist) === true))
 			return;
 	}
-	if ((Math.random() >= 0.25) || (Math.abs(deltay) > Math.abs(deltax)))
-	{
+	if ((Math.random() >= 0.25) || (Math.abs(deltay) > Math.abs(deltax))) {
 		tdir = dx;
 		dx = dy;
 		dy = tdir;
@@ -766,18 +722,14 @@ export const newChaseDir = async function(actor, enemy, dist)
 		return;
 	if ((olddir !== -1) && (await stepDirection(actor, olddir, dist) === true))
 		return;
-	if (Math.random() >= 0.5)
-	{
-		for (tdir = 0.0; tdir <= 315.0; tdir += 45.0)
-		{
+	if (Math.random() >= 0.5) {
+		for (tdir = 0.0; tdir <= 315.0; tdir += 45.0) {
 			if ((tdir !== turnaround) && (await stepDirection(actor, tdir, dist) === true))
 				return;
 		}
 	}
-	else
-	{
-		for (tdir = 315.0; tdir >= 0.0; tdir -= 45.0)
-		{
+	else {
+		for (tdir = 315.0; tdir >= 0.0; tdir -= 45.0) {
 			if ((tdir !== turnaround) && (await stepDirection(actor, tdir, dist) === true))
 				return;
 		}
@@ -789,11 +741,9 @@ export const newChaseDir = async function(actor, enemy, dist)
 		actor.v_float[pr.entvars.flags] |= FL.partialground;
 };
 
-export const closeEnough = function(ent, goal, dist)
-{
+export const closeEnough = function (ent, goal, dist) {
 	var i;
-	for (i = 0; i <= 2; ++i)
-	{
+	for (i = 0; i <= 2; ++i) {
 		if (goal.v_float[pr.entvars.absmin + i] > (ent.v_float[pr.entvars.absmax + i] + dist))
 			return;
 		if (goal.v_float[pr.entvars.absmax + i] < (ent.v_float[pr.entvars.absmin + i] - dist))
@@ -804,39 +754,32 @@ export const closeEnough = function(ent, goal, dist)
 
 // phys
 
-const checkAllEnts = function()
-{
+const checkAllEnts = function () {
 	var e, check, movetype;
-	for (e = 1; e < state.server.num_edicts; ++e)
-	{
+	for (e = 1; e < state.server.num_edicts; ++e) {
 		check = state.server.edicts[e];
 		if (check.free === true)
 			continue;
-		switch (check.v_float[pr.entvars.movetype])
-		{
-		case MOVE_TYPE.push:
-		case MOVE_TYPE.none:
-		case MOVE_TYPE.noclip:
-			continue;
+		switch (check.v_float[pr.entvars.movetype]) {
+			case MOVE_TYPE.push:
+			case MOVE_TYPE.none:
+			case MOVE_TYPE.noclip:
+				continue;
 		}
 		if (testEntityPosition(check) === true)
 			con.print('entity in invalid position\n');
 	}
 };
 
-const checkVelocity = function(ent)
-{
+const checkVelocity = function (ent) {
 	var i, velocity;
-	for (i = 0; i <= 2; ++i)
-	{
+	for (i = 0; i <= 2; ++i) {
 		velocity = ent.v_float[pr.entvars.velocity + i];
-		if (q.isNaN(velocity) === true)
-		{
+		if (q.isNaN(velocity) === true) {
 			con.print('Got a NaN velocity on ' + pr.getString(ent.v_int[pr.entvars.classname]) + '\n');
 			velocity = 0.0;
 		}
-		if (q.isNaN(ent.v_float[pr.entvars.origin + i]) === true)
-		{
+		if (q.isNaN(ent.v_float[pr.entvars.origin + i]) === true) {
 			con.print('Got a NaN origin on ' + pr.getString(ent.v_int[pr.entvars.classname]) + '\n');
 			ent.v_float[pr.entvars.origin + i] = 0.0;
 		}
@@ -848,8 +791,7 @@ const checkVelocity = function(ent)
 	}
 };
 
-async function runThink(ent)
-{
+async function runThink(ent) {
 	var thinktime = ent.v_float[pr.entvars.nextthink];
 	if ((thinktime <= 0.0) || (thinktime > (state.server.time + host.state.frametime)))
 		return true;
@@ -868,33 +810,29 @@ async function runThink(ent)
 
 	// check if we need to send the interval
 	if (!ent.free &&
-		ent.v_float[pr.entvars.nextthink] && 
-		(ent.v_float[pr.entvars.MOVE_TYPE] == MOVE_TYPE.step || ent.v_float[pr.entvars.frame] != oldframe))
-	{
-		const i = Math.round((ent.v_float[pr.entvars.nextthink]-thinktime) * 255)
+		ent.v_float[pr.entvars.nextthink] &&
+		(ent.v_float[pr.entvars.MOVE_TYPE] == MOVE_TYPE.step || ent.v_float[pr.entvars.frame] != oldframe)) {
+		const i = Math.round((ent.v_float[pr.entvars.nextthink] - thinktime) * 255)
 
 		//25 and 26 are close enough to 0.1 to not send
-		if (i >= 0 && i < 256 && i != 25 && i != 26) 
+		if (i >= 0 && i < 256 && i != 25 && i != 26)
 			ent.sendinterval = true;
 	}
 
 	return (ent.free !== true);
 };
 
-const impact = async function(e1, e2)
-{
+const impact = async function (e1, e2) {
 	var old_self = pr.state.globals_int[pr.globalvars.self];
 	var old_other = pr.state.globals_int[pr.globalvars.other];
 	pr.state.globals_float[pr.globalvars.time] = state.server.time;
 
-	if ((e1.v_int[pr.entvars.touch] !== 0) && (e1.v_float[pr.entvars.solid] !== SOLID.not))
-	{
+	if ((e1.v_int[pr.entvars.touch] !== 0) && (e1.v_float[pr.entvars.solid] !== SOLID.not)) {
 		pr.state.globals_int[pr.globalvars.self] = e1.num;
 		pr.state.globals_int[pr.globalvars.other] = e2.num;
 		await pr.executeProgram(e1.v_int[pr.entvars.touch]);
 	}
-	if ((e2.v_int[pr.entvars.touch] !== 0) && (e2.v_float[pr.entvars.solid] !== SOLID.not))
-	{
+	if ((e2.v_int[pr.entvars.touch] !== 0) && (e2.v_float[pr.entvars.solid] !== SOLID.not)) {
 		pr.state.globals_int[pr.globalvars.self] = e2.num;
 		pr.state.globals_int[pr.globalvars.other] = e1.num;
 		await pr.executeProgram(e2.v_int[pr.entvars.touch]);
@@ -904,8 +842,7 @@ const impact = async function(e1, e2)
 	pr.state.globals_int[pr.globalvars.other] = old_other;
 };
 
-const clipVelocity = function(vec, normal, out, overbounce)
-{
+const clipVelocity = function (vec, normal, out, overbounce) {
 	var backoff = (vec[0] * normal[0] + vec[1] * normal[1] + vec[2] * normal[2]) * overbounce;
 
 	out[0] = vec[0] - normal[0] * backoff;
@@ -919,8 +856,7 @@ const clipVelocity = function(vec, normal, out, overbounce)
 		out[2] = 0.0;
 };
 
-const flyMove = async function(ent, time)
-{
+const flyMove = async function (ent, time) {
 	var bumpcount;
 	var numplanes = 0;
 	var dir, d;
@@ -933,8 +869,7 @@ const flyMove = async function(ent, time)
 	var end = [];
 	var time_left = time;
 	var blocked = 0;
-	for (bumpcount = 0; bumpcount <= 3; ++bumpcount)
-	{
+	for (bumpcount = 0; bumpcount <= 3; ++bumpcount) {
 		if ((ent.v_float[pr.entvars.velocity] === 0.0) &&
 			(ent.v_float[pr.entvars.velocity1] === 0.0) &&
 			(ent.v_float[pr.entvars.velocity2] === 0.0))
@@ -943,13 +878,11 @@ const flyMove = async function(ent, time)
 		end[1] = ent.v_float[pr.entvars.origin1] + time_left * ent.v_float[pr.entvars.velocity1];
 		end[2] = ent.v_float[pr.entvars.origin2] + time_left * ent.v_float[pr.entvars.velocity2];
 		trace = move(ed.vector(ent, pr.entvars.origin), ed.vector(ent, pr.entvars.mins), ed.vector(ent, pr.entvars.maxs), end, 0, ent);
-		if (trace.allsolid === true)
-		{
+		if (trace.allsolid === true) {
 			ed.setVector(ent, pr.entvars.velocity, vec.origin);
 			return 3;
 		}
-		if (trace.fraction > 0.0)
-		{
+		if (trace.fraction > 0.0) {
 			ed.setVector(ent, pr.entvars.origin, trace.endpos);
 			original_velocity = ed.vector(ent, pr.entvars.velocity);
 			numplanes = 0;
@@ -958,17 +891,14 @@ const flyMove = async function(ent, time)
 		}
 		if (trace.ent == null)
 			sys.error('SV.FlyMove: !trace.ent');
-		if (trace.plane.normal[2] > 0.7)
-		{
+		if (trace.plane.normal[2] > 0.7) {
 			blocked |= 1;
-			if (trace.ent.v_float[pr.entvars.solid] === SOLID.bsp)
-			{
+			if (trace.ent.v_float[pr.entvars.solid] === SOLID.bsp) {
 				ent.v_float[pr.entvars.flags] |= FL.onground;
 				ent.v_int[pr.entvars.groundentity] = trace.ent.num;
 			}
 		}
-		else if (trace.plane.normal[2] === 0.0)
-		{
+		else if (trace.plane.normal[2] === 0.0) {
 			blocked |= 2;
 			state.steptrace = trace;
 		}
@@ -976,19 +906,15 @@ const flyMove = async function(ent, time)
 		if (ent.free === true)
 			break;
 		time_left -= time_left * trace.fraction;
-		if (numplanes >= 5)
-		{
+		if (numplanes >= 5) {
 			ed.setVector(ent, pr.entvars.velocity, vec.origin);
 			return 3;
 		}
 		planes[numplanes++] = [trace.plane.normal[0], trace.plane.normal[1], trace.plane.normal[2]];
-		for (i = 0; i < numplanes; ++i)
-		{
+		for (i = 0; i < numplanes; ++i) {
 			clipVelocity(original_velocity, planes[i], new_velocity, 1.0);
-			for (j = 0; j < numplanes; ++j)
-			{
-				if (j !== i)
-				{
+			for (j = 0; j < numplanes; ++j) {
+				if (j !== i) {
 					plane = planes[j];
 					if ((new_velocity[0] * plane[0] + new_velocity[1] * plane[1] + new_velocity[2] * plane[2]) < 0.0)
 						break;
@@ -999,10 +925,8 @@ const flyMove = async function(ent, time)
 		}
 		if (i !== numplanes)
 			ed.setVector(ent, pr.entvars.velocity, new_velocity);
-		else
-		{
-			if (numplanes !== 2)
-			{
+		else {
+			if (numplanes !== 2) {
 				ed.setVector(ent, pr.entvars.velocity, vec.origin);
 				return 7;
 			}
@@ -1016,8 +940,7 @@ const flyMove = async function(ent, time)
 		}
 		if ((ent.v_float[pr.entvars.velocity] * primal_velocity[0] +
 			ent.v_float[pr.entvars.velocity1] * primal_velocity[1] +
-			ent.v_float[pr.entvars.velocity2] * primal_velocity[2]) <= 0.0)
-		{
+			ent.v_float[pr.entvars.velocity2] * primal_velocity[2]) <= 0.0) {
 			ed.setVector(ent, pr.entvars.velocity, vec.origin);
 			return blocked;
 		}
@@ -1025,8 +948,7 @@ const flyMove = async function(ent, time)
 	return blocked;
 };
 
-const addGravity = function(ent)
-{
+const addGravity = function (ent) {
 	var val = pr.entvars.gravity, ent_gravity;
 	if (val != null)
 		ent_gravity = (ent.v_float[val] !== 0.0) ? ent.v_float[val] : 1.0;
@@ -1035,8 +957,7 @@ const addGravity = function(ent)
 	ent.v_float[pr.entvars.velocity2] -= ent_gravity * cvr.gravity.value * host.state.frametime;
 };
 
-const pushEntity = async function(ent, push)
-{
+const pushEntity = async function (ent, push) {
 	var end = [
 		ent.v_float[pr.entvars.origin] + push[0],
 		ent.v_float[pr.entvars.origin1] + push[1],
@@ -1059,12 +980,10 @@ const pushEntity = async function(ent, push)
 	return trace;
 };
 
-const pushMove = async function(pusher, movetime)
-{
+const pushMove = async function (pusher, movetime) {
 	if ((pusher.v_float[pr.entvars.velocity] === 0.0) &&
 		(pusher.v_float[pr.entvars.velocity1] === 0.0) &&
-		(pusher.v_float[pr.entvars.velocity2] === 0.0))
-	{
+		(pusher.v_float[pr.entvars.velocity2] === 0.0)) {
 		pusher.v_float[pr.entvars.ltime] += movetime;
 		return;
 	}
@@ -1091,8 +1010,7 @@ const pushMove = async function(pusher, movetime)
 	await linkEdict(pusher, false);
 	var e, check, movetype;
 	var entorig, moved = [], moved_edict, i;
-	for (e = 1; e < state.server.num_edicts; ++e)
-	{
+	for (e = 1; e < state.server.num_edicts; ++e) {
 		check = state.server.edicts[e];
 		if (check.free === true)
 			continue;
@@ -1102,8 +1020,7 @@ const pushMove = async function(pusher, movetime)
 			|| (movetype === MOVE_TYPE.noclip))
 			continue;
 		if (((check.v_float[pr.entvars.flags] & FL.onground) === 0) ||
-			(check.v_int[pr.entvars.groundentity] !== pusher.num))
-		{
+			(check.v_int[pr.entvars.groundentity] !== pusher.num)) {
 			if ((check.v_float[pr.entvars.absmin] >= maxs[0])
 				|| (check.v_float[pr.entvars.absmin1] >= maxs[1])
 				|| (check.v_float[pr.entvars.absmin2] >= maxs[2])
@@ -1121,12 +1038,10 @@ const pushMove = async function(pusher, movetime)
 		pusher.v_float[pr.entvars.solid] = SOLID.not;
 		await pushEntity(check, _move);
 		pusher.v_float[pr.entvars.solid] = SOLID.bsp;
-		if (testEntityPosition(check) === true)
-		{
+		if (testEntityPosition(check) === true) {
 			if (check.v_float[pr.entvars.mins] === check.v_float[pr.entvars.maxs])
 				continue;
-			if ((check.v_float[pr.entvars.solid] === SOLID.not) || (check.v_float[pr.entvars.solid] === SOLID.trigger))
-			{
+			if ((check.v_float[pr.entvars.solid] === SOLID.not) || (check.v_float[pr.entvars.solid] === SOLID.trigger)) {
 				check.v_float[pr.entvars.mins] = check.v_float[pr.entvars.maxs] = 0.0;
 				check.v_float[pr.entvars.mins1] = check.v_float[pr.entvars.maxs1] = 0.0;
 				check.v_float[pr.entvars.maxs2] = check.v_float[pr.entvars.mins2];
@@ -1141,14 +1056,12 @@ const pushMove = async function(pusher, movetime)
 			pusher.v_float[pr.entvars.origin2] = pushorig[2];
 			await linkEdict(pusher, false);
 			pusher.v_float[pr.entvars.ltime] -= movetime;
-			if (pusher.v_int[pr.entvars.blocked] !== 0)
-			{
+			if (pusher.v_int[pr.entvars.blocked] !== 0) {
 				pr.state.globals_int[pr.globalvars.self] = pusher.num;
 				pr.state.globals_int[pr.globalvars.other] = check.num;
 				await pr.executeProgram(pusher.v_int[pr.entvars.blocked]);
 			}
-			for (i = 0; i < moved.length; ++i)
-			{
+			for (i = 0; i < moved.length; ++i) {
 				moved_edict = moved[i];
 				moved_edict[3].v_float[pr.entvars.origin] = moved_edict[0];
 				moved_edict[3].v_float[pr.entvars.origin1] = moved_edict[1];
@@ -1160,13 +1073,11 @@ const pushMove = async function(pusher, movetime)
 	}
 };
 
-const physics_Pusher = async function(ent)
-{
+const physics_Pusher = async function (ent) {
 	var oldltime = ent.v_float[pr.entvars.ltime];
 	var thinktime = ent.v_float[pr.entvars.nextthink];
 	var movetime;
-	if (thinktime < (oldltime + host.state.frametime))
-	{
+	if (thinktime < (oldltime + host.state.frametime)) {
 		movetime = thinktime - oldltime;
 		if (movetime < 0.0)
 			movetime = 0.0;
@@ -1184,10 +1095,8 @@ const physics_Pusher = async function(ent)
 	await pr.executeProgram(ent.v_int[pr.entvars.think]);
 };
 
-const checkStuck = async function(ent)
-{
-	if (testEntityPosition(ent) !== true)
-	{
+const checkStuck = async function (ent) {
+	if (testEntityPosition(ent) !== true) {
 		ent.v_float[pr.entvars.oldorigin] = ent.v_float[pr.entvars.origin];
 		ent.v_float[pr.entvars.oldorigin1] = ent.v_float[pr.entvars.origin1];
 		ent.v_float[pr.entvars.oldorigin2] = ent.v_float[pr.entvars.origin2];
@@ -1197,24 +1106,19 @@ const checkStuck = async function(ent)
 	ent.v_float[pr.entvars.origin] = ent.v_float[pr.entvars.oldorigin];
 	ent.v_float[pr.entvars.origin1] = ent.v_float[pr.entvars.oldorigin1];
 	ent.v_float[pr.entvars.origin2] = ent.v_float[pr.entvars.oldorigin2];
-	if (testEntityPosition(ent) !== true)
-	{
+	if (testEntityPosition(ent) !== true) {
 		con.dPrint('Unstuck.\n');
 		await linkEdict(ent, true);
 		return;
 	}
 	var z, i, j;
-	for (z = 0.0; z <= 17.0; ++z)
-	{
-		for (i = -1.0; i <= 1.0; ++i)
-		{
-			for (j = -1.0; j <= 1.0; ++j)
-			{
+	for (z = 0.0; z <= 17.0; ++z) {
+		for (i = -1.0; i <= 1.0; ++i) {
+			for (j = -1.0; j <= 1.0; ++j) {
 				ent.v_float[pr.entvars.origin] = org[0] + i;
 				ent.v_float[pr.entvars.origin1] = org[1] + j;
 				ent.v_float[pr.entvars.origin2] = org[2] + z;
-				if (testEntityPosition(ent) !== true)
-				{
+				if (testEntityPosition(ent) !== true) {
 					con.dPrint('Unstuck.\n');
 					await linkEdict(ent, true);
 					return;
@@ -1226,8 +1130,7 @@ const checkStuck = async function(ent)
 	con.dPrint('player is stuck.\n');
 };
 
-const checkWater = function(ent)
-{
+const checkWater = function (ent) {
 	var point = [
 		ent.v_float[pr.entvars.origin],
 		ent.v_float[pr.entvars.origin1],
@@ -1242,8 +1145,7 @@ const checkWater = function(ent)
 	ent.v_float[pr.entvars.waterlevel] = 1.0;
 	point[2] = ent.v_float[pr.entvars.origin2] + (ent.v_float[pr.entvars.mins2] + ent.v_float[pr.entvars.maxs2]) * 0.5;
 	cont = pointContents(point);
-	if (cont <= mod.CONTENTS.water)
-	{
+	if (cont <= mod.CONTENTS.water) {
 		ent.v_float[pr.entvars.waterlevel] = 2.0;
 		point[2] = ent.v_float[pr.entvars.origin2] + ent.v_float[pr.entvars.view_ofs2];
 		cont = pointContents(point);
@@ -1253,8 +1155,7 @@ const checkWater = function(ent)
 	return ent.v_float[pr.entvars.waterlevel] > 1.0;
 };
 
-const wallFriction = function(ent, trace)
-{
+const wallFriction = function (ent, trace) {
 	var forward = [];
 	vec.angleVectors(ed.vector(ent, pr.entvars.v_angle), forward, null, null);
 	var normal = trace.plane.normal;
@@ -1265,26 +1166,23 @@ const wallFriction = function(ent, trace)
 	var i = normal[0] * ent.v_float[pr.entvars.velocity]
 		+ normal[1] * ent.v_float[pr.entvars.velocity1]
 		+ normal[2] * ent.v_float[pr.entvars.velocity2];
-	ent.v_float[pr.entvars.velocity] = (ent.v_float[pr.entvars.velocity] - normal[0] * i) * d; 
-	ent.v_float[pr.entvars.velocity1] = (ent.v_float[pr.entvars.velocity1] - normal[1] * i) * d; 
+	ent.v_float[pr.entvars.velocity] = (ent.v_float[pr.entvars.velocity] - normal[0] * i) * d;
+	ent.v_float[pr.entvars.velocity1] = (ent.v_float[pr.entvars.velocity1] - normal[1] * i) * d;
 };
 
-const tryUnstick = async function(ent, oldvel)
-{
+const tryUnstick = async function (ent, oldvel) {
 	var oldorg = ed.vector(ent, pr.entvars.origin);
 	var dir = [2.0, 0.0, 0.0];
 	var i, clip;
-	for (i = 0; i <= 7; ++i)
-	{
-		switch (i)
-		{
-		case 1: dir[0] = 0.0; dir[1] = 2.0; break;
-		case 2: dir[0] = -2.0; dir[1] = 0.0; break;
-		case 3: dir[0] = 0.0; dir[1] = -2.0; break;
-		case 4: dir[0] = 2.0; dir[1] = 2.0; break;
-		case 5: dir[0] = -2.0; dir[1] = 2.0; break;
-		case 6: dir[0] = 2.0; dir[1] = -2.0; break;
-		case 7: dir[0] = -2.0; dir[1] = -2.0;
+	for (i = 0; i <= 7; ++i) {
+		switch (i) {
+			case 1: dir[0] = 0.0; dir[1] = 2.0; break;
+			case 2: dir[0] = -2.0; dir[1] = 0.0; break;
+			case 3: dir[0] = 0.0; dir[1] = -2.0; break;
+			case 4: dir[0] = 2.0; dir[1] = 2.0; break;
+			case 5: dir[0] = -2.0; dir[1] = 2.0; break;
+			case 6: dir[0] = 2.0; dir[1] = -2.0; break;
+			case 7: dir[0] = -2.0; dir[1] = -2.0;
 		}
 		await pushEntity(ent, dir);
 		ent.v_float[pr.entvars.velocity] = oldvel[0];
@@ -1300,8 +1198,7 @@ const tryUnstick = async function(ent, oldvel)
 	return 7;
 };
 
-const walkMove = async function(ent)
-{
+const walkMove = async function (ent) {
 	var oldonground = ent.v_float[pr.entvars.flags] & FL.onground;
 	ent.v_float[pr.entvars.flags] ^= oldonground;
 	var oldorg = ed.vector(ent, pr.entvars.origin);
@@ -1325,8 +1222,7 @@ const walkMove = async function(ent)
 	ent.v_float[pr.entvars.velocity1] = oldvel[1];
 	ent.v_float[pr.entvars.velocity2] = 0.0;
 	clip = await flyMove(ent, host.state.frametime);
-	if (clip !== 0)
-	{
+	if (clip !== 0) {
 		if ((Math.abs(oldorg[1] - ent.v_float[pr.entvars.origin1]) < 0.03125)
 			&& (Math.abs(oldorg[0] - ent.v_float[pr.entvars.origin]) < 0.03125))
 			clip = await tryUnstick(ent, oldvel);
@@ -1334,10 +1230,8 @@ const walkMove = async function(ent)
 			wallFriction(ent, state.steptrace);
 	}
 	var downtrace = await pushEntity(ent, [0.0, 0.0, oldvel[2] * host.state.frametime - 18.0]);
-	if (downtrace.plane.normal[2] > 0.7)
-	{
-		if (ent.v_float[pr.entvars.solid] === SOLID.bsp)
-		{
+	if (downtrace.plane.normal[2] > 0.7) {
+		if (ent.v_float[pr.entvars.solid] === SOLID.bsp) {
 			ent.v_float[pr.entvars.flags] |= FL.onground;
 			ent.v_int[pr.entvars.groundentity] = downtrace.ent.num;
 		}
@@ -1347,8 +1241,7 @@ const walkMove = async function(ent)
 	ed.setVector(ent, pr.entvars.velocity, nostepvel);
 };
 
-const physics_Client = async function(ent)
-{
+const physics_Client = async function (ent) {
 	if (state.svs.clients[ent.num - 1].active !== true)
 		return;
 	pr.state.globals_float[pr.globalvars.time] = state.server.time;
@@ -1358,30 +1251,28 @@ const physics_Client = async function(ent)
 	var movetype = ent.v_float[pr.entvars.movetype] >> 0;
 	if ((movetype === MOVE_TYPE.toss) || (movetype === MOVE_TYPE.bounce))
 		await physics_Toss(ent);
-	else
-	{
+	else {
 		if (await runThink(ent) !== true)
 			return;
-		switch (movetype)
-		{
-		case MOVE_TYPE.none:
-			break;
-		case MOVE_TYPE.walk:
-			if ((checkWater(ent) !== true) && ((ent.v_float[pr.entvars.flags] & FL.waterjump) === 0))
-				addGravity(ent);
-			await checkStuck(ent);
-			await walkMove(ent);
-			break;
-		case MOVE_TYPE.fly:
-			await flyMove(ent, host.state.frametime);
-			break;
-		case MOVE_TYPE.noclip:
-			ent.v_float[pr.entvars.origin] += host.state.frametime * ent.v_float[pr.entvars.velocity];
-			ent.v_float[pr.entvars.origin1] += host.state.frametime * ent.v_float[pr.entvars.velocity1];
-			ent.v_float[pr.entvars.origin2] += host.state.frametime * ent.v_float[pr.entvars.velocity2];
-			break;
-		default:
-			sys.error('SV.Physics_Client: bad movetype ' + movetype);
+		switch (movetype) {
+			case MOVE_TYPE.none:
+				break;
+			case MOVE_TYPE.walk:
+				if ((checkWater(ent) !== true) && ((ent.v_float[pr.entvars.flags] & FL.waterjump) === 0))
+					addGravity(ent);
+				await checkStuck(ent);
+				await walkMove(ent);
+				break;
+			case MOVE_TYPE.fly:
+				await flyMove(ent, host.state.frametime);
+				break;
+			case MOVE_TYPE.noclip:
+				ent.v_float[pr.entvars.origin] += host.state.frametime * ent.v_float[pr.entvars.velocity];
+				ent.v_float[pr.entvars.origin1] += host.state.frametime * ent.v_float[pr.entvars.velocity1];
+				ent.v_float[pr.entvars.origin2] += host.state.frametime * ent.v_float[pr.entvars.velocity2];
+				break;
+			default:
+				sys.error('SV.Physics_Client: bad movetype ' + movetype);
 		}
 	}
 	await linkEdict(ent, true);
@@ -1390,8 +1281,7 @@ const physics_Client = async function(ent)
 	await pr.executeProgram(pr.state.globals_int[pr.globalvars.PlayerPostThink]);
 };
 
-const physics_Noclip = async function(ent)
-{
+const physics_Noclip = async function (ent) {
 	if (await runThink(ent) !== true)
 		return;
 	ent.v_float[pr.entvars.angles] += host.state.frametime * ent.v_float[pr.entvars.avelocity];
@@ -1403,17 +1293,14 @@ const physics_Noclip = async function(ent)
 	await linkEdict(ent, false);
 };
 
-const checkWaterTransition = function(ent)
-{
+const checkWaterTransition = function (ent) {
 	var cont = pointContents(ed.vector(ent, pr.entvars.origin));
-	if (ent.v_float[pr.entvars.watertype] === 0.0)
-	{
+	if (ent.v_float[pr.entvars.watertype] === 0.0) {
 		ent.v_float[pr.entvars.watertype] = cont;
 		ent.v_float[pr.entvars.waterlevel] = 1.0;
 		return;
 	}
-	if (cont <= mod.CONTENTS.water)
-	{
+	if (cont <= mod.CONTENTS.water) {
 		if (ent.v_float[pr.entvars.watertype] === mod.CONTENTS.empty)
 			startSound(ent, 0, 'misc/h2ohit1.wav', 255, 1.0);
 		ent.v_float[pr.entvars.watertype] = cont;
@@ -1426,8 +1313,7 @@ const checkWaterTransition = function(ent)
 	ent.v_float[pr.entvars.waterlevel] = cont;
 };
 
-const physics_Toss = async function(ent)
-{
+const physics_Toss = async function (ent) {
 	if (await runThink(ent) !== true)
 		return;
 	if ((ent.v_float[pr.entvars.flags] & FL.onground) !== 0)
@@ -1450,10 +1336,8 @@ const physics_Toss = async function(ent)
 	var velocity = [];
 	clipVelocity(ed.vector(ent, pr.entvars.velocity), trace.plane.normal, velocity, (movetype === MOVE_TYPE.bounce) ? 1.5 : 1.0);
 	ed.setVector(ent, pr.entvars.velocity, velocity);
-	if (trace.plane.normal[2] > 0.7)
-	{
-		if ((ent.v_float[pr.entvars.velocity2] < 60.0) || (movetype !== MOVE_TYPE.bounce))
-		{
+	if (trace.plane.normal[2] > 0.7) {
+		if ((ent.v_float[pr.entvars.velocity2] < 60.0) || (movetype !== MOVE_TYPE.bounce)) {
 			ent.v_float[pr.entvars.flags] |= FL.onground;
 			ent.v_int[pr.entvars.groundentity] = trace.ent.num;
 			ent.v_float[pr.entvars.velocity] = ent.v_float[pr.entvars.velocity1] = ent.v_float[pr.entvars.velocity2] = 0.0;
@@ -1463,10 +1347,8 @@ const physics_Toss = async function(ent)
 	checkWaterTransition(ent);
 };
 
-const physics_Step = async function(ent)
-{
-	if ((ent.v_float[pr.entvars.flags] & (FL.onground + FL.fly + FL.swim)) === 0)
-	{
+const physics_Step = async function (ent) {
+	if ((ent.v_float[pr.entvars.flags] & (FL.onground + FL.fly + FL.swim)) === 0) {
 		var hitsound = (ent.v_float[pr.entvars.velocity2] < (cvr.gravity.value * -0.1));
 		addGravity(ent);
 		checkVelocity(ent);
@@ -1482,8 +1364,7 @@ const physics_Step = async function(ent)
 
 // user
 
-const setIdealPitch = function()
-{
+const setIdealPitch = function () {
 	var ent = state.player;
 	if ((ent.v_float[pr.entvars.flags] & FL.onground) === 0)
 		return;
@@ -1493,8 +1374,7 @@ const setIdealPitch = function()
 	var top = [0.0, 0.0, ent.v_float[pr.entvars.origin2] + ent.v_float[pr.entvars.view_ofs2]];
 	var bottom = [0.0, 0.0, top[2] - 160.0];
 	var i, tr, z = [];
-	for (i = 0; i < 6; ++i)
-	{
+	for (i = 0; i < 6; ++i) {
 		top[0] = bottom[0] = ent.v_float[pr.entvars.origin] + cosval * (i + 3) * 12.0;
 		top[1] = bottom[1] = ent.v_float[pr.entvars.origin1] + sinval * (i + 3) * 12.0;
 		tr = move(top, vec.origin, vec.origin, bottom, 1, ent);
@@ -1503,8 +1383,7 @@ const setIdealPitch = function()
 		z[i] = top[2] - tr.fraction * 160.0;
 	}
 	var dir = 0.0, step, steps = 0;
-	for (i = 1; i < 6; ++i)
-	{
+	for (i = 1; i < 6; ++i) {
 		step = z[i] - z[i - 1];
 		if ((step > -0.1) && (step < 0.1))
 			continue;
@@ -1513,8 +1392,7 @@ const setIdealPitch = function()
 		++steps;
 		dir = step;
 	}
-	if (dir === 0.0)
-	{
+	if (dir === 0.0) {
 		ent.v_float[pr.entvars.idealpitch] = 0.0;
 		return;
 	}
@@ -1522,8 +1400,7 @@ const setIdealPitch = function()
 		ent.v_float[pr.entvars.idealpitch] = -dir * cvr.idealpitchscale.value;
 };
 
-const userFriction = function()
-{
+const userFriction = function () {
 	var ent = state.player;
 	var vel0 = ent.v_float[pr.entvars.velocity], vel1 = ent.v_float[pr.entvars.velocity1];
 	var speed = Math.sqrt(vel0 * vel0 + vel1 * vel1);
@@ -1546,38 +1423,36 @@ const userFriction = function()
 	ent.v_float[pr.entvars.velocity2] *= newspeed;
 };
 
-const accelerate = function(wishvel, air, wishdir, wishspeed)
-{
-    var wishAir, addspeed, ent = state.player;;
-    if(air){
-        wishAir = vec.normalize (wishvel);
-        if (wishAir > 30)
-            wishAir = 30;
-            
-        addspeed = wishAir - (ent.v_float[pr.entvars.velocity] * wishvel[0]
-            + ent.v_float[pr.entvars.velocity1] * wishvel[1]
-            + ent.v_float[pr.entvars.velocity2] * wishvel[2]);
+const accelerate = function (wishvel, air, wishdir, wishspeed) {
+	var wishAir, addspeed, ent = state.player;;
+	if (air) {
+		wishAir = vec.normalize(wishvel);
+		if (wishAir > 30)
+			wishAir = 30;
 
-    } else {        
-        addspeed = wishspeed - (ent.v_float[pr.entvars.velocity] * wishdir[0]
-            + ent.v_float[pr.entvars.velocity1] * wishdir[1]
-            + ent.v_float[pr.entvars.velocity2] * wishdir[2]);
-    }
+		addspeed = wishAir - (ent.v_float[pr.entvars.velocity] * wishvel[0]
+			+ ent.v_float[pr.entvars.velocity1] * wishvel[1]
+			+ ent.v_float[pr.entvars.velocity2] * wishvel[2]);
+
+	} else {
+		addspeed = wishspeed - (ent.v_float[pr.entvars.velocity] * wishdir[0]
+			+ ent.v_float[pr.entvars.velocity1] * wishdir[1]
+			+ ent.v_float[pr.entvars.velocity2] * wishdir[2]);
+	}
 	if (addspeed <= 0)
 		return;
-	var accelspeed = cvr.accelerate.value*host.state.frametime*wishspeed;
+	var accelspeed = cvr.accelerate.value * host.state.frametime * wishspeed;
 	if (accelspeed > addspeed)
 		accelspeed = addspeed;
-        
-    var velToMult = air ? wishvel : wishdir;
-    
+
+	var velToMult = air ? wishvel : wishdir;
+
 	ent.v_float[pr.entvars.velocity] += accelspeed * velToMult[0];
 	ent.v_float[pr.entvars.velocity1] += accelspeed * velToMult[1];
 	ent.v_float[pr.entvars.velocity2] += accelspeed * velToMult[2];
 };
 
-const waterMove = function()
-{
+const waterMove = function () {
 	var ent = state.player, _cmd = host.state.client.cmd;
 	var forward = [], right = [];
 	vec.angleVectors(ed.vector(ent, pr.entvars.v_angle), forward, right, null);
@@ -1592,8 +1467,7 @@ const waterMove = function()
 		wishvel[2] += _cmd.upmove;
 	var wishspeed = Math.sqrt(wishvel[0] * wishvel[0] + wishvel[1] * wishvel[1] + wishvel[2] * wishvel[2]);
 	var scale;
-	if (wishspeed > cvr.maxspeed.value)
-	{
+	if (wishspeed > cvr.maxspeed.value) {
 		scale = cvr.maxspeed.value / wishspeed;
 		wishvel[0] *= scale;
 		wishvel[1] *= scale;
@@ -1605,8 +1479,7 @@ const waterMove = function()
 		+ ent.v_float[pr.entvars.velocity1] * ent.v_float[pr.entvars.velocity1]
 		+ ent.v_float[pr.entvars.velocity2] * ent.v_float[pr.entvars.velocity2]
 	), newspeed;
-	if (speed !== 0.0)
-	{
+	if (speed !== 0.0) {
 		newspeed = speed - host.state.frametime * speed * cvr.friction.value;
 		if (newspeed < 0.0)
 			newspeed = 0.0;
@@ -1630,11 +1503,9 @@ const waterMove = function()
 	ent.v_float[pr.entvars.velocity2] += accelspeed * (wishvel[2] / wishspeed);
 };
 
-const waterJump = function()
-{
+const waterJump = function () {
 	var ent = state.player;
-	if ((state.server.time > ent.v_float[pr.entvars.teleport_time]) || (ent.v_float[pr.entvars.waterlevel] === 0.0))
-	{
+	if ((state.server.time > ent.v_float[pr.entvars.teleport_time]) || (ent.v_float[pr.entvars.waterlevel] === 0.0)) {
 		ent.v_float[pr.entvars.flags] &= (~FL.waterjump >>> 0);
 		ent.v_float[pr.entvars.teleport_time] = 0.0;
 	}
@@ -1642,40 +1513,37 @@ const waterJump = function()
 	ent.v_float[pr.entvars.velocity1] = ent.v_float[pr.entvars.movedir1];
 };
 
-const airMove = function()
-{
+const airMove = function () {
 	var ent = state.player;
 	var _cmd = host.state.client.cmd;
 	var forward = [], right = [];
-    
+
 	vec.angleVectors(ed.vector(ent, pr.entvars.angles), forward, right, null);
-    
+
 	var fmove = _cmd.forwardmove;
 	var smove = _cmd.sidemove;
-    
+
 	if ((state.server.time < ent.v_float[pr.entvars.teleport_time]) && (fmove < 0.0))
 		fmove = 0.0;
-        
+
 	var wishvel = [
 		forward[0] * fmove + right[0] * smove,
 		forward[1] * fmove + right[1] * smove,
-		((ent.v_float[pr.entvars.movetype] >> 0) !== MOVE_TYPE.walk) ? _cmd.upmove : 0.0];    
-    
+		((ent.v_float[pr.entvars.movetype] >> 0) !== MOVE_TYPE.walk) ? _cmd.upmove : 0.0];
+
 	var wishdir = [wishvel[0], wishvel[1], wishvel[2]],
-        wishspeed = vec.normalize(wishdir);
-    var scaler = (cvr.maxspeed.value / wishspeed);
-	if (wishspeed > cvr.maxspeed.value)
-	{
+		wishspeed = vec.normalize(wishdir);
+	var scaler = (cvr.maxspeed.value / wishspeed);
+	if (wishspeed > cvr.maxspeed.value) {
 		wishvel[0] = wishvel[0] * scaler;
 		wishvel[1] = wishvel[1] * scaler;
 		wishvel[2] = wishvel[2] * scaler;
 		wishspeed = cvr.maxspeed.value;
 	}
-    
+
 	if (ent.v_float[pr.entvars.movetype] === MOVE_TYPE.noclip)
 		ed.setVector(ent, pr.entvars.velocity, wishvel);
-	else if ((ent.v_float[pr.entvars.flags] & FL.onground) !== 0)
-	{
+	else if ((ent.v_float[pr.entvars.flags] & FL.onground) !== 0) {
 		userFriction() // wishvel); original has this param. Fn doesn't take one.
 		accelerate(wishvel, false, wishdir, wishspeed);
 	}
@@ -1683,8 +1551,7 @@ const airMove = function()
 		accelerate(wishvel, true, wishdir, wishspeed);
 };
 
-const clientThink = function()
-{
+const clientThink = function () {
 	var ent = state.player;
 
 	if (ent.v_float[pr.entvars.movetype] === MOVE_TYPE.none)
@@ -1702,8 +1569,7 @@ const clientThink = function()
 		return;
 
 	ent.v_float[pr.entvars.angles2] = v.calcRoll(ed.vector(ent, pr.entvars.angles), ed.vector(ent, pr.entvars.velocity)) * 4.0;
-	if (state.player.v_float[pr.entvars.fixangle] === 0.0)
-	{
+	if (state.player.v_float[pr.entvars.fixangle] === 0.0) {
 		ent.v_float[pr.entvars.angles] = (ent.v_float[pr.entvars.v_angle] + ent.v_float[pr.entvars.punchangle]) / -3.0;
 		ent.v_float[pr.entvars.angles1] = ent.v_float[pr.entvars.v_angle1] + ent.v_float[pr.entvars.punchangle1];
 	}
@@ -1716,8 +1582,7 @@ const clientThink = function()
 		airMove();
 };
 
-const readClientMove = function()
-{
+const readClientMove = function () {
 	var client = host.state.client;
 	client.ping_times[client.num_pings++ & 15] = state.server.time - msg.readFloat();
 	client.edict.v_float[pr.entvars.v_angle] = msg.readAngle();
@@ -1734,12 +1599,11 @@ const readClientMove = function()
 		client.edict.v_float[pr.entvars.impulse] = i;
 };
 
-const readClientMessage = async function()
-{
+const readClientMessage = async function () {
 	var ret, _cmd, s, i;
 	var cmds = [
 		'status',
-		'god', 
+		'god',
 		'notarget',
 		'fly',
 		'name',
@@ -1758,40 +1622,33 @@ const readClientMessage = async function()
 		'give',
 		'ban'
 	];
-	do
-	{
+	do {
 		ret = net.getMessage(host.state.client.netconnection);
-		if (ret === -1)
-		{
+		if (ret === -1) {
 			sys.print('SV.ReadClientMessage: NET.GetMessage failed\n');
 			return;
 		}
 		if (ret === 0)
 			return true;
 		msg.beginReading();
-		for (;;)
-		{
+		for (; ;) {
 			if (host.state.client.active !== true)
 				return;
-			if (msg.state.badread === true)
-			{
+			if (msg.state.badread === true) {
 				sys.print('SV.ReadClientMessage: badread\n');
 				return;
 			}
 			_cmd = msg.readChar();
-			if (_cmd === -1)
-			{
+			if (_cmd === -1) {
 				ret = 1;
 				break;
 			}
 			if (_cmd === protocol.CLC.nop)
 				continue;
-			if (_cmd === protocol.CLC.stringcmd)
-			{
+			if (_cmd === protocol.CLC.stringcmd) {
 				s = msg.readString();
 				console.log('read -> ' + s)
-				for (i = 0; i < cmds.length; ++i)
-				{
+				for (i = 0; i < cmds.length; ++i) {
 					if (s.substring(0, cmds[i].length).toLowerCase() !== cmds[i])
 						continue;
 					await cmd.executeString(s, true);
@@ -1804,8 +1661,7 @@ const readClientMessage = async function()
 				return;
 			else if (_cmd === protocol.CLC.move)
 				readClientMove();
-			else
-			{
+			else {
 				sys.print('SV.ReadClientMessage: unknown command char\n');
 				return;
 			}
@@ -1821,8 +1677,7 @@ const MOVE = {
 	missile: 2
 };
 
-const initBoxHull = function()
-{
+const initBoxHull = function () {
 	state.box_clipnodes = [];
 	state.box_planes = [];
 	state.box_hull = {
@@ -1832,8 +1687,7 @@ const initBoxHull = function()
 		lastclipnode: 5
 	};
 	var i, node, plane;
-	for (i = 0; i <= 5; ++i)
-	{
+	for (i = 0; i <= 5; ++i) {
 		node = {};
 		state.box_clipnodes[i] = node;
 		node.planenum = i;
@@ -1852,10 +1706,8 @@ const initBoxHull = function()
 	}
 };
 
-const hullForEntity = function(ent, mins, maxs, offset)
-{
-	if (ent.v_float[pr.entvars.solid] !== SOLID.bsp)
-	{
+const hullForEntity = function (ent, mins, maxs, offset) {
+	if (ent.v_float[pr.entvars.solid] !== SOLID.bsp) {
 		state.box_planes[0].dist = ent.v_float[pr.entvars.maxs] - mins[0];
 		state.box_planes[1].dist = ent.v_float[pr.entvars.mins] - maxs[0];
 		state.box_planes[2].dist = ent.v_float[pr.entvars.maxs1] - mins[1];
@@ -1888,8 +1740,7 @@ const hullForEntity = function(ent, mins, maxs, offset)
 	return hull;
 };
 
-const createAreaNode = function(depth, mins, maxs)
-{
+const createAreaNode = function (depth, mins, maxs) {
 	var anode = {} as any;
 	state.areanodes[state.areanodes.length++] = anode;
 
@@ -1898,8 +1749,7 @@ const createAreaNode = function(depth, mins, maxs)
 	anode.solid_edicts = {};
 	anode.solid_edicts.prev = anode.solid_edicts.next = anode.solid_edicts;
 
-	if (depth === 4)
-	{
+	if (depth === 4) {
 		anode.axis = -1;
 		anode.children = [];
 		return anode;
@@ -1915,8 +1765,7 @@ const createAreaNode = function(depth, mins, maxs)
 	return anode;
 };
 
-export const unlinkEdict = function(ent)
-{
+export const unlinkEdict = function (ent) {
 	if (ent.area.prev != null)
 		ent.area.prev.next = ent.area.next;
 	if (ent.area.next != null)
@@ -1924,11 +1773,9 @@ export const unlinkEdict = function(ent)
 	ent.area.prev = ent.area.next = null;
 };
 
-const touchLinks = async function(ent, node)
-{
+const touchLinks = async function (ent, node) {
 	var l, next, touch, old_self, old_other;
-	for (l = node.trigger_edicts.next; l !== node.trigger_edicts; l = next)
-	{
+	for (l = node.trigger_edicts.next; l !== node.trigger_edicts; l = next) {
 		next = l.next;
 		touch = l.ent;
 		if (touch === ent)
@@ -1936,7 +1783,7 @@ const touchLinks = async function(ent, node)
 		if ((touch.v_int[pr.entvars.touch] === 0) || (touch.v_float[pr.entvars.solid] !== SOLID.trigger))
 			continue;
 		if ((ent.v_float[pr.entvars.absmin] > touch.v_float[pr.entvars.absmax]) ||
-			(ent.v_float[pr.entvars.absmin1] > touch.v_float[pr.entvars.absmax1]) || 
+			(ent.v_float[pr.entvars.absmin1] > touch.v_float[pr.entvars.absmax1]) ||
 			(ent.v_float[pr.entvars.absmin2] > touch.v_float[pr.entvars.absmax2]) ||
 			(ent.v_float[pr.entvars.absmax] < touch.v_float[pr.entvars.absmin]) ||
 			(ent.v_float[pr.entvars.absmax1] < touch.v_float[pr.entvars.absmin1]) ||
@@ -1959,13 +1806,11 @@ const touchLinks = async function(ent, node)
 		await touchLinks(ent, node.children[1]);
 };
 
-const findTouchedLeafs = function(ent, node)
-{
+const findTouchedLeafs = function (ent, node) {
 	if (node.contents === mod.CONTENTS.solid)
 		return;
 
-	if (node.contents < 0)
-	{
+	if (node.contents < 0) {
 		if (ent.leafnums.length === 16)
 			return;
 		ent.leafnums[ent.leafnums.length] = node.num - 1;
@@ -1980,8 +1825,7 @@ const findTouchedLeafs = function(ent, node)
 		findTouchedLeafs(ent, node.children[1]);
 };
 
-export const linkEdict = async function(ent, touch_triggers: boolean = false)
-{
+export const linkEdict = async function (ent, touch_triggers: boolean = false) {
 	if ((ent === state.server.edicts[0]) || (ent.free === true))
 		return;
 
@@ -1994,15 +1838,13 @@ export const linkEdict = async function(ent, touch_triggers: boolean = false)
 	ent.v_float[pr.entvars.absmax1] = ent.v_float[pr.entvars.origin1] + ent.v_float[pr.entvars.maxs1] + 1.0;
 	ent.v_float[pr.entvars.absmax2] = ent.v_float[pr.entvars.origin2] + ent.v_float[pr.entvars.maxs2];
 
-	if ((ent.v_float[pr.entvars.flags] & FL.item) !== 0)
-	{
+	if ((ent.v_float[pr.entvars.flags] & FL.item) !== 0) {
 		ent.v_float[pr.entvars.absmin] -= 14.0;
 		ent.v_float[pr.entvars.absmin1] -= 14.0;
 		ent.v_float[pr.entvars.absmax] += 14.0;
 		ent.v_float[pr.entvars.absmax1] += 14.0;
 	}
-	else
-	{
+	else {
 		ent.v_float[pr.entvars.absmin2] -= 1.0;
 		ent.v_float[pr.entvars.absmax2] += 1.0;
 	}
@@ -2015,8 +1857,7 @@ export const linkEdict = async function(ent, touch_triggers: boolean = false)
 		return;
 
 	var node = state.areanodes[0];
-	for (;;)
-	{
+	for (; ;) {
 		if (node.axis === -1)
 			break;
 		if (ent.v_float[pr.entvars.absmin + node.axis] > node.dist)
@@ -2038,11 +1879,9 @@ export const linkEdict = async function(ent, touch_triggers: boolean = false)
 		await touchLinks(ent, state.areanodes[0]);
 };
 
-const hullPointContents = function(hull, num, p)
-{
+const hullPointContents = function (hull, num, p) {
 	var d, node, plane;
-	for (; num >= 0; )
-	{
+	for (; num >= 0;) {
 		if ((num < hull.firstclipnode) || (num > hull.lastclipnode))
 			sys.error('SV.HullPointContents: bad node number');
 		node = hull.clipnodes[num];
@@ -2059,26 +1898,21 @@ const hullPointContents = function(hull, num, p)
 	return num;
 };
 
-export const pointContents = function(p)
-{
+export const pointContents = function (p) {
 	var cont = hullPointContents(state.server.worldmodel.hulls[0], 0, p);
 	if ((cont <= mod.CONTENTS.current_0) && (cont >= mod.CONTENTS.current_down))
 		return mod.CONTENTS.water;
 	return cont;
 };
 
-const testEntityPosition = function(ent)
-{
+const testEntityPosition = function (ent) {
 	var origin = ed.vector(ent, pr.entvars.origin);
 	return move(origin, ed.vector(ent, pr.entvars.mins), ed.vector(ent, pr.entvars.maxs), origin, 0, ent).startsolid;
 };
 
-export const recursiveHullCheck = function(hull, num, p1f, p2f, p1, p2, trace)
-{
-	if (num < 0)
-	{
-		if (num !== mod.CONTENTS.solid)
-		{
+export const recursiveHullCheck = function (hull, num, p1f, p2f, p1, p2, trace) {
+	if (num < 0) {
+		if (num !== mod.CONTENTS.solid) {
 			trace.allsolid = false;
 			if (num === mod.CONTENTS.empty)
 				trace.inopen = true;
@@ -2097,13 +1931,11 @@ export const recursiveHullCheck = function(hull, num, p1f, p2f, p1, p2, trace)
 	var plane = hull.planes[node.planenum];
 	var t1, t2;
 
-	if (plane.type <= 2)
-	{
+	if (plane.type <= 2) {
 		t1 = p1[plane.type] - plane.dist;
 		t2 = p2[plane.type] - plane.dist;
 	}
-	else
-	{
+	else {
 		t1 = plane.normal[0] * p1[0] + plane.normal[1] * p1[1] + plane.normal[2] * p1[2] - plane.dist;
 		t2 = plane.normal[0] * p2[0] + plane.normal[1] * p2[1] + plane.normal[2] * p2[2] - plane.dist;
 	}
@@ -2136,22 +1968,18 @@ export const recursiveHullCheck = function(hull, num, p1f, p2f, p1, p2, trace)
 	if (trace.allsolid === true)
 		return;
 
-	if (side === 0)
-	{
+	if (side === 0) {
 		trace.plane.normal = [plane.normal[0], plane.normal[1], plane.normal[2]];
 		trace.plane.dist = plane.dist;
 	}
-	else
-	{
+	else {
 		trace.plane.normal = [-plane.normal[0], -plane.normal[1], -plane.normal[2]];
 		trace.plane.dist = -plane.dist;
 	}
 
-	while (hullPointContents(hull, hull.firstclipnode, mid) === mod.CONTENTS.solid)
-	{
+	while (hullPointContents(hull, hull.firstclipnode, mid) === mod.CONTENTS.solid) {
 		frac -= 0.1;
-		if (frac < 0.0)
-		{
+		if (frac < 0.0) {
 			trace.fraction = midf;
 			trace.endpos = [mid[0], mid[1], mid[2]];
 			con.dPrint('backup past 0\n');
@@ -2167,21 +1995,19 @@ export const recursiveHullCheck = function(hull, num, p1f, p2f, p1, p2, trace)
 	trace.endpos = [mid[0], mid[1], mid[2]];
 };
 
-const clipMoveToEntity = function(ent, start, mins, maxs, end)
-{
+const clipMoveToEntity = function (ent, start, mins, maxs, end) {
 	var trace = {
 		fraction: 1.0,
 		allsolid: true,
 		endpos: [end[0], end[1], end[2]],
-		plane: {normal: [0.0, 0.0, 0.0], dist: 0.0}
+		plane: { normal: [0.0, 0.0, 0.0], dist: 0.0 }
 	} as any
 	var offset = [];
 	var hull = hullForEntity(ent, mins, maxs, offset);
 	recursiveHullCheck(hull, hull.firstclipnode, 0.0, 1.0,
 		[start[0] - offset[0], start[1] - offset[1], start[2] - offset[2]],
 		[end[0] - offset[0], end[1] - offset[1], end[2] - offset[2]], trace);
-	if (trace.fraction !== 1.0)
-	{
+	if (trace.fraction !== 1.0) {
 		trace.endpos[0] += offset[0];
 		trace.endpos[1] += offset[1];
 		trace.endpos[2] += offset[2];
@@ -2191,11 +2017,9 @@ const clipMoveToEntity = function(ent, start, mins, maxs, end)
 	return trace;
 };
 
-const clipToLinks = function(node, clip)
-{
+const clipToLinks = function (node, clip) {
 	var l, next, touch, solid, trace;
-	for (l = node.solid_edicts.next; l !== node.solid_edicts; l = l.next)
-	{
+	for (l = node.solid_edicts.next; l !== node.solid_edicts; l = l.next) {
 		touch = l.ent;
 		solid = touch.v_float[pr.entvars.solid];
 		if ((solid === SOLID.not) || (touch === clip.passedict))
@@ -2211,15 +2035,13 @@ const clipToLinks = function(node, clip)
 			(clip.boxmaxs[1] < touch.v_float[pr.entvars.absmin1]) ||
 			(clip.boxmaxs[2] < touch.v_float[pr.entvars.absmin2]))
 			continue;
-		if (clip.passedict != null)
-		{
+		if (clip.passedict != null) {
 			if ((clip.passedict.v_float[pr.entvars.size] !== 0.0) && (touch.v_float[pr.entvars.size] === 0.0))
 				continue;
 		}
 		if (clip.trace.allsolid === true)
 			return;
-		if (clip.passedict != null)
-		{
+		if (clip.passedict != null) {
 			if (state.server.edicts[touch.v_int[pr.entvars.owner]] === clip.passedict)
 				continue;
 			if (state.server.edicts[clip.passedict.v_int[pr.entvars.owner]] === touch)
@@ -2229,8 +2051,7 @@ const clipToLinks = function(node, clip)
 			trace = clipMoveToEntity(touch, clip.start, clip.mins2, clip.maxs2, clip.end);
 		else
 			trace = clipMoveToEntity(touch, clip.start, clip.mins, clip.maxs, clip.end);
-		if ((trace.allsolid === true) || (trace.startsolid === true) || (trace.fraction < clip.trace.fraction))
-		{
+		if ((trace.allsolid === true) || (trace.startsolid === true) || (trace.fraction < clip.trace.fraction)) {
 			trace.ent = touch;
 			clip.trace = trace;
 			if (trace.startsolid === true)
@@ -2245,8 +2066,7 @@ const clipToLinks = function(node, clip)
 		clipToLinks(node.children[1], clip);
 };
 
-export const move = function(start, mins, maxs, end, type, passedict)
-{
+export const move = function (start, mins, maxs, end, type, passedict) {
 	var clip = {
 		trace: clipMoveToEntity(state.server.edicts[0], start, mins, maxs, end),
 		start: start,
@@ -2258,21 +2078,17 @@ export const move = function(start, mins, maxs, end, type, passedict)
 		boxmins: [],
 		boxmaxs: []
 	} as any;
-	if (type === MOVE.missile)
-	{
+	if (type === MOVE.missile) {
 		clip.mins2 = [-15.0, -15.0, -15.0];
 		clip.maxs2 = [15.0, 15.0, 15.0];
 	}
-	else
-	{
+	else {
 		clip.mins2 = [mins[0], mins[1], mins[2]];
 		clip.maxs2 = [maxs[0], maxs[1], maxs[2]];
 	}
 	var i;
-	for (i = 0; i <= 2; ++i)
-	{
-		if (end[i] > start[i])
-		{
+	for (i = 0; i <= 2; ++i) {
+		if (end[i] > start[i]) {
 			clip.boxmins[i] = start[i] + clip.mins2[i] - 1.0;
 			clip.boxmaxs[i] = end[i] + clip.maxs2[i] + 1.0;
 			continue;
@@ -2284,22 +2100,18 @@ export const move = function(start, mins, maxs, end, type, passedict)
 	return clip.trace;
 };
 
-export const runClients = async function()
-{
+export const runClients = async function () {
 	var i;
-	for (i = 0; i < state.svs.maxclients; ++i)
-	{
+	for (i = 0; i < state.svs.maxclients; ++i) {
 		host.state.client = state.svs.clients[i];
 		if (host.state.client.active !== true)
 			continue;
 		state.player = host.state.client.edict;
-		if (await readClientMessage() !== true)
-		{
+		if (await readClientMessage() !== true) {
 			await host.dropClient(false);
 			continue;
 		}
-		if (host.state.client.spawned !== true)
-		{
+		if (host.state.client.spawned !== true) {
 			host.state.client.cmd.forwardmove = 0.0;
 			host.state.client.cmd.sidemove = 0.0;
 			host.state.client.cmd.upmove = 0.0;
@@ -2309,10 +2121,8 @@ export const runClients = async function()
 	}
 };
 
-export const writeClientdataToMessage = function(ent, message)
-{
-	if ((ent.v_float[pr.entvars.dmg_take] !== 0.0) || (ent.v_float[pr.entvars.dmg_save] !== 0.0))
-	{
+export const writeClientdataToMessage = function (ent, message) {
+	if ((ent.v_float[pr.entvars.dmg_take] !== 0.0) || (ent.v_float[pr.entvars.dmg_save] !== 0.0)) {
 		var other = state.server.edicts[ent.v_int[pr.entvars.dmg_inflictor]];
 		msg.writeByte(message, protocol.SVC.damage);
 		msg.writeByte(message, ent.v_float[pr.entvars.dmg_save]);
@@ -2326,8 +2136,7 @@ export const writeClientdataToMessage = function(ent, message)
 
 	setIdealPitch();
 
-	if (ent.v_float[pr.entvars.fixangle] !== 0.0)
-	{
+	if (ent.v_float[pr.entvars.fixangle] !== 0.0) {
 		msg.writeByte(message, protocol.SVC.setangle);
 		msg.writeAngle(message, ent.v_float[pr.entvars.angles]);
 		msg.writeAngle(message, ent.v_float[pr.entvars.angles1]);
@@ -2342,8 +2151,7 @@ export const writeClientdataToMessage = function(ent, message)
 		bits |= protocol.SU.idealpitch;
 
 	var val = pr.entvars.items2, items;
-	if (val != null)
-	{
+	if (val != null) {
 		if (ent.v_float[val] !== 0.0)
 			items = (ent.v_float[pr.entvars.items] >> 0) + ((ent.v_float[val] << 23) >>> 0);
 		else
@@ -2376,19 +2184,19 @@ export const writeClientdataToMessage = function(ent, message)
 		bits |= protocol.SU.armor;
 
 	if (state.server.protocol !== protocol.netquake) {
-		if (bits & protocol.SU.weapon && modelIndex(pr.getString(ent.v_int[pr.entvars.weaponmodel])) & 0xFF00) 
+		if (bits & protocol.SU.weapon && modelIndex(pr.getString(ent.v_int[pr.entvars.weaponmodel])) & 0xFF00)
 			bits |= protocol.SU.weapon2;
-		if (ent.v_float[pr.entvars.armorvalue] & 0xFF00) 
+		if (ent.v_float[pr.entvars.armorvalue] & 0xFF00)
 			bits |= protocol.SU.armor2;
-		if (ent.v_float[pr.entvars.currentammo] & 0xFF00) 
+		if (ent.v_float[pr.entvars.currentammo] & 0xFF00)
 			bits |= protocol.SU.ammo2;
-		if (ent.v_float[pr.entvars.ammo_shells] & 0xFF00) 
+		if (ent.v_float[pr.entvars.ammo_shells] & 0xFF00)
 			bits |= protocol.SU.shells2;
-		if (ent.v_float[pr.entvars.ammo_nails] & 0xFF00) 
+		if (ent.v_float[pr.entvars.ammo_nails] & 0xFF00)
 			bits |= protocol.SU.nails2;
-		if (ent.v_float[pr.entvars.ammo_rockets] & 0xFF00) 
+		if (ent.v_float[pr.entvars.ammo_rockets] & 0xFF00)
 			bits |= protocol.SU.rockets2;
-		if (ent.v_float[pr.entvars.ammo_cells] & 0xFF00) 
+		if (ent.v_float[pr.entvars.ammo_cells] & 0xFF00)
 			bits |= protocol.SU.cells2;
 		if (bits & protocol.SU.weaponframe && ent.v_float[pr.entvars.weaponframe] & 0xFF00)
 			bits |= protocol.SU.weaponframe2
@@ -2441,13 +2249,10 @@ export const writeClientdataToMessage = function(ent, message)
 	msg.writeByte(message, ent.v_float[pr.entvars.ammo_cells]);
 	if (com.state.standard_quake === true)
 		msg.writeByte(message, ent.v_float[pr.entvars.weapon]);
-	else
-	{
+	else {
 		var i, weapon = ent.v_float[pr.entvars.weapon];
-		for (i = 0; i <= 31; ++i)
-		{
-			if ((weapon & (1 << i)) !== 0)
-			{
+		for (i = 0; i <= 31; ++i) {
+			if ((weapon & (1 << i)) !== 0) {
 				msg.writeByte(message, i);
 				break;
 			}
@@ -2474,12 +2279,10 @@ export const writeClientdataToMessage = function(ent, message)
 		msg.writeByte(message, ent.v_float[pr.entvars.alpha] >> 8)
 };
 
-export const saveSpawnparms = async function()
-{
+export const saveSpawnparms = async function () {
 	state.svs.serverflags = pr.state.globals_float[pr.globalvars.serverflags];
 	var i, j;
-	for (i = 0; i < state.svs.maxclients; ++i)
-	{
+	for (i = 0; i < state.svs.maxclients; ++i) {
 		host.state.client = state.svs.clients[i];
 		if (host.state.client.active !== true)
 			continue;
@@ -2490,8 +2293,15 @@ export const saveSpawnparms = async function()
 	}
 };
 
-export const spawnServer = async function(server)
-{
+const getString = (strings, ofs) => {
+	var ret = ''
+	while (strings[ofs]) {
+		ret += String.fromCharCode(strings[ofs++])
+	}
+	return ret
+}
+
+export const spawnServer = async function (server) {
 	var i;
 
 	if (net.cvr.hostname.string.length === 0)
@@ -2502,8 +2312,7 @@ export const spawnServer = async function(server)
 	con.dPrint('SpawnServer: ' + server + '\n');
 	state.svs.changelevel_issued = false;
 
-	if (state.server.active === true)
-	{
+	if (state.server.active === true) {
 		net.sendToAll(state.reconnect);
 		await cmd.executeString('reconnect\n', undefined);
 	}
@@ -2525,14 +2334,15 @@ export const spawnServer = async function(server)
 	state.server.protocol = protocol.fitzquake
 	state.server.edicts = [];
 	var _ed;
-	for (i = 0; i < def.max_edicts; ++i)
-	{
+	for (i = 0; i < def.max_edicts; ++i) {
 		_ed = {
+			alpha: 0,
 			num: i,
 			free: false,
 			area: {},
 			leafnums: [],
 			baseline: {
+				alpha: 0,
 				origin: [0.0, 0.0, 0.0],
 				angles: [0.0, 0.0, 0.0],
 				modelindex: 0,
@@ -2564,8 +2374,7 @@ export const spawnServer = async function(server)
 	state.server.lastchecktime = 0.0;
 	state.server.modelname = 'maps/' + server + '.bsp';
 	state.server.worldmodel = await mod.forName(state.server.modelname, false);
-	if (state.server.worldmodel == null)
-	{
+	if (state.server.worldmodel == null) {
 		con.print('Couldn\'t spawn server ' + state.server.modelname + '\n');
 		state.server.active = false;
 		return;
@@ -2578,8 +2387,7 @@ export const spawnServer = async function(server)
 
 	state.server.sound_precache = [''];
 	state.server.model_precache = ['', state.server.modelname];
-	for (i = 1; i <= state.server.worldmodel.submodels.length; ++i)
-	{
+	for (i = 1; i <= state.server.worldmodel.submodels.length; ++i) {
 		state.server.model_precache[i + 1] = '*' + i;
 		state.server.models[i + 1] = await mod.forName('*' + i, false);
 	}
@@ -2605,12 +2413,11 @@ export const spawnServer = async function(server)
 	state.server.active = true;
 	state.server.loading = false;
 	host.state.frametime = 0.1;
-	
+
 	await physics();
 	await physics();
 	createBaseline();
-	for (i = 0; i < state.svs.maxclients; ++i)
-	{
+	for (i = 0; i < state.svs.maxclients; ++i) {
 		host.state.client = state.svs.clients[i];
 		if (host.state.client.active !== true)
 			continue;
@@ -2621,24 +2428,19 @@ export const spawnServer = async function(server)
 	con.dPrint('Server spawned.\n');
 };
 
-export const sendClientMessages = async function()
-{
+export const sendClientMessages = async function () {
 	updateToReliableMessages();
 	var i, client;
-	for (i = 0; i < state.svs.maxclients; ++i)
-	{
+	for (i = 0; i < state.svs.maxclients; ++i) {
 		host.state.client = client = state.svs.clients[i];
 		if (client.active !== true)
 			continue;
-		if (client.spawned === true)
-		{
+		if (client.spawned === true) {
 			if (await sendClientDatagram() !== true)
 				continue;
 		}
-		else if (client.sendsignon !== true)
-		{
-			if ((host.state.realtime - client.last_message) > 5.0)
-			{
+		else if (client.sendsignon !== true) {
+			if ((host.state.realtime - client.last_message) > 5.0) {
 				if (net.sendUnreliableMessage(client.netconnection, state.nop) === -1)
 					await host.dropClient(true);
 				client.last_message = host.state.realtime;
@@ -2649,19 +2451,16 @@ export const sendClientMessages = async function()
 		// JPG 3.40 - NAT fix
 		if (client.netconnection.netWait)
 			continue;
-		if (client.message.overflowed === true)
-		{
+		if (client.message.overflowed === true) {
 			await host.dropClient(true);
 			client.message.overflowed = false;
 			continue;
 		}
-		if (client.dropasap === true)
-		{
+		if (client.dropasap === true) {
 			if (net.canSendMessage(client.netconnection) === true)
 				await host.dropClient(false);
 		}
-		else if (client.message.cursize !== 0)
-		{
+		else if (client.message.cursize !== 0) {
 			if (net.canSendMessage(client.netconnection) !== true)
 				continue;
 			if (net.sendMessage(client.netconnection, client.message) === -1)
@@ -2675,45 +2474,41 @@ export const sendClientMessages = async function()
 	for (i = 1; i < state.server.num_edicts; ++i)
 		state.server.edicts[i].v_float[pr.entvars.effects] &= (~mod.EFFECTS.muzzleflash >>> 0);
 };
-export const physics = async function()
-{
+export const physics = async function () {
 	pr.state.globals_int[pr.globalvars.self] = 0;
 	pr.state.globals_int[pr.globalvars.other] = 0;
 	pr.state.globals_float[pr.globalvars.time] = state.server.time;
 	await pr.executeProgram(pr.state.globals_int[pr.globalvars.StartFrame]);
 	var i, ent;
-	for (i = 0; i < state.server.num_edicts; ++i)
-	{
+	for (i = 0; i < state.server.num_edicts; ++i) {
 		ent = state.server.edicts[i];
 		if (ent.free === true)
 			continue;
 		if (pr.state.globals_float[pr.globalvars.force_retouch] !== 0.0)
 			await linkEdict(ent, true);
-		if ((i > 0) && (i <= state.svs.maxclients))
-		{
+		if ((i > 0) && (i <= state.svs.maxclients)) {
 			await physics_Client(ent);
 			continue;
 		}
-		switch (ent.v_float[pr.entvars.movetype])
-		{
-		case MOVE_TYPE.push:
-			await physics_Pusher(ent);
-			continue;
-		case MOVE_TYPE.none:
-			await runThink(ent);
-			continue;
-		case MOVE_TYPE.noclip:
-			await runThink(ent);
-			continue;
-		case MOVE_TYPE.step:
-			await physics_Step(ent);
-			continue;
-		case MOVE_TYPE.toss:
-		case MOVE_TYPE.bounce:
-		case MOVE_TYPE.fly:
-		case MOVE_TYPE.flymissile:
-			await physics_Toss(ent);
-			continue;
+		switch (ent.v_float[pr.entvars.movetype]) {
+			case MOVE_TYPE.push:
+				await physics_Pusher(ent);
+				continue;
+			case MOVE_TYPE.none:
+				await runThink(ent);
+				continue;
+			case MOVE_TYPE.noclip:
+				await runThink(ent);
+				continue;
+			case MOVE_TYPE.step:
+				await physics_Step(ent);
+				continue;
+			case MOVE_TYPE.toss:
+			case MOVE_TYPE.bounce:
+			case MOVE_TYPE.fly:
+			case MOVE_TYPE.flymissile:
+				await physics_Toss(ent);
+				continue;
 		}
 		sys.error('SV.Physics: bad movetype ' + (ent.v_float[pr.entvars.movetype] >> 0));
 	}
@@ -2722,16 +2517,13 @@ export const physics = async function()
 	state.server.time += host.state.frametime;
 };
 
-export const checkForNewClients = async function()
-{
+export const checkForNewClients = async function () {
 	var ret, i;
-	for (;;)
-	{
+	for (; ;) {
 		ret = net.checkNewConnections();
 		if (ret == null)
 			return;
-		for (i = 0; i < state.svs.maxclients; ++i)
-		{
+		for (i = 0; i < state.svs.maxclients; ++i) {
 			if (state.svs.clients[i].active !== true)
 				break;
 		}
@@ -2743,21 +2535,18 @@ export const checkForNewClients = async function()
 	}
 };
 
-export const setClientName = function(client, name)
-{
+export const setClientName = function (client, name) {
 	var ofs = pr.state.netnames + (client.num << 5), i;
 	for (i = 0; i < name.length; ++i)
 		pr.state.strings[ofs + i] = name.charCodeAt(i);
 	pr.state.strings[ofs + i] = 0;
 };
 
-export const getClientName = function(client)
-{
+export const getClientName = function (client) {
 	return pr.getString(pr.state.netnames + (client.num << 5));
 };
 
-export const init = function()
-{
+export const init = function () {
 	initState()
 	cvr.maxvelocity = cvar.registerVariable('sv_maxvelocity', '2000');
 	cvr.gravity = cvar.registerVariable('sv_gravity', '800', false, true);
