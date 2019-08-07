@@ -43,10 +43,10 @@ export const init = async function () {
 	cvr.ambient_fade = cvar.registerVariable('ambient_fade', '100');
 
 	// createBuffer is broken, disable Web Audio for now.
-	/* if (window.AudioContext != null))
-		S.context = new AudioContext();
-	else if (window.webkitAudioContext != null)
-		S.context = new webkitAudioContext(); */
+	if ((window as any).AudioContext != null)
+		context = new (window as any).AudioContext();
+	else if ((window as any).webkitAudioContext != null)
+		context = new (window as any).webkitAudioContext();
 
 	var i, ambient_sfx = ['water1', 'wind2'], ch, nodes;
 	for (i = 0; i < ambient_sfx.length; ++i) {
@@ -61,7 +61,7 @@ export const init = async function () {
 		if (context != null) {
 			nodes = {
 				source: context.createBufferSource(),
-				gain: context.createGainNode()
+				gain: context.createGain()
 			};
 			ch.nodes = nodes;
 			nodes.source.buffer = ch.sfx.cache.data;
@@ -208,8 +208,8 @@ export const startSound = async function (entnum, entchannel, sfx, origin, vol, 
 			source: context.createBufferSource(),
 			merger1: context.createChannelMerger(2),
 			splitter: context.createChannelSplitter(2),
-			gain0: context.createGainNode(),
-			gain1: context.createGainNode(),
+			gain0: context.createGain(),
+			gain1: context.createGain(),
 			merger2: context.createChannelMerger(2)
 		};
 		target_chan.nodes = nodes;
@@ -347,8 +347,8 @@ export const staticSound = async function (sfx, origin, vol, attenuation) {
 			source: context.createBufferSource(),
 			merger1: context.createChannelMerger(2),
 			splitter: context.createChannelSplitter(2),
-			gain0: context.createGainNode(),
-			gain1: context.createGainNode(),
+			gain0: context.createGain(),
+			gain1: context.createGain(),
 			merger2: context.createChannelMerger(2)
 		};
 		ss.nodes = nodes;
@@ -729,8 +729,11 @@ export const loadSound = async function (s) {
 	view.setUint32(36, 0x61746164, true); // data
 	view.setUint32(40, datalen, true);
 	(new Uint8Array(out, 44, datalen)).set(new Uint8Array(data, dataofs, datalen));
-	if (context != null)
-		sc.data = context.createBuffer(out, true);
+	if (context != null) {
+		// sc.data = context.createBuffer(out, true);
+		const length = datalen / fmt.channels / (fmt.bitsPerSample / 8)
+		sc.data = context.createBuffer(fmt.channels, length, fmt.samplesPerSec)
+	}
 	else
 		sc.data = new Audio('data:audio/wav;base64,' + q.btoa(new Uint8Array(out)));
 
