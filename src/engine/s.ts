@@ -25,6 +25,11 @@ const listener_up = [0.0, 0.0, 0.0];
 let known_sfx = [];
 export const cvr = {} as any
 
+
+const onNoteEnd = (note) => () => {
+	note.state = 'end'
+}
+
 export const init = async function () {
 	state = {}
 	known_sfx = []
@@ -64,6 +69,7 @@ export const init = async function () {
 				gain: context.createGain()
 			};
 			ch.nodes = nodes;
+			nodes.source.onended = onNoteEnd(nodes.source)
 			nodes.source.buffer = ch.sfx.cache.data;
 			nodes.source.loop = true;
 			nodes.source.loopStart = ch.sfx.cache.loopstart;
@@ -79,15 +85,31 @@ export const init = async function () {
 };
 
 export const noteOff = function (node) {
-	if ((node.playbackState === 1) || (node.playbackState === 2)) {
-		try { node.noteOff(0.0); } catch (e) { }
+	if (node.state === 'playing') {
+		try {
+			node.stop(0)
+		} catch(ex) {
+			
+		}
+		node.state = 'idle'
 	}
+	// if ((node.playbackState === 1) || (node.playbackState === 2)) {
+	// 	try { node.noteOff(0.0); } catch (e) { }
+	// }
 }
 
 export const noteOn = function (node) {
-	if ((node.playbackState === 0) || (node.playbackState === 3)) {
-		try { node.noteOn(0.0); } catch (e) { }
+	if (node.state !== 'playing') {
+		try {
+			node.start(0)
+		} catch(ex) {
+			
+		}
+		node.state = 'playing'
 	}
+	// if ((node.playbackState === 0) || (node.playbackState === 3)) {
+	// 	try { node.noteOn(0.0); } catch (e) { }
+	// }
 }
 
 export const precacheSound = async function (name) {
@@ -213,6 +235,7 @@ export const startSound = async function (entnum, entchannel, sfx, origin, vol, 
 			merger2: context.createChannelMerger(2)
 		};
 		target_chan.nodes = nodes;
+		nodes.source.onended = onNoteEnd(nodes.source)
 		nodes.source.buffer = sfx.cache.data;
 		if (sfx.cache.loopstart != null) {
 			nodes.source.loop = true;
@@ -249,7 +272,8 @@ export const startSound = async function (entnum, entchannel, sfx, origin, vol, 
 			}
 			target_chan.pos += skip;
 			target_chan.end -= skip;
-			nodes.source.noteGrainOn(0.0, skip, nodes.source.buffer.length - skip);
+			nodes.source.start(0.0, skip, nodes.source.buffer.length - skip)
+			nodes.source.state = 'playing'
 			break;
 		}
 		noteOn(nodes.source);
@@ -260,7 +284,7 @@ export const startSound = async function (entnum, entchannel, sfx, origin, vol, 
 		if (volume > 1.0)
 			volume = 1.0;
 		target_chan.audio.volume = volume * cvr.volume.value;
-		await target_chan.audio.play().catch(() => { });
+		await target_chan.audio.play().catch(() => { })``;
 	}
 };
 
@@ -352,6 +376,7 @@ export const staticSound = async function (sfx, origin, vol, attenuation) {
 			merger2: context.createChannelMerger(2)
 		};
 		ss.nodes = nodes;
+		nodes.source.onended = onNoteEnd(nodes.source)
 		nodes.source.buffer = sfx.cache.data;
 		nodes.source.loop = true;
 		nodes.source.loopStart = sfx.cache.loopstart;
@@ -732,11 +757,14 @@ export const loadSound = async function (s) {
 	if (context != null) {
 		// sc.data = context.createBuffer(out, true);
 		const length = datalen / fmt.channels / (fmt.bitsPerSample / 8)
-		sc.data = context.createBuffer(fmt.channels, length, fmt.samplesPerSec)
+		//const buffer = context.createBuffer(fmt.channels, length, fmt.samplesPerSec)
+		sc.data = await new Promise((resolve, reject) =>
+			context.decodeAudioData(out, buffer => resolve(buffer))
+		)
 	}
 	else
 		sc.data = new Audio('data:audio/wav;base64,' + q.btoa(new Uint8Array(out)));
-
+	
 	s.cache = sc;
 	return true;
 };

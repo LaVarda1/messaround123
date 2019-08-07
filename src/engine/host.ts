@@ -285,7 +285,6 @@ const _frame = async function()
     }
   
     if (state.connectOnLoad) {
-
       const url = state.connectOnLoad
       state.connectOnLoad = null
       await cl.establishConnection(url);
