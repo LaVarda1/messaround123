@@ -47,18 +47,14 @@ function getNanoSecTime() {
 const startGameLoop = () => {
 	const _gameLoop = async () => {
 		try{
-//			const start = getNanoSecTime()
 			await host.frame();
-			// const durr = getNanoSecTime() - start
-			// if (durr > 10000000) {
-			// 	console.log(durr)
-			// }
 		} 
 		catch(e) {
 			if(e && e.message)
 			{
 				console.log(e && e.message)
 				console.log(e && e.stack)
+				quit()
 			}
     }
     

@@ -28,6 +28,10 @@ import * as ed from './ed'
 import * as q from './q'
 import * as vec from './vec'
 import * as sz from './sz'
+import * as tx from './texture'
+import * as mapAlpha from './mapAlpha'
+import * as fog from './fog'
+
 import IAssetStore from './interfaces/store/IAssetStore';
 import INetworkDriver from './interfaces/net/INetworkDriver';
 
@@ -284,7 +288,6 @@ const _frame = async function()
     }
   
     if (state.connectOnLoad) {
-
       const url = state.connectOnLoad
       state.connectOnLoad = null
       await cl.establishConnection(url);
@@ -1487,6 +1490,9 @@ export const init = async function(
     await vid.init();
     await draw.init();
     await scr.init();
+    tx.init();
+    mapAlpha.init();
+    fog.init();
     r.init();
     await s.init();
     await m.init();

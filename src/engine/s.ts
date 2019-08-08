@@ -25,6 +25,11 @@ const listener_up = [0.0, 0.0, 0.0];
 let known_sfx = [];
 export const cvr = {} as any
 
+
+const onNoteEnd = (note) => () => {
+	note.state = 'end'
+}
+
 export const init = async function () {
 	state = {}
 	known_sfx = []
@@ -43,10 +48,10 @@ export const init = async function () {
 	cvr.ambient_fade = cvar.registerVariable('ambient_fade', '100');
 
 	// createBuffer is broken, disable Web Audio for now.
-	/* if (window.AudioContext != null))
-		S.context = new AudioContext();
-	else if (window.webkitAudioContext != null)
-		S.context = new webkitAudioContext(); */
+	// if ((window as any).AudioContext != null)
+	// 	context = new (window as any).AudioContext();
+	// else if ((window as any).webkitAudioContext != null)
+	// 	context = new (window as any).webkitAudioContext();
 
 	var i, ambient_sfx = ['water1', 'wind2'], ch, nodes;
 	for (i = 0; i < ambient_sfx.length; ++i) {
@@ -61,9 +66,10 @@ export const init = async function () {
 		if (context != null) {
 			nodes = {
 				source: context.createBufferSource(),
-				gain: context.createGainNode()
+				gain: context.createGain()
 			};
 			ch.nodes = nodes;
+			nodes.source.onended = onNoteEnd(nodes.source)
 			nodes.source.buffer = ch.sfx.cache.data;
 			nodes.source.loop = true;
 			nodes.source.loopStart = ch.sfx.cache.loopstart;
@@ -79,15 +85,31 @@ export const init = async function () {
 };
 
 export const noteOff = function (node) {
-	if ((node.playbackState === 1) || (node.playbackState === 2)) {
-		try { node.noteOff(0.0); } catch (e) { }
+	if (node.state === 'playing') {
+		try {
+			node.stop(0)
+		} catch(ex) {
+			
+		}
+		node.state = 'idle'
 	}
+	// if ((node.playbackState === 1) || (node.playbackState === 2)) {
+	// 	try { node.noteOff(0.0); } catch (e) { }
+	// }
 }
 
 export const noteOn = function (node) {
-	if ((node.playbackState === 0) || (node.playbackState === 3)) {
-		try { node.noteOn(0.0); } catch (e) { }
+	if (node.state !== 'playing') {
+		try {
+			node.start(0)
+		} catch(ex) {
+			
+		}
+		node.state = 'playing'
 	}
+	// if ((node.playbackState === 0) || (node.playbackState === 3)) {
+	// 	try { node.noteOn(0.0); } catch (e) { }
+	// }
 }
 
 export const precacheSound = async function (name) {
@@ -208,11 +230,12 @@ export const startSound = async function (entnum, entchannel, sfx, origin, vol, 
 			source: context.createBufferSource(),
 			merger1: context.createChannelMerger(2),
 			splitter: context.createChannelSplitter(2),
-			gain0: context.createGainNode(),
-			gain1: context.createGainNode(),
+			gain0: context.createGain(),
+			gain1: context.createGain(),
 			merger2: context.createChannelMerger(2)
 		};
 		target_chan.nodes = nodes;
+		nodes.source.onended = onNoteEnd(nodes.source)
 		nodes.source.buffer = sfx.cache.data;
 		if (sfx.cache.loopstart != null) {
 			nodes.source.loop = true;
@@ -249,7 +272,8 @@ export const startSound = async function (entnum, entchannel, sfx, origin, vol, 
 			}
 			target_chan.pos += skip;
 			target_chan.end -= skip;
-			nodes.source.noteGrainOn(0.0, skip, nodes.source.buffer.length - skip);
+			nodes.source.start(0.0, skip, nodes.source.buffer.length - skip)
+			nodes.source.state = 'playing'
 			break;
 		}
 		noteOn(nodes.source);
@@ -260,7 +284,12 @@ export const startSound = async function (entnum, entchannel, sfx, origin, vol, 
 		if (volume > 1.0)
 			volume = 1.0;
 		target_chan.audio.volume = volume * cvr.volume.value;
-		await target_chan.audio.play().catch(() => { });
+		try {
+			await target_chan.audio.play()
+		}
+		catch (ex){
+			
+		}
 	}
 };
 
@@ -347,11 +376,12 @@ export const staticSound = async function (sfx, origin, vol, attenuation) {
 			source: context.createBufferSource(),
 			merger1: context.createChannelMerger(2),
 			splitter: context.createChannelSplitter(2),
-			gain0: context.createGainNode(),
-			gain1: context.createGainNode(),
+			gain0: context.createGain(),
+			gain1: context.createGain(),
 			merger2: context.createChannelMerger(2)
 		};
 		ss.nodes = nodes;
+		nodes.source.onended = onNoteEnd(nodes.source)
 		nodes.source.buffer = sfx.cache.data;
 		nodes.source.loop = true;
 		nodes.source.loopStart = sfx.cache.loopstart;
@@ -729,11 +759,17 @@ export const loadSound = async function (s) {
 	view.setUint32(36, 0x61746164, true); // data
 	view.setUint32(40, datalen, true);
 	(new Uint8Array(out, 44, datalen)).set(new Uint8Array(data, dataofs, datalen));
-	if (context != null)
-		sc.data = context.createBuffer(out, true);
+	if (context != null) {
+		// sc.data = context.createBuffer(out, true);
+		const length = datalen / fmt.channels / (fmt.bitsPerSample / 8)
+		//const buffer = context.createBuffer(fmt.channels, length, fmt.samplesPerSec)
+		sc.data = await new Promise((resolve, reject) =>
+			context.decodeAudioData(out, buffer => resolve(buffer))
+		)
+	}
 	else
 		sc.data = new Audio('data:audio/wav;base64,' + q.btoa(new Uint8Array(out)));
-
+	
 	s.cache = sc;
 	return true;
 };

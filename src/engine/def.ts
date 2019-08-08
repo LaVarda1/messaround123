@@ -81,7 +81,53 @@ export const HIT = {
   empathy_shields: 67108864
 };
 
+export const SURF = {
+  planeback: 2,
+  drawsky: 4,
+  drawsprite: 8,
+  drawtub: 0x10,
+  drawtiled: 0x20,
+  drawbackground: 0x40,
+  underwater: 0x80,
+  notexture: 0x100,
+  drawfence: 0x200,
+  drawlava: 0x400,
+  drawslime: 0x800,
+  drawtele: 0x1000,
+  drawwater: 0x2000
+}
 
-// export const LMAP = {
-//   BLOCK_WIDTH
-// }
+export const TEX_CHAIN = {
+  world: 0,
+  model: 1
+}
+
+export const PLANE = {
+  x: 0,
+  y: 1,
+  z: 2
+}
+
+export const TEX = {
+  special: 1,		// sky or slime, no lightmap or 256 subdivision
+  missing: 2		// johnfitz -- this texinfo does not have a textur
+}
+
+export const VERTEXSIZE =	7
+
+export const TEXPREF = {
+  none: 0x000,
+  mipmap: 0x0001,     // generate mipmaps
+  // TEXPREF_NEAREST and TEXPREF_LINEAR aren't supposed to be ORed with TEX_MIPMAP
+  linear: 0x0002,	    // force linear
+  nearest: 0x0004,	  // force nearest
+  alpha: 0x0008,	    // allow alpha
+  pad: 0x0010,	      // allow padding
+  persist: 0x0020,    // never free
+  overwrite: 0x0040,  // overwrite existing same-name texture
+  nopicmip: 0x0080,   // always load full-sized
+  fullbright: 0x0100, // use fullbright mask palette
+  nobright: 0x0200,   // use nobright mask palette
+  conchars: 0x0400,   //use conchars palette
+  warpimage: 0x0800    // resize this texture when warpimagesize changes
+}

@@ -21,7 +21,8 @@ export let state = {
   functions: null,
   argc: null,
   edict_size: 0,
-  trace: false
+	trace: false,
+	alpha_supported: false
 } as any
 
 export const ETYPE = {
@@ -342,7 +343,7 @@ export const loadProgs = async function()
 		sys.error('progs.dat system vars have been modified, PR.js is out of date');
 
 	state.crc = crc.block(new Uint8Array(progs));
-
+	state.alpha_supported = false
 	state.stack = [];
 	state.depth = 0;
 
@@ -390,6 +391,7 @@ export const loadProgs = async function()
 			ofs: view.getUint16(ofs + 2, true),
 			name: view.getUint32(ofs + 4, true)
 		};
+		//johnfitz
 		ofs += 8;
 	}
 
@@ -432,6 +434,13 @@ export const loadProgs = async function()
 	for (i = 0; i < num; ++i)
 		state.globals_int[i] = view.getInt32(ofs + (i << 2), true);
 
+	for (i = 0; i < state.fielddefs.length; i++) {
+		//johnfitz -- detect alpha support in progs.dat
+		if (getString(state.fielddefs[i].name) === "alpha") {
+			state.alpha_supported = true;
+			break;
+		}
+	}
 	state.entityfields = view.getUint32(56, true);
 	state.edict_size = 96 + (state.entityfields << 2);
 
@@ -904,3 +913,12 @@ export const tempString = function(string)
 		state.strings[state.string_temp + i] = string.charCodeAt(i);
 	state.strings[state.string_temp + string.length] = 0;
 };
+
+export const encodeAlpha = val => {
+	const alpha = val <= 0 ? 0 : Math.round(val * 254 + 1);
+	return alpha > 255 ? 255 : alpha
+}
+
+export const decodeAlpha = val => {
+	return val === 0 ? 1 : ((val - 1) / 254)
+}

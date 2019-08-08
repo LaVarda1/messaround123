@@ -35,48 +35,48 @@ void main(void)
   gl_FragColor.b = pow(gl_FragColor.b, uGamma);
 }`
 
-export const vshBrush =
-`uniform vec3 uOrigin;
-uniform mat3 uAngles;
-uniform vec3 uViewOrigin;
-uniform mat3 uViewAngles;
-uniform mat4 uPerspective;
-attribute vec3 aPosition;
-attribute vec4 aTexCoord;
-attribute vec4 aLightStyle;
-varying vec4 vTexCoord;
-varying vec4 vLightStyle;
-void main(void)
-{
-  vec3 position = uViewAngles * (uAngles * aPosition + uOrigin - uViewOrigin);
-  gl_Position = uPerspective * vec4(position.xz, -position.y, 1.0);
-  vTexCoord = aTexCoord;
-  vLightStyle = aLightStyle;
-}`
+// export const vshBrush =
+// `uniform vec3 uOrigin;
+// uniform mat3 uAngles;
+// uniform vec3 uViewOrigin;
+// uniform mat3 uViewAngles;
+// uniform mat4 uPerspective;
+// attribute vec3 aPosition;
+// attribute vec4 aTexCoord;
+// attribute vec4 aLightStyle;
+// varying vec4 vTexCoord;
+// varying vec4 vLightStyle;
+// void main(void)
+// {
+//   vec3 position = uViewAngles * (uAngles * aPosition + uOrigin - uViewOrigin);
+//   gl_Position = uPerspective * vec4(position.xz, -position.y, 1.0);
+//   vTexCoord = aTexCoord;
+//   vLightStyle = aLightStyle;
+// }`
 
-export const fshBrush =
-`precision mediump float;
-uniform float uGamma;
-uniform sampler2D tTexture;
-uniform sampler2D tLightmap;
-uniform sampler2D tDlight;
-uniform sampler2D tLightStyle;
-varying vec4 vTexCoord;
-varying vec4 vLightStyle;
-void main(void)
-{
-  vec4 texture = texture2D(tTexture, vTexCoord.xy);
-  gl_FragColor = vec4(texture.rgb *
-    mix(1.0, dot(texture2D(tLightmap, vTexCoord.zw), vec4(
-      texture2D(tLightStyle, vec2(vLightStyle.x, 0.0)).a,
-      texture2D(tLightStyle, vec2(vLightStyle.y, 0.0)).a,
-      texture2D(tLightStyle, vec2(vLightStyle.z, 0.0)).a,
-      texture2D(tLightStyle, vec2(vLightStyle.w, 0.0)).a)
-    * 43.828125) + texture2D(tDlight, vTexCoord.zw).a, texture.a), 1.0);
-  gl_FragColor.r = pow(gl_FragColor.r, uGamma);
-  gl_FragColor.g = pow(gl_FragColor.g, uGamma);
-  gl_FragColor.b = pow(gl_FragColor.b, uGamma);
-}`
+// export const fshBrush =
+// `precision mediump float;
+// uniform float uGamma;
+// uniform sampler2D tTexture;
+// uniform sampler2D tLightmap;
+// uniform sampler2D tDlight;
+// uniform sampler2D tLightStyle;
+// varying vec4 vTexCoord;
+// varying vec4 vLightStyle;
+// void main(void)
+// {
+//   vec4 texture = texture2D(tTexture, vTexCoord.xy);
+//   gl_FragColor = vec4(texture.rgb *
+//     mix(1.0, dot(texture2D(tLightmap, vTexCoord.zw), vec4(
+//       texture2D(tLightStyle, vec2(vLightStyle.x, 0.0)).a,
+//       texture2D(tLightStyle, vec2(vLightStyle.y, 0.0)).a,
+//       texture2D(tLightStyle, vec2(vLightStyle.z, 0.0)).a,
+//       texture2D(tLightStyle, vec2(vLightStyle.w, 0.0)).a)
+//     * 43.828125) + texture2D(tDlight, vTexCoord.zw).a, texture.a), 1.0);
+//   gl_FragColor.r = pow(gl_FragColor.r, uGamma);
+//   gl_FragColor.g = pow(gl_FragColor.g, uGamma);
+//   gl_FragColor.b = pow(gl_FragColor.b, uGamma);
+// }`
 
 export const vshCharacter =
 `uniform vec2 uCharacter;
@@ -358,13 +358,18 @@ export const fshTurbulent =
 uniform float uGamma;
 uniform float uTime;
 uniform sampler2D tTexture;
+uniform float uAlpha;
+
 varying vec2 vTexCoord;
+
 void main(void)
 {
   gl_FragColor = vec4(texture2D(tTexture, vTexCoord + vec2(sin(vTexCoord.t * 3.141593 + uTime), sin(vTexCoord.s * 3.141593 + uTime)) * 0.125).rgb, 1.0);
   gl_FragColor.r = pow(gl_FragColor.r, uGamma);
   gl_FragColor.g = pow(gl_FragColor.g, uGamma);
   gl_FragColor.b = pow(gl_FragColor.b, uGamma);
+
+  gl_FragColor.a = uAlpha;
 }`
 
 export const vshWarp =
@@ -386,4 +391,73 @@ varying vec2 vTexCoord;
 void main(void)
 {
   gl_FragColor = texture2D(tTexture, vTexCoord + vec2(sin(vTexCoord.t * 15.70796 + uTime) * 0.003125, sin(vTexCoord.s * 9.817477 + uTime) * 0.005));
+}`
+
+export const vshBrush = 
+`#version 100
+
+uniform vec3 uOrigin;
+uniform mat3 uAngles;
+uniform vec3 uViewOrigin;
+uniform mat3 uViewAngles;
+uniform mat4 uPerspective;
+
+attribute vec3 Vert;
+attribute vec2 TexCoords;
+attribute vec2 LMCoords;
+
+varying float FogFragCoord;
+varying vec2 vTexCoords;
+varying vec2 vLMCoords;
+
+void main()
+{
+  vec3 position = uViewAngles * (uAngles * Vert + uOrigin - uViewOrigin);
+	gl_Position = uPerspective * vec4(position.xz, -position.y, 1.0);
+	
+	vTexCoords = TexCoords;
+	vLMCoords = LMCoords;
+	FogFragCoord = gl_Position.w;
+}`
+
+export const fshBrush = 
+`#version 100
+precision mediump float;
+
+uniform sampler2D Tex;
+uniform sampler2D LMTex;
+uniform sampler2D FullbrightTex;
+uniform bool uUseFullbrightTex;
+uniform bool uUseOverbright;
+uniform bool uUseAlphaTest;
+uniform float uAlpha;
+uniform float uFogDensity;
+uniform vec4 uFogColor;
+uniform float uGamma;
+
+varying float FogFragCoord;
+varying vec2 vTexCoords;
+varying vec2 vLMCoords;
+
+void main()
+{
+	vec4 result = texture2D(Tex, vTexCoords);
+	if (uUseAlphaTest && (result.a < 0.666))
+		discard;
+	result *= texture2D(LMTex, vLMCoords);
+	if (uUseOverbright)
+		result.rgb *= 2.0;
+	if (uUseFullbrightTex)
+		result += texture2D(FullbrightTex, vTexCoords);
+	result = clamp(result, 0.0, 1.0);
+	float fog = exp(-uFogDensity * uFogDensity * FogFragCoord * FogFragCoord);
+	fog = clamp(fog, 0.0, 1.0);
+	result = mix(uFogColor, result, fog);
+  result.a = uAlpha; // FIXME: This will make almost transparent things cut holes though heavy fog
+  
+	result.r = pow(result.r, uGamma);
+	result.g = pow(result.g, uGamma);
+  result.b = pow(result.b, uGamma);
+
+	gl_FragColor = result;
 }`

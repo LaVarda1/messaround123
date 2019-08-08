@@ -12,6 +12,7 @@ import * as r from './r'
 import * as s from './s'
 import * as vec from './vec'
 import * as msg from './msg'
+import * as lm from './lightmap'
 
 export const cvr = {
 
@@ -412,6 +413,7 @@ export const renderView = function()
 	else if (cl.clState.paused !== true)
 		calcRefdef();
 	r.pushDlights();
+	r.state.framecount++
 	r.renderView();
 };
 
