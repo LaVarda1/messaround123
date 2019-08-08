@@ -21,8 +21,9 @@ import * as batchRender from './batchRender'
 import * as s from './s'
 import * as lm from './lightmap'
 import * as texture from './texture'
+import * as mapAlpha from './mapAlpha'
+import * as fog from './fog'
 
-const LIGHTMAP_DIM = 1024
 export const LERP = {
 	movestep: 1,
 	resetanim: 1 << 1,
@@ -30,6 +31,7 @@ export const LERP = {
 	resetmove: 1 << 3,
 	finish: 1 << 4
 }
+
 export const state = {
 	// efrag
 	// light
@@ -89,32 +91,6 @@ const animateLight = () => {
 		//johnfitz
 	}
 }
-
-// export const animateLight = function()
-// {
-//   const gl = GL.getContext()
-// 	var j;
-// 	if (cvr.fullbright.value === 0)
-// 	{
-// 		var i = Math.floor(cl.clState.time * 10.0);
-// 		for (j = 0; j < 64; ++j)
-// 		{
-// 			if (cl.state.lightstyle[j].length === 0)
-// 			{
-// 				state.lightstylevalue[j] = 12;
-// 				continue;
-// 			}
-// 			state.lightstylevalue[j] = cl.state.lightstyle[j].charCodeAt(i % cl.state.lightstyle[j].length) - 97;
-// 		}
-// 	}
-// 	else
-// 	{
-// 		for (j = 0; j < 64; ++j)
-// 			state.lightstylevalue[j] = 12;
-// 	}
-// 	GL.bind(0, state.lightstyle_texture);
-// 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 64, 1, 0, gl.ALPHA, gl.UNSIGNED_BYTE, state.lightstylevalue);
-// };
 
 export const renderDlights = function () {
 	const gl = GL.getContext()
@@ -842,8 +818,8 @@ export const perspective = function () {
 		sr * cp, -sp, cr * cp
 	];
 
-	if (v.cvr.gamma.value < 0.5)
-		cvar.setValue('gamma', 0.5);
+	if (v.cvr.gamma.value < 0.2)
+		cvar.setValue('gamma', 0.2);
 	else if (v.cvr.gamma.value > 1.0)
 		cvar.setValue('gamma', 1.0);
 
@@ -1083,7 +1059,13 @@ export const init = function () {
 	cvr.fullbrights = cvar.registerVariable('gl_fullbrights', '1');
 	cvr.oldskyleaf = cvar.registerVariable('oldskyleaf', '0')
 	cvr.flatlightstyles = cvar.registerVariable('r_flatlightstyles', '0')
+  cvr.wateralpha = cvar.registerVariable('r_wateralpha', '1')
+  cvr.lavaalpha = cvar.registerVariable('r_lavaalpha', '1')
+  cvr.telealpha = cvar.registerVariable('r_telealpha', '1')
+  cvr.slimealpha = cvar.registerVariable('r_slimealpha', '1')
 
+	cvar.registerChangedEvent('r_novis', () => state.vis_changed = true)
+	
 	initParticles();
 
 	GL.createProgram('Alias',
@@ -1095,7 +1077,7 @@ export const init = function () {
 		'Brush',
 		['uUseFullbrightTex', 'uUseOverbright', 'uUseAlphaTest',
 			'uAlpha', 'uPerspective', 'uViewAngles', 'uViewOrigin',
-			'uOrigin', 'uAngles', 'uFogDensity', 'uFogColor'],
+			'uOrigin', 'uAngles', 'uFogDensity', 'uFogColor', 'uGamma'],
 		[
 			['Vert', gl.FLOAT, 3, false],
 			['TexCoords', gl.FLOAT, 2, false],
@@ -1173,6 +1155,8 @@ export const newMap = function () {
 
 	clearParticles();
 	lm.init()
+	mapAlpha.parseWorldspawn()
+	fog.parseWorldspawn()
 
 	for (i = 1; i < cl.clState.model_precache.length; ++i) {
 		var model = cl.clState.model_precache[i];
@@ -1186,8 +1170,6 @@ export const newMap = function () {
 
 	buildModelVertexBuffer(gl)
 
-	for (i = 0; i <= 1048575; ++i)
-		state.dlightmaps[i] = 0;
 	GL.bind(0, state.dlightmap_texture);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 1024, 1024, 0, gl.ALPHA, gl.UNSIGNED_BYTE, null);
 };
@@ -1635,87 +1617,6 @@ export const allocParticles = function (count) {
 // surf
 
 state.lightmap_modified = [];
-state.lightmaps = new Uint8Array(new ArrayBuffer(4096 * LIGHTMAP_DIM));
-state.dlightmaps = new Uint8Array(new ArrayBuffer(1024 * LIGHTMAP_DIM));
-
-// export const addDynamicLights = function(surf)
-// {
-// 	var smax = (surf.extents[0] >> 4) + 1;
-// 	var tmax = (surf.extents[1] >> 4) + 1;
-// 	var size = smax * tmax;
-// 	var tex = cl.clState.worldmodel.texinfo[surf.texinfo];
-// 	var i, light, s, t;
-// 	var dist, rad, minlight, impact = [], local = [], sd, td;
-
-// 	var blocklights = [];
-// 	for (i = 0; i < size; ++i)
-// 		blocklights[i] = 0;
-
-// 	for (i = 0; i <= 31; ++i)
-// 	{
-// 		if (((surf.dlightbits >>> i) & 1) === 0)
-// 			continue;
-// 		light = cl.state.dlights[i];
-// 		dist = vec.dotProduct(light.origin, surf.plane.normal) - surf.plane.dist;
-// 		rad = light.radius - Math.abs(dist);
-// 		minlight = light.minlight;
-// 		if (rad < minlight)
-// 			continue;
-// 		minlight = rad - minlight;
-// 		impact[0] = light.origin[0] - surf.plane.normal[0] * dist;
-// 		impact[1] = light.origin[1] - surf.plane.normal[1] * dist;
-// 		impact[2] = light.origin[2] - surf.plane.normal[2] * dist;
-// 		local[0] = vec.dotProduct(impact, tex.vecs[0]) + tex.vecs[0][3] - surf.texturemins[0];
-// 		local[1] = vec.dotProduct(impact, tex.vecs[1]) + tex.vecs[1][3] - surf.texturemins[1];
-// 		for (t = 0; t < tmax; ++t)
-// 		{
-// 			td = local[1] - (t << 4);
-// 			if (td < 0.0)
-// 				td = -td;
-// 			td = Math.floor(td);
-// 			for (s = 0; s < smax; ++s)
-// 			{
-// 				sd = local[0] - (s << 4);
-// 				if (sd < 0)
-// 					sd = -sd;
-// 				sd = Math.floor(sd);
-// 				if (sd > td)
-// 					dist = sd + (td >> 1);
-// 				else
-// 					dist = td + (sd >> 1);
-// 				if (dist < minlight)
-// 					blocklights[t * smax + s] += Math.floor((rad - dist) * 256.0);
-// 			}
-// 		}
-// 	}
-
-// 	i = 0;
-// 	var dest, bl;
-// 	for (t = 0; t < tmax; ++t)
-// 	{
-// 		state.lightmap_modified[surf.light_t + t] = true;
-// 		dest = ((surf.light_t + t) << 10) + surf.light_s;
-// 		for (s = 0; s < smax; ++s)
-// 		{
-// 			bl = blocklights[i++] >> 7;
-// 			if (bl > 255)
-// 				bl = 255;
-// 			state.dlightmaps[dest + s] = bl;
-// 		}
-// 	}
-// };
-
-export const removeDynamicLights = function (surf) {
-	var smax = (surf.extents[0] >> 4) + 1;
-	var tmax = (surf.extents[1] >> 4) + 1;
-	var dest, s, t;
-	for (t = 0; t < tmax; ++t) {
-		state.lightmap_modified[surf.light_t + t] = true;
-		dest = ((surf.light_t + t) << 10) + surf.light_s;
-		for (s = 0; s < smax; ++s)
-			state.dlightmaps[dest + s] = 0;
-	}
-};
 
 const backFaceCull = (surf) => {
 	var dot
@@ -1870,6 +1771,33 @@ export const recursiveWorldNode = function (node) {
 	recursiveWorldNode(node.children[1]);
 };
 
+const waterAlphaForSurface = (surf) => {
+	if (surf.flags & def.SURF.drawlava)
+		return mapAlpha.state.lava > 0 ? mapAlpha.state.lava : mapAlpha.state.water;
+	else if (surf.flags & def.SURF.drawtele)
+		return mapAlpha.state.tele > 0 ? mapAlpha.state.tele : mapAlpha.state.water;
+	else if (surf.flags & def.SURF.drawslime)
+		return mapAlpha.state.slime > 0 ? mapAlpha.state.slime : mapAlpha.state.water;
+	else
+		return mapAlpha.state.water;
+}
+
+
+/*
+================
+GL_WaterAlphaForEntitySurface -- ericw
+ 
+Returns the water alpha to use for the entity and surface combination.
+================
+*/
+const waterAlphaForEntitySurface = (ent, surf) => {
+	var entalpha = 1
+	if (!ent || ent.alpha == 1)
+		entalpha = waterAlphaForSurface(surf);
+	else
+		entalpha = pr.decodeAlpha(ent.alpha);
+	return entalpha;
+}
 
 /*
 ================
@@ -1894,7 +1822,6 @@ const drawTextureChains_water = (gl: WebGLRenderingContext, model, ent, chain) =
 	gl.uniform3f(turbulentProgram.uOrigin, 0.0, 0.0, 0.0);
 	gl.uniformMatrix3fv(turbulentProgram.uAngles, false, GL.identity);
 	gl.uniform1f(turbulentProgram.uTime, host.state.realtime % (Math.PI * 2.0))
-	gl.uniform1f(turbulentProgram.uAlpha, .5);
 
 	for (var i = 0; i < model.textures.length; i++) {
 		var t = model.textures[i];
@@ -1903,74 +1830,47 @@ const drawTextureChains_water = (gl: WebGLRenderingContext, model, ent, chain) =
 		var animatedTexture = textureAnimation(state.cl_worldmodel, t, ent != null ? ent.frame : 0)
 		batchRender.clearBatch();
 		var bound = false;
-		var entalpha = .5;
+		var entalpha = 0
+
+
 		for (var s = t.texturechains[chain]; s; s = s.texturechain)
 			if (!s.culled) {
 				if (!bound) //only bind once we are sure we need this texture
 				{
-					//entalpha = GL_WaterAlphaForEntitySurface (ent, s);
-					//R_BeginTransparentDrawing (entalpha);
-					// TODO
-					gl.depthMask(false);
-					gl.enable(gl.BLEND);
-					gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-					//	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
 					GL.bind(0, animatedTexture.texturenum);
 					bound = true;
 				}
+				
+				var	newalpha = waterAlphaForEntitySurface (ent, s);
+				if (newalpha !== entalpha) {
+					if (newalpha < 1)
+					{
+						gl.depthMask(false);
+						gl.enable(gl.BLEND);
+						gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+					} else {
+						gl.depthMask(true);
+						gl.disable(gl.BLEND);
+					}
+					gl.uniform1f(turbulentProgram.uAlpha, newalpha);
+				}
+				entalpha = newalpha
+
 				batchRender.batchSurface(gl, s);
 			}
 
 		//R_EndTransparentDrawing (entalpha);
 		batchRender.flushBatch(gl)
 
-		gl.depthMask(true);
-		gl.disable(gl.BLEND);
+		if (entalpha < 1)
+		{
+			gl.depthMask(true);
+			gl.disable(gl.BLEND);
+		}
 	}
 
 
 	GL.unbindProgram()
-
-	// }
-	// else
-	// {
-	// for (var i=0 ; i < model.textures.length ; i++)
-	// {
-	// 	var t = model.textures[i];
-
-	// 	if (!t || !t.texturechains[chain] || !(t.texturechains[chain].flags & defs.SURF.drawtub))
-	// 		continue;
-
-	// 	var bound = false;
-	// 	var entalpha = 1.0;
-
-	// 	for (var s = t.texturechains[chain]; !!s; s = s.texturechain)
-	// 		if (!s.culled)
-	// 		{
-	// 			if (!bound) //only bind once we are sure we need this texture
-	// 			{
-	// 				// entalpha = GL_WaterAlphaForEntitySurface (ent, s);
-	// 				// R_BeginTransparentDrawing (entalpha);
-	// 				GL_Bind (t->warpimage);
-
-	// 				if (model !== state.cl_worldmodel)
-	// 				{
-	// 					// ericw -- this is copied from R_DrawSequentialPoly.
-	// 					// If the poly is not part of the world we have to
-	// 					// set this flag
-	// 					// Joe - Mutating in render is smelly
-	// 					t.update_warp = true; // FIXME: one frame too late!
-	// 				}
-
-	// 				bound = true;
-	// 			}
-	// 			DrawGLPoly (s->polys);
-	// 			rs_brushpasses++;
-	// 		}
-	// 	R_EndTransparentDrawing (entalpha);
-	// }
-	//} // oldwater
 }
 
 const drawTextureChains = (gl, model, ent, chain) => {
@@ -2002,6 +1902,8 @@ const drawTextureChains = (gl, model, ent, chain) => {
 	}
 
 	const brushProgram = GL.useProgram('Brush')
+	const fogColor = fog.getColor()
+	const fogDensity = fog.getDensity()
 
 	// Bind the buffers
 	gl.bindBuffer(gl.ARRAY_BUFFER, state.model_vbo);
@@ -2016,8 +1918,8 @@ const drawTextureChains = (gl, model, ent, chain) => {
 	gl.uniform1i(brushProgram.uUseOverbright, cvr.overbright.value);
 	gl.uniform1i(brushProgram.uUseAlphaTest, 0);
 	gl.uniform1f(brushProgram.uAlpha, entalpha);
-	gl.uniform1f(brushProgram.uFogDensity, 0.0 / 64)
-	gl.uniform4f(brushProgram.uFogColor, .2, .16, .15, 1)
+	gl.uniform1f(brushProgram.uFogDensity, fogDensity / 64)
+	gl.uniform4f(brushProgram.uFogColor, fogColor[0], fogColor[1], fogColor[2], fogColor[3])
 
 	if (ent !== null) {
 		var viewMatrix = GL.rotationMatrix(ent.angles[0], ent.angles[1], ent.angles[2]);

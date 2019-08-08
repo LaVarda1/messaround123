@@ -4,6 +4,7 @@ import * as vec from './vec'
 import * as def from './def'
 import * as GL from './GL'
 import * as texture from './texture'
+import * as con from './console'
 
 export const LM_BLOCK_WIDTH = 128
 export const LM_BLOCK_HEIGHT = 128
@@ -233,7 +234,7 @@ export const buildLightmaps = (gl: WebGLRenderingContext, model) => {
 
 	//johnfitz -- warn about exceeding old limits
 	if (i >= 64)
-		console.log (`%i lightmaps exceeds standard limit of 64 (max = ${MAXLIGHTMAPS}).\n`, i);
+		con.dPrint(`${i} lightmaps exceeds standard limit of 64 (max = ${MAXLIGHTMAPS}).\n`);
 	//johnfitz
 }
 

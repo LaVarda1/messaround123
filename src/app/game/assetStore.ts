@@ -228,7 +228,6 @@ const getStorePackFileContents = (game, name, data) => {
       });
     }
     con.print('Added packfile ' + name + ' (' + numpackfiles + ' files)\n');
-    console.log('Added packfile ' + name + ' (' + numpackfiles + ' files)\n');
     
     return pack;
   }

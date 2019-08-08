@@ -4,6 +4,7 @@ import { d_8to24table, d_8to24table_fbright_fence, d_8to24table_fbright,
 } from './pallete'
 import * as defs from './def'
 import * as GL from './GL'
+import * as con from './console'
 
 export const state = {
   maxtexturesize: -1,
@@ -215,7 +216,7 @@ export const loadTexture = (gl, identifier, width, height, data, flags = 0) => {
       if (glt.identifier === identifier)
       {
         if ((width !== glt.width) || (height !== glt.height))
-          console.log('GL.LoadTexture: cache mismatch')
+          con.print('GL.LoadTexture: cache mismatch\n')
         return glt
       }
     }

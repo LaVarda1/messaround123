@@ -4,7 +4,16 @@ import * as host from './host'
 import * as q from './q'
 import * as sv from './sv'
 
+const changeEvents = {}
 export var vars = [] as any
+
+export const registerChangedEvent = (cvar, fn) => {
+  if (changeEvents[cvar]) {
+    changeEvents[cvar].push(fn)
+  } else {
+    changeEvents[cvar] = [fn]
+  }
+}
 
 export const findVar = function(name)
 {
@@ -40,6 +49,12 @@ export const set = function(name, value)
       changed = true;
     v.string = value;
     v.value = q.atof(value);
+    if (changed && changeEvents[name]) {
+      const events = changeEvents[name]
+      for(var j = 0; j < events.length; j++) {
+        events[j](value)
+      }
+    }
     if ((v.server === true) && (changed === true) && (sv.state.server.active === true))
       host.broadcastPrint('"' + v.name + '" changed to "' + v.string + '"\n');
     return;

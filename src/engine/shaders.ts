@@ -433,6 +433,7 @@ uniform bool uUseAlphaTest;
 uniform float uAlpha;
 uniform float uFogDensity;
 uniform vec4 uFogColor;
+uniform float uGamma;
 
 varying float FogFragCoord;
 varying vec2 vTexCoords;
@@ -452,6 +453,11 @@ void main()
 	float fog = exp(-uFogDensity * uFogDensity * FogFragCoord * FogFragCoord);
 	fog = clamp(fog, 0.0, 1.0);
 	result = mix(uFogColor, result, fog);
-	result.a = uAlpha; // FIXME: This will make almost transparent things cut holes though heavy fog
+  result.a = uAlpha; // FIXME: This will make almost transparent things cut holes though heavy fog
+  
+	result.r = pow(result.r, uGamma);
+	result.g = pow(result.g, uGamma);
+  result.b = pow(result.b, uGamma);
+
 	gl_FragColor = result;
 }`

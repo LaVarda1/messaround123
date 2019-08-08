@@ -29,6 +29,9 @@ import * as q from './q'
 import * as vec from './vec'
 import * as sz from './sz'
 import * as tx from './texture'
+import * as mapAlpha from './mapAlpha'
+import * as fog from './fog'
+
 import IAssetStore from './interfaces/store/IAssetStore';
 import INetworkDriver from './interfaces/net/INetworkDriver';
 
@@ -1488,6 +1491,8 @@ export const init = async function(
     await draw.init();
     await scr.init();
     tx.init();
+    mapAlpha.init();
+    fog.init();
     r.init();
     await s.init();
     await m.init();
