@@ -2327,20 +2327,20 @@ export const drawSkyBox = function () {
 	gl.colorMask(false, false, false, false);
 	var clmodel = cl.clState.worldmodel;
 	var program = GL.useProgram('SkyChain', false);
-	gl.bindBuffer(gl.ARRAY_BUFFER, clmodel.cmds);
-	gl.vertexAttribPointer(program.aPosition.location, 3, gl.FLOAT, false, 12, clmodel.skychain);
-	var i, j, leaf, cmds;
-	for (i = 0; i < clmodel.leafs.length; ++i) {
-		leaf = clmodel.leafs[i];
-		if ((leaf.visframe !== state.visframecount) || (leaf.skychain === leaf.waterchain))
+	gl.bindBuffer(gl.ARRAY_BUFFER,  state.model_vbo);
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null)
+	gl.vertexAttribPointer(program.aPosition.location, 3, gl.FLOAT, false, def.VERTEXSIZE * 4, 0);
+	for (var i = 0; i < clmodel.textures.length; i++) {
+		var t = clmodel.textures[i];
+		if (!t || !t.texturechains || !t.texturechains[def.TEX_CHAIN.world] || !(t.texturechains[def.TEX_CHAIN.world].flags & def.SURF.drawsky))
 			continue;
-		if (cullBox(leaf.mins, leaf.maxs) === true)
-			continue;
-		for (j = leaf.skychain; j < leaf.waterchain; ++j) {
-			cmds = leaf.cmds[j];
-			gl.drawArrays(gl.TRIANGLES, cmds[0], cmds[1]);
-		}
+		for (var s = t.texturechains[def.TEX_CHAIN.world]; !!s; s = s.texturechain)
+			if (!s.culled) {
+				batchRender.batchSurface(gl, s);
+			}
 	}
+	batchRender.flushBatch(gl);
+
 	gl.colorMask(true, true, true, true);
 
 	gl.depthFunc(gl.GREATER);
