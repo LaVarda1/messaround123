@@ -5,10 +5,10 @@ stages:
 
 variables:
 
-  CONTAINER_FRONTEND_REF_IMAGE: 096121458971.dkr.ecr.us-east-2.amazonaws.com/webquake-frontend:$CI_COMMIT_REF_SLUG
+  CONTAINER_FRONTEND_REF_IMAGE: 096121458971.dkr.ecr.us-east-2.amazonaws.com/webquake-frontend:$CI_COMMIT_SHORT_SHA
   CONTAINER_FRONTEND_RELEASE_IMAGE: 096121458971.dkr.ecr.us-east-2.amazonaws.com/webquake-frontend:latest
 
-  CONTAINER_SERVER_REF_IMAGE: 096121458971.dkr.ecr.us-east-2.amazonaws.com/webquake-server:$CI_COMMIT_REF_SLUG
+  CONTAINER_SERVER_REF_IMAGE: 096121458971.dkr.ecr.us-east-2.amazonaws.com/webquake-server:$CI_COMMIT_SHORT_SHA
   CONTAINER_SERVER_RELEASE_IMAGE: 096121458971.dkr.ecr.us-east-2.amazonaws.com/webquake-server:latest
 
 build_job:
