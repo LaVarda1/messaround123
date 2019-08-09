@@ -4,11 +4,12 @@ stages:
   - deploy
 
 variables:
-  CONTAINER_FRONTEND_REF_IMAGE: registry.netquake.io/webquake-web:$CI_COMMIT_REF_SLUG
-  CONTAINER_FRONTEND_RELEASE_IMAGE: registry.netquake.io/webquake-web:latest
 
-  CONTAINER_SERVER_REF_IMAGE: registry.netquake.io/webquake-server:$CI_COMMIT_REF_SLUG
-  CONTAINER_SERVER_RELEASE_IMAGE: registry.netquake.io/webquake-server:latest
+  CONTAINER_FRONTEND_REF_IMAGE: 096121458971.dkr.ecr.us-east-2.amazonaws.com/webquake-frontend:$CI_COMMIT_REF_SLUG
+  CONTAINER_FRONTEND_RELEASE_IMAGE: 096121458971.dkr.ecr.us-east-2.amazonaws.com/webquake-frontend:latest
+
+  CONTAINER_SERVER_REF_IMAGE: 096121458971.dkr.ecr.us-east-2.amazonaws.com/webquake-server:$CI_COMMIT_REF_SLUG
+  CONTAINER_SERVER_RELEASE_IMAGE: 096121458971.dkr.ecr.us-east-2.amazonaws.com/webquake-server:latest
 
 build_job:
   image: node:carbon
@@ -21,11 +22,12 @@ build_job:
       - dist/
 
 push_job:
-  image: docker:latest
+  image: organs/awscli
   services:
     - docker:dind
   stage: push
   script:
+    - $(aws ecr get-login --no-include-email --region us-east-1)
     - docker build -t $CONTAINER_FRONTEND_REF_IMAGE -f Dockerfile.frontend .
     - docker push $CONTAINER_FRONTEND_REF_IMAGE
     - docker tag $CONTAINER_FRONTEND_REF_IMAGE $CONTAINER_FRONTEND_RELEASE_IMAGE

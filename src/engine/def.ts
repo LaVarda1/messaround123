@@ -1,5 +1,5 @@
-export const webquake_version = 54;
-export const timedate = 'Exe: 13:00:49 Jan 27 2019\n';
+export const webquake_version = 58;
+export const timedate = 'Exe: 13:00:49 Aug 8 2019\n';
 
 export const max_edicts = 8192;
 export const max_message = 32768
