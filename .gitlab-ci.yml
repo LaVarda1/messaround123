@@ -30,7 +30,7 @@ push_job:
     - pip install awscli
   stage: push
   script:
-    - $(aws ecr get-login --no-include-email --region us-east-1)
+    - $(aws ecr get-login --no-include-email --region us-east-2)
     - docker build -t $CONTAINER_FRONTEND_REF_IMAGE -f Dockerfile.frontend .
     - docker push $CONTAINER_FRONTEND_REF_IMAGE
     - docker tag $CONTAINER_FRONTEND_REF_IMAGE $CONTAINER_FRONTEND_RELEASE_IMAGE
