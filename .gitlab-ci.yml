@@ -17,7 +17,7 @@ build_job:
   script:
     - npm --unsafe-perm install
     - npm run build
-  artifacts
+  artifacts:
     paths:
       - dist/
 
