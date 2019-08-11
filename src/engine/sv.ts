@@ -483,7 +483,7 @@ const createBaseline = function () {
 		baseline.frame = svent.v_float[pr.entvars.frame] >> 0;
 		baseline.skin = svent.v_float[pr.entvars.skin] >> 0;
 		// TODO: Alpha
-		if ((i > 0) && (i <= state.server.maxclients)) {
+		if ((i > 0) && (i <= state.svs.maxclients)) {
 			baseline.colormap = i
 			baseline.modelindex = player;
 			baseline.alpha = protocol.ENT_ALPHA.default

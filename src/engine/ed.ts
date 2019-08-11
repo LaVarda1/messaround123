@@ -50,6 +50,7 @@ export const free = function (ed) {
   ed.v_float[pr.entvars.nextthink] = -1.0;
   ed.v_float[pr.entvars.solid] = 0.0;
   ed.freetime = sv.state.server.time;
+	ed.alpha = 0;
 };
 
 export const globalAtOfs = function (ofs) {
