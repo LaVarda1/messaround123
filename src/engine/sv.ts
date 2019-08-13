@@ -21,11 +21,11 @@ import * as pf from './pf'
 export let state = {
 	fatpvs: [],
 	fatbytes: 0,
-	clientdatagram: { data: new ArrayBuffer(1024), cursize: 0 },
+	clientdatagram: { data: new ArrayBuffer(def.max_message), cursize: 0 },
 	server: {
 		num_edicts: 0,
-		datagram: { data: new ArrayBuffer(1024), cursize: 0 },
-		reliable_datagram: { data: new ArrayBuffer(1024), cursize: 0 },
+		datagram: { data: new ArrayBuffer(def.max_message), cursize: 0 },
+		reliable_datagram: { data: new ArrayBuffer(def.max_message), cursize: 0 },
 		signon: { data: new ArrayBuffer(def.max_message), cursize: 0 },
 		active: false,
 		loading: false
@@ -92,11 +92,11 @@ const initState = () => {
 	state = {
 		fatpvs: [],
 		fatbytes: 0,
-		clientdatagram: { data: new ArrayBuffer(1024), cursize: 0 },
+		clientdatagram: { data: new ArrayBuffer(def.max_message), cursize: 0 },
 		server: {
 			num_edicts: 0,
-			datagram: { data: new ArrayBuffer(1024), cursize: 0 },
-			reliable_datagram: { data: new ArrayBuffer(1024), cursize: 0 },
+			datagram: { data: new ArrayBuffer(def.max_message), cursize: 0 },
+			reliable_datagram: { data: new ArrayBuffer(def.max_message), cursize: 0 },
 			signon: { data: new ArrayBuffer(def.max_message), cursize: 0 },
 			active: false,
 			loading: false
@@ -299,7 +299,9 @@ const writeEntitiesToClient = function (clent, message) {
 			if (i === ent.leafnums.length)
 				continue;
 		}
-		if ((message.data.byteLength - message.cursize) < 16) {
+		//johnfitz -- max size for protocol 15 is 18 bytes, not 16 as originally
+		//assumed here.  And, for protocol 85 the max size is actually 24 bytes.
+		if ((message.data.byteLength - message.cursize) < 24) {
 			con.print('packet overflow\n');
 			return;
 		}

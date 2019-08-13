@@ -1335,6 +1335,85 @@ export const loadAllFrames = function(buffer, inmodel)
   }
 };
 
+
+//=========================================================================
+
+/*
+=================
+Mod_CalcAliasBounds -- johnfitz -- calculate bounds of alias model for nonrotated, yawrotated, and fullrotated cases
+=================
+*/
+const calcAliasBounds = a => {
+  var i, j, k
+	var		dist, yawradius, radius, v;
+
+	//clear out all data
+	for (var i = 0; i < 3; i++)
+	{
+		loadmodel.mins[i] = loadmodel.ymins[i] = loadmodel.rmins[i] = 999999;
+		loadmodel.maxs[i] = loadmodel.ymaxs[i] = loadmodel.rmaxs[i] = -999999;
+		radius = yawradius = 0;
+	}
+
+	//process verts
+	for (i = 0 ; i < a.numposes; i++)
+		for (j = 0; j < a.numverts; j++)
+		{
+			for (k = 0; k < 3; k++)
+				v[k] = poseverts[i][j].v[k] * pheader->scale[k] + pheader->scale_origin[k];
+
+			for (k=0; k<3;k++)
+			{
+				loadmodel->mins[k] = q_min(loadmodel->mins[k], v[k]);
+				loadmodel->maxs[k] = q_max(loadmodel->maxs[k], v[k]);
+			}
+			dist = v[0] * v[0] + v[1] * v[1];
+			if (yawradius < dist)
+				yawradius = dist;
+			dist += v[2] * v[2];
+			if (radius < dist)
+				radius = dist;
+		}
+
+	//rbounds will be used when entity has nonzero pitch or roll
+	radius = sqrt(radius);
+	loadmodel->rmins[0] = loadmodel->rmins[1] = loadmodel->rmins[2] = -radius;
+	loadmodel->rmaxs[0] = loadmodel->rmaxs[1] = loadmodel->rmaxs[2] = radius;
+
+	//ybounds will be used when entity has nonzero yaw
+	yawradius = sqrt(yawradius);
+	loadmodel->ymins[0] = loadmodel->ymins[1] = -yawradius;
+	loadmodel->ymaxs[0] = loadmodel->ymaxs[1] = yawradius;
+	loadmodel->ymins[2] = loadmodel->mins[2];
+	loadmodel->ymaxs[2] = loadmodel->maxs[2];
+}
+
+/*
+=================
+Mod_SetExtraFlags -- johnfitz -- set up extra flags that aren't in the mdl
+=================
+*/
+const aliasSetExtraFlags = mod => {
+	if (!mod || mod.type != TYPE.alias)
+		return;
+
+	mod.flags &= (0xFF | def.MOD.mf_honey); //only preserve first byte, plus MF_HOLEY
+
+	// nolerp flag
+	// if (nameInList(r_nolerp_list.string, mod->name))
+	// 	mod->flags |= MOD_NOLERP;
+
+	// // noshadow flag
+	// if (nameInList(r_noshadow_list.string, mod->name))
+	// 	mod->flags |= MOD_NOSHADOW;
+
+	// fullbright hack (TODO: make this a cvar list)
+	if (mod.name === "progs/flame2.mdl" ||
+    mod.name === "progs/flame.mdl" ||
+    mod.name === "progs/boss.mdl")
+		mod.flags |= def.MOD.fbrighthack;
+}
+
 export const loadAliasModel = function(buffer)
 {
   var i, j, k, l;
