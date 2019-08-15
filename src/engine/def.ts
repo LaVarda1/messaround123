@@ -131,3 +131,10 @@ export const TEXPREF = {
   conchars: 0x0400,   //use conchars palette
   warpimage: 0x0800    // resize this texture when warpimagesize changes
 }
+
+export const MOD = {
+  mf_honey: 1 << 14, // MarkV/QSS -- make index 255 transparent on mdl's
+  nolerp: 1 << 8,
+  noshadow: 1 << 9,
+  fbrighthack: 1 << 10
+}

@@ -1270,15 +1270,17 @@ export const loadAllSkins = function(buffer, inmodel)
 
 export const loadAllFrames = function(buffer, inmodel)
 {
+  var poseverts = []
   loadmodel.frames = [];
   var model = new DataView(buffer);
   var i, j, k, frame, group, numframes;
   for (i = 0; i < loadmodel.numframes; ++i)
   {
     inmodel += 4;
-    if (model.getUint32(inmodel - 4, true) === 0)
+    if (model.getUint32(inmodel - 4, true) === 0) // ALIAS_SINGLE
     {
       frame = {
+        numposes: 1,
         group: false,
         bboxmin: [model.getUint8(inmodel), model.getUint8(inmodel + 1), model.getUint8(inmodel + 2)],
         bboxmax: [model.getUint8(inmodel + 4), model.getUint8(inmodel + 5), model.getUint8(inmodel + 6)],
@@ -1343,50 +1345,50 @@ export const loadAllFrames = function(buffer, inmodel)
 Mod_CalcAliasBounds -- johnfitz -- calculate bounds of alias model for nonrotated, yawrotated, and fullrotated cases
 =================
 */
-const calcAliasBounds = a => {
-  var i, j, k
-	var		dist, yawradius, radius, v;
+// const calcAliasBounds = a => {
+//   var i, j, k
+// 	var		dist, yawradius, radius, v;
 
-	//clear out all data
-	for (var i = 0; i < 3; i++)
-	{
-		loadmodel.mins[i] = loadmodel.ymins[i] = loadmodel.rmins[i] = 999999;
-		loadmodel.maxs[i] = loadmodel.ymaxs[i] = loadmodel.rmaxs[i] = -999999;
-		radius = yawradius = 0;
-	}
+// 	//clear out all data
+// 	for (i = 0; i < 3; i++)
+// 	{
+// 		loadmodel.mins[i] = loadmodel.ymins[i] = loadmodel.rmins[i] = 999999;
+// 		loadmodel.maxs[i] = loadmodel.ymaxs[i] = loadmodel.rmaxs[i] = -999999;
+// 		radius = yawradius = 0;
+// 	}
 
-	//process verts
-	for (i = 0 ; i < a.numposes; i++)
-		for (j = 0; j < a.numverts; j++)
-		{
-			for (k = 0; k < 3; k++)
-				v[k] = poseverts[i][j].v[k] * pheader->scale[k] + pheader->scale_origin[k];
+// 	//process verts
+// 	for (i = 0 ; i < a.numposes; i++)
+// 		for (j = 0; j < a.numverts; j++)
+// 		{
+// 			for (k = 0; k < 3; k++)
+// 				v[k] = poseverts[i][j].v[k] * pheader->scale[k] + pheader->scale_origin[k];
 
-			for (k=0; k<3;k++)
-			{
-				loadmodel->mins[k] = q_min(loadmodel->mins[k], v[k]);
-				loadmodel->maxs[k] = q_max(loadmodel->maxs[k], v[k]);
-			}
-			dist = v[0] * v[0] + v[1] * v[1];
-			if (yawradius < dist)
-				yawradius = dist;
-			dist += v[2] * v[2];
-			if (radius < dist)
-				radius = dist;
-		}
+// 			for (k=0; k<3;k++)
+// 			{
+// 				loadmodel->mins[k] = q_min(loadmodel->mins[k], v[k]);
+// 				loadmodel->maxs[k] = q_max(loadmodel->maxs[k], v[k]);
+// 			}
+// 			dist = v[0] * v[0] + v[1] * v[1];
+// 			if (yawradius < dist)
+// 				yawradius = dist;
+// 			dist += v[2] * v[2];
+// 			if (radius < dist)
+// 				radius = dist;
+// 		}
 
-	//rbounds will be used when entity has nonzero pitch or roll
-	radius = sqrt(radius);
-	loadmodel->rmins[0] = loadmodel->rmins[1] = loadmodel->rmins[2] = -radius;
-	loadmodel->rmaxs[0] = loadmodel->rmaxs[1] = loadmodel->rmaxs[2] = radius;
+// 	//rbounds will be used when entity has nonzero pitch or roll
+// 	radius = sqrt(radius);
+// 	loadmodel->rmins[0] = loadmodel->rmins[1] = loadmodel->rmins[2] = -radius;
+// 	loadmodel->rmaxs[0] = loadmodel->rmaxs[1] = loadmodel->rmaxs[2] = radius;
 
-	//ybounds will be used when entity has nonzero yaw
-	yawradius = sqrt(yawradius);
-	loadmodel->ymins[0] = loadmodel->ymins[1] = -yawradius;
-	loadmodel->ymaxs[0] = loadmodel->ymaxs[1] = yawradius;
-	loadmodel->ymins[2] = loadmodel->mins[2];
-	loadmodel->ymaxs[2] = loadmodel->maxs[2];
-}
+// 	//ybounds will be used when entity has nonzero yaw
+// 	yawradius = sqrt(yawradius);
+// 	loadmodel->ymins[0] = loadmodel->ymins[1] = -yawradius;
+// 	loadmodel->ymaxs[0] = loadmodel->ymaxs[1] = yawradius;
+// 	loadmodel->ymins[2] = loadmodel->mins[2];
+// 	loadmodel->ymaxs[2] = loadmodel->maxs[2];
+// }
 
 /*
 =================
