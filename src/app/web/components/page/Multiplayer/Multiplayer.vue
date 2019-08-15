@@ -42,7 +42,7 @@ export default {
       var query = {
         "-connect": `ws://${server.connecthostport}`,
       }
-      if (server.game) {
+      if (server.game && server.game !== 'id1') {
         query["-game"] = server.game
       }
       this.$router.push({name: 'quake', query})
