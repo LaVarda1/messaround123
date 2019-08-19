@@ -7,6 +7,7 @@ import * as q from '../../engine/q'
 import * as _assetStore from './assetStore'
 import * as loop from './net/loop'
 import * as webs from './net/webs'
+import * as input from '../../engine/input'
 
 export const assetStore = _assetStore
 export const state = {
@@ -56,6 +57,9 @@ const onkeyup = async function(e)
 
 const onmousedown = async function(e)
 {
+	if (!input.hasPointerLock()) {
+		return
+	}
 	var _key;
 	switch (e.which)
 	{
@@ -77,6 +81,9 @@ const onmousedown = async function(e)
 
 const onmouseup = async function(e)
 {
+	if (!input.hasPointerLock()) {
+		return
+	}
 	var _key;
 	switch (e.which)
 	{

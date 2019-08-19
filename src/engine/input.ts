@@ -14,12 +14,14 @@ let old_mouse_x = 0.0
 let old_mouse_y = 0.0
 
 export const state = {
-
 } as any
 
 export const cvr = {
 } as any
 
+export const hasPointerLock = () => {
+  return document[state.pointerLockElement] === vid.state.mainwindow
+}
 export const startupMouse = function()
 {
   cvr.m_filter = cvar.registerVariable('m_filter', '1');
