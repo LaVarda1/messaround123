@@ -18,6 +18,8 @@ import * as sz from './sz'
 import * as v from './v'
 import * as pf from './pf'
 
+const MAX_ENT_LEAFS = 32
+
 export let state = {
 	fatpvs: [],
 	fatbytes: 0,
@@ -296,7 +298,7 @@ const writeEntitiesToClient = function (clent, message) {
 				if ((pvs[ent.leafnums[i] >> 3] & (1 << (ent.leafnums[i] & 7))) !== 0)
 					break;
 			}
-			if (i === ent.leafnums.length)
+			if (i === ent.leafnums.length && ent.leafnums.length < MAX_ENT_LEAFS)
 				continue;
 		}
 		//johnfitz -- max size for protocol 15 is 18 bytes, not 16 as originally
@@ -345,7 +347,7 @@ const writeEntitiesToClient = function (clent, message) {
 				bits |= protocol.U.alpha
 			if (bits & protocol.U.frame && ent.v_float[pr.entvars.frame] & 0xFF00)
 				bits |= protocol.U.frame2
-			if (bits & protocol.U.frame && ent.v_float[pr.entvars.modelindex] & 0xFF00)
+			if (bits & protocol.U.model && ent.v_float[pr.entvars.modelindex] & 0xFF00)
 				bits |= protocol.U.model2
 			if (ent.sendinterval)
 				bits |= protocol.U.lerpfinish
@@ -1813,7 +1815,7 @@ const findTouchedLeafs = function (ent, node) {
 		return;
 
 	if (node.contents < 0) {
-		if (ent.leafnums.length === 16)
+		if (ent.leafnums.length === MAX_ENT_LEAFS)
 			return;
 		ent.leafnums[ent.leafnums.length] = node.num - 1;
 		return;

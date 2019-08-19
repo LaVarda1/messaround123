@@ -277,7 +277,17 @@ state.refdef = {
 	vieworg: [0.0, 0.0, 0.0],
 	viewangles: [0.0, 0.0, 0.0]
 };
-
+const cullBox2 = function(mins, maxs)
+{
+	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[0]) === 2)
+		return true;
+	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[1]) === 2)
+		return true;
+	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[2]) === 2)
+		return true;
+	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[3]) === 2)
+		return true;
+};
 export const cullBox = function (emins, emaxs) {
 	for (var i = 0; i < 4; i++) {
 		var p = state.frustum[i];
@@ -1643,17 +1653,22 @@ const backFaceCull = (surf) => {
 }
 
 const cullSurfaces = (model, chain) => {
-
+	var i, s, t
 	// ericw -- instead of testing (s->visframe == r_visframecount) on all world
 	// surfaces, use the chained surfaces, which is exactly the same set of sufaces
-	for (var i = 0; i < model.textures.length; i++) {
-		var t = model.textures[i];
+	for (i = 0; i < model.textures.length; i++) {
+		t = model.textures[i];
 
 		if (!t || !t.texturechains || !t.texturechains[chain])
 			continue;
 
-		for (var s = t.texturechains[chain]; s; s = s.texturechain) {
-			if (cullBox(s.mins, s.maxs) || backFaceCull(s))
+		for (s = t.texturechains[chain]; s; s = s.texturechain) { 
+			// const try1 = cullBox(s.mins, s.maxs)
+			// const try2 = cullBox2(s.mins, s.maxs)
+			// if ( try1 != try2) {
+			// 	// console.log('Not the same!')
+			// }
+			if (cullBox2(s.mins, s.maxs))
 				s.culled = true;
 			else {
 				s.culled = false;
