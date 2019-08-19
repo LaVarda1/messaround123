@@ -1,7 +1,7 @@
 const MAX_BATCH_SIZE = 4096
 
 const state = {
-  vbo_indices: new Uint32Array(new ArrayBuffer(MAX_BATCH_SIZE)),
+  vbo_indices: new Uint32Array(new ArrayBuffer(MAX_BATCH_SIZE * 4)),
   num_vbo_indices: 0,
   vbo_buffer: null
 }

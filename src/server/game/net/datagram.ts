@@ -15,6 +15,8 @@ import * as url from 'url'
 import * as dgram from 'dgram'
 import * as os from 'os'
 
+const HEADER_SIZE = 8
+
 export const name = "datagram"
 export var initialized = false
 export var available = true
@@ -142,7 +144,7 @@ export const checkNewConnections = function()
 	sock.addr = [accetpData.address, accetpData.port],
 	sock.address = accetpData.address + ':' + accetpData.port
 	sock.messages = [];
-	var buf = new Buffer(1032);
+	var buf = new Buffer(def.max_message + HEADER_SIZE);
 	buf.writeUInt32LE(0x09000080, 0);
 	buf[4] = 0x81;
 	buf.writeUInt32LE(newsocket.data_port, 5);
@@ -203,10 +205,10 @@ export const getMessage = function(sock)
 				con.dPrint('Duplicate ACK received\n');
 				continue;
 			}
-			sock.sendMessageLength -= 1024;
+			sock.sendMessageLength -= def.max_message;
 			if (sock.sendMessageLength > 0)
 			{
-				sock.sendMessage.copy(sock.sendMessage, 0, 1024, 1024 + sock.sendMessageLength);
+				sock.sendMessage.copy(sock.sendMessage, 0, def.max_message, def.max_message + sock.sendMessageLength);
 				sock.sendNext = true;
 				continue;
 			}
@@ -252,17 +254,17 @@ export const sendMessage = function(sock, data)
 	for (i = 0; i < data.cursize; ++i)
 		sock.sendMessage[i] = src[i];
 	sock.sendMessageLength = data.cursize;
-	var buf = new Buffer(1032);
+	var buf = new Buffer(def.max_message + HEADER_SIZE);
 	buf[0] = 0;
 	var dataLen;
-	if (data.cursize <= 1024)
+	if (data.cursize <= def.max_message)
 	{
 		dataLen = data.cursize;
 		buf[1] = 9;
 	}
 	else
 	{
-		dataLen = 1024;
+		dataLen = def.max_message;
 		buf[1] = 1;
 	}
 	buf.writeUInt16BE(dataLen + 8, 2);
@@ -276,17 +278,17 @@ export const sendMessage = function(sock, data)
 
 const sendMessageNext = function(sock, resend)
 {
-	var buf = new Buffer(1032);
+	var buf = new Buffer(def.max_message + HEADER_SIZE);
 	buf[0] = 0;
 	var dataLen;
-	if (sock.sendMessageLength <= 1024)
+	if (sock.sendMessageLength <= def.max_message)
 	{
 		dataLen = sock.sendMessageLength;
 		buf[1] = 9;
 	}
 	else
 	{
-		dataLen = 1024;
+		dataLen = def.max_message;
 		buf[1] = 1;
 	}
 	buf.writeUInt16BE(dataLen + 8, 2);
@@ -305,7 +307,7 @@ export const sendUnreliableMessage = function(sock, data)
 	if (sock.driverdata == null)
 		return -1;
 	con.print(sock.driverdata.data_port + ' sending um')
-	var buf = new Buffer(1032);
+	var buf = new Buffer(def.max_message + HEADER_SIZE);
 	buf.writeUInt32BE(data.cursize + 0x00100008, 0);
 	buf.writeUInt32BE(sock.unreliableSendSequence++, 4);
 	var i, src = new Uint8Array(data.data);
@@ -344,7 +346,7 @@ const controlOnMessage = function(msg, rinfo)
 	if (((msg[2] << 8) + msg[3]) !== rinfo.size)
 		return;
 	var command = msg[4];
-	var buf = new Buffer(1032), str, cursize;
+	var buf = new Buffer(def.max_message + HEADER_SIZE), str, cursize;
 	buf[0] = 0x80;
 	buf[1] = 0;
 

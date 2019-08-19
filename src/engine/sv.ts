@@ -18,14 +18,16 @@ import * as sz from './sz'
 import * as v from './v'
 import * as pf from './pf'
 
+const MAX_ENT_LEAFS = 32
+
 export let state = {
 	fatpvs: [],
 	fatbytes: 0,
-	clientdatagram: { data: new ArrayBuffer(1024), cursize: 0 },
+	clientdatagram: { data: new ArrayBuffer(def.max_message), cursize: 0 },
 	server: {
 		num_edicts: 0,
-		datagram: { data: new ArrayBuffer(1024), cursize: 0 },
-		reliable_datagram: { data: new ArrayBuffer(1024), cursize: 0 },
+		datagram: { data: new ArrayBuffer(def.max_message), cursize: 0 },
+		reliable_datagram: { data: new ArrayBuffer(def.max_message), cursize: 0 },
 		signon: { data: new ArrayBuffer(def.max_message), cursize: 0 },
 		active: false,
 		loading: false
@@ -92,11 +94,11 @@ const initState = () => {
 	state = {
 		fatpvs: [],
 		fatbytes: 0,
-		clientdatagram: { data: new ArrayBuffer(1024), cursize: 0 },
+		clientdatagram: { data: new ArrayBuffer(def.max_message), cursize: 0 },
 		server: {
 			num_edicts: 0,
-			datagram: { data: new ArrayBuffer(1024), cursize: 0 },
-			reliable_datagram: { data: new ArrayBuffer(1024), cursize: 0 },
+			datagram: { data: new ArrayBuffer(def.max_message), cursize: 0 },
+			reliable_datagram: { data: new ArrayBuffer(def.max_message), cursize: 0 },
 			signon: { data: new ArrayBuffer(def.max_message), cursize: 0 },
 			active: false,
 			loading: false
@@ -296,10 +298,12 @@ const writeEntitiesToClient = function (clent, message) {
 				if ((pvs[ent.leafnums[i] >> 3] & (1 << (ent.leafnums[i] & 7))) !== 0)
 					break;
 			}
-			if (i === ent.leafnums.length)
+			if (i === ent.leafnums.length && ent.leafnums.length < MAX_ENT_LEAFS)
 				continue;
 		}
-		if ((message.data.byteLength - message.cursize) < 16) {
+		//johnfitz -- max size for protocol 15 is 18 bytes, not 16 as originally
+		//assumed here.  And, for protocol 85 the max size is actually 24 bytes.
+		if ((message.data.byteLength - message.cursize) < 24) {
 			con.print('packet overflow\n');
 			return;
 		}
@@ -343,7 +347,7 @@ const writeEntitiesToClient = function (clent, message) {
 				bits |= protocol.U.alpha
 			if (bits & protocol.U.frame && ent.v_float[pr.entvars.frame] & 0xFF00)
 				bits |= protocol.U.frame2
-			if (bits & protocol.U.frame && ent.v_float[pr.entvars.modelindex] & 0xFF00)
+			if (bits & protocol.U.model && ent.v_float[pr.entvars.modelindex] & 0xFF00)
 				bits |= protocol.U.model2
 			if (ent.sendinterval)
 				bits |= protocol.U.lerpfinish
@@ -1811,7 +1815,7 @@ const findTouchedLeafs = function (ent, node) {
 		return;
 
 	if (node.contents < 0) {
-		if (ent.leafnums.length === 16)
+		if (ent.leafnums.length === MAX_ENT_LEAFS)
 			return;
 		ent.leafnums[ent.leafnums.length] = node.num - 1;
 		return;
