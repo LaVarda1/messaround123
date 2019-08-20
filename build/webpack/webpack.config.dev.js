@@ -2,7 +2,7 @@ const base = require('./webpack.config')
 const merge = require('webpack-merge')
 const webpack = require('webpack')
 
-module.exports = merge({
+module.exports = merge(base, {
   devtool: 'none',
   entry: {
     app: ['webpack-hot-middleware/client', "./src/app/web/index.js"]
@@ -10,4 +10,4 @@ module.exports = merge({
   plugins: [
     new webpack.HotModuleReplacementPlugin()
   ],
-}, base)
+})
