@@ -1663,12 +1663,8 @@ const cullSurfaces = (model, chain) => {
 			continue;
 
 		for (s = t.texturechains[chain]; s; s = s.texturechain) { 
-			// const try1 = cullBox(s.mins, s.maxs)
-			// const try2 = cullBox2(s.mins, s.maxs)
-			// if ( try1 != try2) {
-			// 	// console.log('Not the same!')
-			// }
-			if (cullBox2(s.mins, s.maxs))
+			//if (cullBox(s.mins, s.maxs) && backFaceCull(s)) // Quakespasm. Slower, but better?
+			if (cullBox2(s.mins, s.maxs)) 
 				s.culled = true;
 			else {
 				s.culled = false;
@@ -1912,7 +1908,7 @@ const drawTextureChains = (gl, model, ent, chain) => {
 
 	// enable blending / disable depth writes
 	if (entalpha < 1) {
-		gl.depthMask(gl.FALSE);
+		gl.depthMask(false);
 		gl.enable(gl.BLEND);
 	}
 
@@ -1924,9 +1920,9 @@ const drawTextureChains = (gl, model, ent, chain) => {
 	gl.bindBuffer(gl.ARRAY_BUFFER, state.model_vbo);
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null) // indices come from client memory!
 
-	gl.vertexAttribPointer(brushProgram.Vert.location, 3, gl.FLOAT, gl.FALSE, def.VERTEXSIZE * 4, 0);
-	gl.vertexAttribPointer(brushProgram.TexCoords.location, 2, gl.FLOAT, gl.FALSE, def.VERTEXSIZE * 4, 4 * 3);
-	gl.vertexAttribPointer(brushProgram.LMCoords.location, 2, gl.FLOAT, gl.FALSE, def.VERTEXSIZE * 4, 4 * 5);
+	gl.vertexAttribPointer(brushProgram.Vert.location, 3, gl.FLOAT, false, def.VERTEXSIZE * 4, 0);
+	gl.vertexAttribPointer(brushProgram.TexCoords.location, 2, gl.FLOAT, false, def.VERTEXSIZE * 4, 4 * 3);
+	gl.vertexAttribPointer(brushProgram.LMCoords.location, 2, gl.FLOAT, false, def.VERTEXSIZE * 4, 4 * 5);
 
 	// set uniforms
 	gl.uniform1i(brushProgram.uUseFullbrightTex, 0);
@@ -2002,7 +1998,7 @@ const drawTextureChains = (gl, model, ent, chain) => {
 	GL.unbindProgram()
 
 	if (entalpha < 1) {
-		gl.depthMask(gl.TRUE);
+		gl.depthMask(true);
 		gl.disable(gl.BLEND);
 	}
 }
