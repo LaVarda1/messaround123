@@ -73,9 +73,9 @@ export const splitEntityOnNode = function (node, entity, emins, emaxs) {
 	}
 
 	if ((sides & 1) !== 0)
-		return splitEntityOnNode(node.children[0], entity, emins, emaxs);
+		splitEntityOnNode(node.children[0], entity, emins, emaxs);
 	if ((sides & 2) !== 0)
-		return splitEntityOnNode(node.children[1], entity, emins, emaxs);
+		splitEntityOnNode(node.children[1], entity, emins, emaxs);
 };
 
 const storeEfrags = efrag => {

@@ -31,7 +31,6 @@ export let clState = {
 } as any
 
 export let state = {
-  static_entities: [],
   visedicts: [],
   kbuttons: [],
   // parse
@@ -1040,7 +1039,6 @@ export const sendCmd = async function()
 
 const initState = () => {
   state = {
-    static_entities: [],
     visedicts: [],
     kbuttons: [],
     // parse
@@ -1464,7 +1462,6 @@ export const parseStatic = function(version) {
     dlightbits: [],
     leafs: []
   } as any;
-  state.static_entities[clState.num_statics++] = ent;
   parseBaseline(ent, version);
   ent.model = clState.model_precache[ent.baseline.modelindex];
   ent.lerpflags |= r.LERP.resetanim | r.LERP.resetmove
@@ -1475,12 +1472,13 @@ export const parseStatic = function(version) {
   ent.colormap = 0 // TODO: Joe this doesn't seem right.
   ent.origin = [ent.baseline.origin[0], ent.baseline.origin[1], ent.baseline.origin[2]];
   ent.angles = [ent.baseline.angles[0], ent.baseline.angles[1], ent.baseline.angles[2]];
-  r.state.currententity = ent;
+
   var emins = [ent.origin[0] + ent.model.mins[0], ent.origin[1] + ent.model.mins[1], ent.origin[2] + ent.model.mins[2]];
   var emaxs = [ent.origin[0] + ent.model.maxs[0], ent.origin[1] + ent.model.maxs[1], ent.origin[2] + ent.model.maxs[2]];
 
   state.pefragtopnode = null
   r.splitEntityOnNode(clState.worldmodel.nodes[0], ent, emins, emaxs);
+  // Not used??
   ent.topnode = state.pefragtopnode
 };
 
