@@ -46,19 +46,47 @@ export const cvr = {
 
 // efrag
 
-export const splitEntityOnNode = function (node) {
+export const splitEntityOnNode = function (node, entity, emins, emaxs) {
 	if (node.contents === mod.CONTENTS.solid)
 		return;
+
+	// add an efrag if the node is a leaf
 	if (node.contents < 0) {
-		state.currententity.leafs[state.currententity.leafs.length] = node.num - 1;
+		if (!state.pefragtopnode)
+			state.pefragtopnode = node;
+
+		const efrags = {
+			leafnext: node.efrags,
+			entity
+		}
+
+		node.efrags = efrags
+
 		return;
 	}
-	var sides = vec.boxOnPlaneSide(state.emins, state.emaxs, node.plane);
+	var sides = vec.boxOnPlaneSide(emins, emaxs, node.plane);
+	if (sides === 3) {
+		// split on this plane
+		// if this is the first splitter of this bmodel, remember it
+		if (!state.pefragtopnode)
+			state.pefragtopnode = node;
+	}
+
 	if ((sides & 1) !== 0)
-		splitEntityOnNode(node.children[0]);
+		return splitEntityOnNode(node.children[0], entity, emins, emaxs);
 	if ((sides & 2) !== 0)
-		splitEntityOnNode(node.children[1]);
+		return splitEntityOnNode(node.children[1], entity, emins, emaxs);
 };
+
+const storeEfrags = efrag => {
+	for(var _efrag = efrag; !!_efrag; _efrag = _efrag.leafnext) {
+		var ent = efrag.entity
+		if (ent.visframe !== host.state.framecount && cl.state.numvisedicts < def.max_vis_edicts) {
+			cl.state.visedicts[cl.state.numvisedicts++] = ent
+			ent.visframe = host.state.framecount
+		}
+	}
+}
 
 // light
 /*
@@ -676,63 +704,41 @@ export const drawAliasModel = function (e) {
 	gl.drawArrays(gl.TRIANGLES, 0, clmodel.numtris * 3);
 };
 
-export const drawEntitiesOnList = function () {
+export const drawEntitiesOnList = function (alphaPass) {
 	const gl = GL.getContext()
+
 	if (cvr.drawentities.value === 0)
 		return;
-	var vis = (cvr.novis.value !== 0) ? mod.novis : mod.leafPVS(state.viewleaf, cl.clState.worldmodel);
-	var i, j, leaf;
-	for (i = 0; i < cl.clState.num_statics; ++i) {
-		state.currententity = cl.state.static_entities[i];
-		if (state.currententity.model == null)
+	var i, ent, entalpha
+	for (i = 0; i < cl.state.numvisedicts; ++i) {
+		ent = cl.state.visedicts[i];
+		entalpha = pr.decodeAlpha(ent.alpha);
+		if (ent.model == null || (entalpha === 1 && alphaPass))
 			continue;
-		for (j = 0; j < state.currententity.leafs.length; ++j) {
-			leaf = state.currententity.leafs[j];
-			if ((leaf < 0) || ((vis[leaf >> 3] & (1 << (leaf & 7))) !== 0))
-				break;
-		}
-		if (j === state.currententity.leafs.length)
-			continue;
-		switch (state.currententity.model.type) {
+		switch (ent.model.type) {
 			case mod.TYPE.alias:
-				drawAliasModel(state.currententity);
+				drawAliasModel(ent);
 				continue;
 			case mod.TYPE.brush:
-				drawBrushModel(state.currententity);
+				drawBrushModel(ent);
 		}
 	}
-	for (i = 0; i < cl.state.numvisedicts; ++i) {
-		state.currententity = cl.state.visedicts[i];
-		if (state.currententity.model == null)
-			continue;
-		switch (state.currententity.model.type) {
-			case mod.TYPE.alias:
-				drawAliasModel(state.currententity);
+
+	if (!alphaPass) {
+		GL.streamFlush();
+		gl.depthMask(false);
+		gl.enable(gl.BLEND);
+		for (i = 0; i < cl.state.numvisedicts; ++i) {
+			ent = cl.state.visedicts[i];
+			if (ent.model == null)
 				continue;
-			case mod.TYPE.brush:
-				drawBrushModel(state.currententity);
+			if (ent.model.type === mod.TYPE.sprite)
+				drawSpriteModel(ent);
 		}
+		GL.streamFlush();
+		gl.disable(gl.BLEND);
+		gl.depthMask(true);
 	}
-	GL.streamFlush();
-	gl.depthMask(false);
-	gl.enable(gl.BLEND);
-	for (i = 0; i < cl.clState.num_statics; ++i) {
-		state.currententity = cl.state.static_entities[i];
-		if (state.currententity.model == null)
-			continue;
-		if (state.currententity.model.type === mod.TYPE.sprite)
-			drawSpriteModel(state.currententity);
-	}
-	for (i = 0; i < cl.state.numvisedicts; ++i) {
-		state.currententity = cl.state.visedicts[i];
-		if (state.currententity.model == null)
-			continue;
-		if (state.currententity.model.type === mod.TYPE.sprite)
-			drawSpriteModel(state.currententity);
-	}
-	GL.streamFlush();
-	gl.disable(gl.BLEND);
-	gl.depthMask(true);
 };
 
 export const drawViewModel = function () {
@@ -884,8 +890,9 @@ export const renderScene = function () {
 	drawSkyBox();
 	drawViewModel();
 	drawTextureChains(gl, cl.clState.worldmodel, null, def.TEX_CHAIN.world);
-	drawEntitiesOnList();
+	drawEntitiesOnList(false);
 	drawTextureChains_water(gl, cl.clState.worldmodel, null, def.TEX_CHAIN.world);
+	drawEntitiesOnList(true);
 	gl.disable(gl.CULL_FACE);
 	renderDlights();
 	drawParticles();
@@ -1070,9 +1077,9 @@ export const init = function () {
 	cvr.oldskyleaf = cvar.registerVariable('oldskyleaf', '0')
 	cvr.flatlightstyles = cvar.registerVariable('r_flatlightstyles', '0')
   cvr.wateralpha = cvar.registerVariable('r_wateralpha', '1')
-  cvr.lavaalpha = cvar.registerVariable('r_lavaalpha', '1')
-  cvr.telealpha = cvar.registerVariable('r_telealpha', '1')
-  cvr.slimealpha = cvar.registerVariable('r_slimealpha', '1')
+  cvr.lavaalpha = cvar.registerVariable('r_lavaalpha', '0')
+  cvr.telealpha = cvar.registerVariable('r_telealpha', '0')
+  cvr.slimealpha = cvar.registerVariable('r_slimealpha', '0')
 
 	cvar.registerChangedEvent('r_novis', () => state.vis_changed = true)
 	
@@ -2138,12 +2145,12 @@ const markSurfaces = () => {
 
 	// if surface chains don't need regenerating, just add static entities and return
 	if (state.oldviewleaf == state.viewleaf && !state.vis_changed && !nearwaterportal) {
-		// TODO: efrags
-		// var leaf = state.cl_worldmodel.leafs[1];
-		// for (i = 0 ; i < state.cl_worldmodel.leafs.length ; i++, leaf++)
-		// 	if (vis[i>>3] & (1<<(i&7)))
-		// 		if (leaf.efrags)
-		// 			R_StoreEfrags (&leaf->efrags);
+		for (i = 0; i < cl.clState.worldmodel.numleafs; i++) {
+			var leaf = cl.clState.worldmodel.leafs[i + 1];
+			if (vis[i>>3] & (1<<(i&7)))
+				if (leaf.efrags)
+					storeEfrags (leaf.efrags);
+		}
 		return;
 	}
 
@@ -2161,9 +2168,9 @@ const markSurfaces = () => {
 					surf.visframe = state.visframecount;
 				}
 
-			// add static models // TODO: efrags
-			// if (leaf->efrags)
-			// 	R_StoreEfrags (&leaf->efrags);
+			// add static models
+			if (leaf.efrags)
+				storeEfrags (leaf.efrags);
 		}
 	}
 

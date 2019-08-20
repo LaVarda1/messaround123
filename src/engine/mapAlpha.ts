@@ -5,15 +5,15 @@ import * as q from './q'
 import * as cvar from './cvar'
 
 export const state = {
-  lava: 1,
+  lava: 0,
   water: 1,
-  slime: 1,
-  tele: 1
+  slime: 0,
+  tele: 0
 }
 
 export const init = () => {
   cvar.registerChangedEvent('r_wateralpha', (val) => state.water = val)
-  cvar.registerChangedEvent('r_laaalpha', (val) => state.lava = val)
+  cvar.registerChangedEvent('r_lavaalpha', (val) => state.lava = val)
   cvar.registerChangedEvent('r_telealpha', (val) => state.tele = val)
   cvar.registerChangedEvent('r_slimealpha', (val) => state.slime = val)
 }
