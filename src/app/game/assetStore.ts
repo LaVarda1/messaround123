@@ -15,7 +15,9 @@ function getBinarySize (url) {
                                  //  to get only the header
     xhr.onreadystatechange = function() {
       if (this.readyState == this.DONE) {
-        resolve(parseInt(xhr.getResponseHeader("Content-Length")));
+        return xhr.status === 200 
+          ? resolve(xhr.getResponseHeader("Content-Length"))
+          : reject(xhr.status)
       }
     };
     xhr.onerror = reject
@@ -23,7 +25,7 @@ function getBinarySize (url) {
   })
 }
 
-const getFileWithProgress = (url, progress) : Promise<ArrayBuffer> => {
+const getFileWithProgress = (url, progress) : Promise<any> => {
   return getBinarySize(url)
     .then(total => {
       return new Promise((resolve, reject) => {
@@ -31,7 +33,10 @@ const getFileWithProgress = (url, progress) : Promise<ArrayBuffer> => {
         xhr.overrideMimeType('text\/plain; charset=x-user-defined')
         xhr.open('GET', url)
         xhr.onload = () => {
-          resolve(q.strmem(xhr.responseText));    
+          return xhr.status === 200 
+            ? resolve(q.strmem(xhr.responseText))
+            : reject(xhr.status)
+          
         }
         xhr.onerror = (e) => reject(e) 
         xhr.addEventListener('progress', e => {
@@ -57,35 +62,6 @@ const getFile = async function(file: string) {
     xhr.send();
   });
 };
-
-const getFileRange = async function(file, rangeFrom, rangeTo) {
-  // https://bugs.chromium.org/p/chromium/issues/detail?id=770694
-  return new Promise((resolve, reject) => {
-    var retry = 0
-    const doXhr = () => {
-      const xhr = new XMLHttpRequest();
-      xhr.overrideMimeType('text\/plain; charset=x-user-defined');
-      xhr.open('GET', file);
-      xhr.setRequestHeader('Range', 'bytes=' + rangeFrom + '-' + rangeTo);
-      xhr.onload = () => {
-        resolve({
-          status: xhr.status,
-          responseText: xhr.responseText
-        });
-      }
-      xhr.onerror = (e) => {
-        if (++retry < 3) {
-          doXhr()
-        } else {
-          reject(e)
-        }
-      }
-      xhr.send();
-    }
-    doXhr()
-  })
-};
-
 
 export const writeFile = (filename: string, data: Uint8Array, len: number) =>
 {
@@ -132,12 +108,10 @@ const getLocalStorage = (game, filename) => {
   }
   return null
 }
-const _loadFile = async (filename: string) : Promise<ArrayBuffer> =>
-{
+const _loadFile = async (filename: string) : Promise<ArrayBuffer> => {
   filename = filename.toLowerCase();
-  var i, search, netpath;
+  var i, j, search, netpath;
   
-
   for (i = com.state.searchpaths.length - 1; i >= 0; --i)
   {
     search = com.state.searchpaths[i];
@@ -148,13 +122,16 @@ const _loadFile = async (filename: string) : Promise<ArrayBuffer> =>
       return data
     }
 
-    if (search.type === 'indexeddb' && search.data) {
-      const file = search.packs.find(p => p.name === filename)
-      if (!file) {
-        continue
+    for (j = 0; j < search.packs.length; j++) {
+      const pack = search.packs[j]
+      if (pack.type === 'indexeddb' && pack.data) {
+        const file = pack.contents.find(p => p.name === filename)
+        if (!file) {
+          continue
+        }
+  
+        return pack.data.slice(file.filepos, file.filepos + file.filelen);							
       }
-      sys.print('LocalDBFile: ' + search.dir + '/' + search.name + ' : ' + filename + '\n')
-      return search.data.slice(file.filepos, file.filepos + file.filelen);							
     }
 
     // try indexedDb.
@@ -163,6 +140,21 @@ const _loadFile = async (filename: string) : Promise<ArrayBuffer> =>
       return tryIndexedDb.data
     }
 
+    // Meh. Problem is - if there's a  "game" search path, 
+    // we end up searching the server
+    // for ALL id1 assets. IS this necessary?
+    // 
+    // const gotFile = await getFile(netpath) as any;
+    // if ((gotFile.status >= 200) && (gotFile.status <= 299))
+    // {
+    //   sys.print('FindFile: ' + netpath + '\n');
+    //   return q.strmem(gotFile.responseText);
+    // }
+  }
+
+  // As a workaround to the above, lets only search the server if we can't
+  // find it in known packs
+  for (i = com.state.searchpaths.length - 1; i >= 0; --i) {
     const gotFile = await getFile(netpath) as any;
     if ((gotFile.status >= 200) && (gotFile.status <= 299))
     {
@@ -170,6 +162,7 @@ const _loadFile = async (filename: string) : Promise<ArrayBuffer> =>
       return q.strmem(gotFile.responseText);
     }
   }
+
   sys.print('FindFile: can\'t find ' + filename + '\n');
 };
 
@@ -242,6 +235,7 @@ const getPackFileContents = (game, name, data) => {
         filelen: info.getUint32((i << 6) + 60, true)
       });
     }
+
     con.print('Added packfile ' + name + ' (' + numpackfiles + ' files)\n');
     
     return pack;
@@ -268,7 +262,7 @@ const getPackFileContents = (game, name, data) => {
 //   }))
 // }
 
-const loadStorePackFile = async (game: string, packName: string): Promise<{name: string, data: ArrayBuffer, contents: IPackedFile[]}> => {
+const loadStorePackFile = async (game: string, packName: string): Promise<{name: string, data: ArrayBuffer, type: string, contents: IPackedFile[]}> => {
   let entry = null
   try {
     entry = await indexeddb.getAsset(game, packName)
@@ -283,11 +277,12 @@ const loadStorePackFile = async (game: string, packName: string): Promise<{name:
   return {
     name: entry.fileName,
     data: entry.data,
+    type: 'indexeddb',
     contents: getPackFileContents(game, entry.fileName, entry.data)
   }
 }
 
-const loadServerPackFile = async (game: string, packName: string) : Promise<{name: string, data: ArrayBuffer, contents: IPackedFile[]}> => {
+const loadServerPackFile = async (game: string, packName: string) : Promise<{name: string, data: ArrayBuffer, type: string, contents: IPackedFile[]}> => {
   const packfile = game + '/' + packName
 
   try {
@@ -298,16 +293,21 @@ const loadServerPackFile = async (game: string, packName: string) : Promise<{nam
       return null
     }
     var dataDv = new DataView(data);
-    if (dataDv.getUint32(0, true) !== 0x4b434150)
-      sys.error(packfile + ' is not a packfile');
+    if (dataDv.getUint32(0, true) !== 0x4b434150){
+      con.print(packfile + ' is not a packfile');
+      return null
+    }
     var dirlen = dataDv.getUint32(8, true);
     var numpackfiles = dirlen >> 6;
     if (numpackfiles !== 339)
       com.state.modified = true;
 
+    await indexeddb.saveAsset(game, packName, numpackfiles, data)
+
     return {
       name: packName,
       data,
+      type: 'indexeddb',
       contents: getPackFileContents(game, packName, data)
     }
   } catch{
@@ -315,7 +315,7 @@ const loadServerPackFile = async (game: string, packName: string) : Promise<{nam
   }
 }
 
-export const loadPackFile = async (dir: string, packName: string) : Promise<{name: string, data: ArrayBuffer, contents: IPackedFile[]}> => {
+export const loadPackFile = async (dir: string, packName: string) : Promise<{name: string, data: ArrayBuffer, type: string, contents: IPackedFile[]}> => {
   let entry = await loadStorePackFile(dir, packName)
   if (!entry) {
     entry = await loadServerPackFile(dir, packName)

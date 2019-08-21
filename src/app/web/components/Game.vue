@@ -1,10 +1,11 @@
 <template lang="pug">
-  .game-container  
+  .game-container
     span#progress Starting Quake...
     canvas#mainwindow
     #loading(style="display: none; position: fixed;")
       img(alt="Loading")
       .loading-message(style="color: burlywood; font-family: monospace; font-weight:bold;background: RGBA(0,0,0,.2); padding: 3px 10px; margin-left: -7px;")
+    #lateregistered(style="display: none; position: fixed;")
 </template>
 
 <script>

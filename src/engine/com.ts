@@ -79,40 +79,21 @@ const path_f = function()
 };
 
 
-const addGameDirectory = async function(game)
-{
-  var pak, i = 0;
+const addGameDirectory = async function(game) {
+  var pak, i = 0, packs = []
   for (;;)
   {
     pak = await state.assetStore.loadPackFile(game, 'pak' + i + '.pak');
     if (pak == null)
       break;
-    state.searchpaths[state.searchpaths.length] = {
-      dir: game,
-      data: pak.data,
-      name: pak.name,
-      type: 'indexeddb',
-      packs: pak.contents
-    };
+    packs.push(pak)
     ++i;
   }
+  state.searchpaths[state.searchpaths.length] = {
+    dir: game,
+    packs
+  };
 };
-
-// const addStorePacks = async (game: string) => {
-//   var i;
-//   const results = await state.assetStore.loadStorePackFiles(game)
-//   if (!results) 
-//     return
-//   for(i = 0; i < results.length; i++) {
-//     state.searchpaths[state.searchpaths.length] = {
-//       dir: game,
-//       data: results[i].data,
-//       name: results[i].name,
-//       type: 'indexeddb',
-//       packs: results[i].contents
-//     };
-//   }
-// }
 
 const initFilesystem = async function()
 {
@@ -138,7 +119,7 @@ const initFilesystem = async function()
     if (search != null)
     {
       state.modified = true;
-      addGameDirectory(search);
+      await addGameDirectory(search);
       cvar.set('game', search)
     }
   }
@@ -299,7 +280,9 @@ export const init = async function(assetStore: IAssetStore)
   cvr.registered = cvar.registerVariable('registered', '0');
   cvar.registerVariable('cmdline', state.cmdline, false, true);
   cvar.registerVariable('game', 'id1', false, true);
+
   cmd.addCommand('path', path_f);
+
   await initFilesystem();
   await checkRegistered();
 };

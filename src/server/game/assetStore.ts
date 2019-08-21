@@ -3,6 +3,7 @@ import * as crc from '../../engine/crc'
 import * as com from '../../engine/com'
 import * as sys from '../../engine/sys'
 import * as con from '../../engine/console'
+import IPackedFile from '../../engine/interfaces/store/IPackedFile'
 import * as fs from 'fs'
 
 
@@ -96,12 +97,7 @@ export const loadFile = async function(filename: string)
 	return dest;
 };
 
-export const loadStorePackFiles = async function(game) 
-{
-	return Promise.resolve([])
-}
-export const loadPackFile = async function(dir, packName)
-{
+export const loadPackFile = async (dir: string, packName: string) : Promise<{name: string, data: ArrayBuffer, type: string, contents: IPackedFile[]}> => {
 	const packfile = dir + '/' + packName
 	var fd;
 	try
@@ -112,6 +108,7 @@ export const loadPackFile = async function(dir, packName)
 	{
 		return;
 	}
+
 	var buf = Buffer.alloc(12);
 	fs.readSync(fd, buf, 0, 12, 0);
 	if (buf.readUInt32LE(0) !== 0x4b434150)
@@ -141,5 +138,11 @@ export const loadPackFile = async function(dir, packName)
 	}
 	fs.closeSync(fd);
 	con.print('Added packfile ' + packfile + ' (' + numpackfiles + ' files)\n');
-	return pack;
+
+	return {
+		name: packfile,
+		data: null,
+		type: 'filesystem',
+		contents: pack
+	}
 };

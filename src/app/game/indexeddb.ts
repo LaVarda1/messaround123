@@ -114,7 +114,7 @@ export const getAsset = async (game, fileName) => {
     }
   }
   return null
-}
+} 
 
 export const saveAsset = async (game: string, fileName: string, fileCount: number, blob: any) => {
   if (!game || !fileName || fileCount <= 0) {
