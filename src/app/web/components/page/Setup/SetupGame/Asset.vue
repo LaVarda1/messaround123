@@ -6,13 +6,6 @@
         .column.col-5.asset-fileCount {{assetMeta.fileCount}} Files
         .column.col-2.asset-remove 
           i(class="icon icon-cross" @click="remove")
-    template(v-else)
-      .asset-loader
-        label
-          i(:class="'icon icon-upload' + (loading ? 'loading' : '')")
-          |  Load Asset
-          input.loader-file-input(type="file" name="files[]" @change="handleFileSelect")
-        .asset-loader_error(v-if="loadError") {{loadError}}
 </template>
 
 <script>
@@ -66,38 +59,6 @@ export default {
     ...mapActions('game', ['saveAsset', 'removeAsset']),
     remove() {
       this.removeAsset(this.assetMeta.assetId)
-    },
-    processReadFile({fileName, data}) {
-      const packFiles = readPackFile(data)
-      if (packFiles.length === 0) {
-        return Promise.reject("Not a valid quake pack file")
-      }
-      if (this.assetVerifier && !this.assetVerifier(packFiles, data)) {
-        return Promise.reject(this.assetVerifierFailMessage)
-      }
-      return this.saveAsset({game: this.game, fileName, fileCount: packFiles.length, data})
-    },
-    handleFileSelect (e) {
-      const files = e.target.files
-      if (files.length > 1) {
-        return
-      }
-      const reader = new FileReader()
-      this.loading = true;
-      return readFile(files[0])
-        .then(readFile => {
-          return this.processReadFile(readFile)
-            .then((assetId) => {
-              this.loading = true;
-              this.loadError = ''
-            })
-            .catch(err => {
-              this.loadError = err
-            })
-        })
-        .then(() => {
-          this.loading = false;
-        })
     }
   }
 }
