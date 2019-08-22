@@ -12,21 +12,6 @@
 import { readPackFile } from '../../../../helpers/assetChecker'
 import {mapActions} from 'vuex'
 
-const readFile = file => {
-  return new Promise((resolve, reject) => {
-    const fileName = file.name
-    const reader = new FileReader()
-    reader.onloadend = loadEvt => {
-      resolve({
-        fileName,
-        data: loadEvt.target.result
-      })
-    }
-    reader.onerror = (e) => reject(e)
-    reader.readAsArrayBuffer(file)
-  })
-}
-
 export default {
   props: {
     label: {
@@ -56,7 +41,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions('game', ['saveAsset', 'removeAsset']),
+    ...mapActions('game', ['removeAsset']),
     remove() {
       this.removeAsset(this.assetMeta.assetId)
     }

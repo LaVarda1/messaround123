@@ -5,12 +5,15 @@
     #loading(style="display: none; position: fixed;")
       img(alt="Loading")
       .loading-message(style="color: burlywood; font-family: monospace; font-weight:bold;background: RGBA(0,0,0,.2); padding: 3px 10px; margin-left: -7px;")
-    #lateregistered(style="display: none; position: fixed;")
+    #lateregistered(v-if="showUpload")
+      Id1Assets
+
 </template>
 
 <script>
 import Vue from 'vue'
 import GameInit from '../../game'
+import Id1Assets from '../components/page/Setup/SetupGame/ID1Assets.vue'
 
 const gameHooks = (vueComp) => ({
   quit: () => vueComp.$emit('quit')
@@ -20,8 +23,12 @@ export default Vue.extend({
   data() {
     return {
       gameSys: null,
-      gameQuit: false
+      gameQuit: false,
+      showUpload: false
     }
+  },
+  components: {
+    Id1Assets
   },
   mounted() {
     this.gameSys = GameInit(this.args, {
@@ -29,6 +36,9 @@ export default Vue.extend({
       quit: () => {
         this.gameQuit = true
         this.$router.go(-1)
+      },
+      requireRegistered: () => {
+        this.showUpload = true
       }
     })
   },

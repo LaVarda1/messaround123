@@ -64,16 +64,24 @@ const dbOperation = async (storeName: string, fn: (db: IDBObjectStore) => IDBReq
 }
 
 export const getAllMeta = async (): Promise<Array<any>> => {
-  const keys = await dbOperation(metaStoreName, store => store.getAllKeys())
-  return Promise.all(keys.map(async key => {
-    const meta = await dbOperation(metaStoreName, store => store.get(key))
+  const db = await open()
+
+  var transaction = db.transaction(['meta'], 'readonly');
+  var meta = transaction.objectStore('meta');
+
+  // Select the first matching record, if any exists, assume game exists
+  const allKeys = await promiseMe(meta.getAllKeys()) as any[]
+  
+  return Promise.all(allKeys.map(async key => {
+    const metaObj = await promiseMe(meta.get(key))
 
     return {
-      ...meta,
+      ...metaObj,
       assetId: key
     }
   }))
 }
+
 
 export const getAllMetaPerGame = async (game): Promise<Array<any>> => {
   const assetMetas = await getAllMeta()
@@ -117,7 +125,7 @@ export const getAsset = async (game, fileName) => {
 } 
 
 export const saveAsset = async (game: string, fileName: string, fileCount: number, blob: any) => {
-  if (!game || !fileName || fileCount <= 0) {
+  if (!game || !fileName || blob.length <= 0) {
     throw new Error('Missing data while trying to save asset')
   }
   const metaObj = {
@@ -134,3 +142,34 @@ export const removeAsset = async (assetId): Promise<void> => {
   await dbOperation(metaStoreName, store => store.delete(assetId))
   return await dbOperation(assetStoreName, store => store.delete(assetId))
 }
+
+export const hasGame = async (game) => {
+  const db = await open()
+
+  var transaction = db.transaction(['meta'], 'readonly');
+  var meta = transaction.objectStore('meta');
+  var index = meta.index(gameIndex);
+
+  // Select the first matching record, if any exists, assume game exists
+  const assetMeta = await promiseMe(index.get(IDBKeyRange.only(game.toLowerCase()))) as any
+  return !!assetMeta
+}
+
+export const removeGame = async (game) => {
+  const db = await open()
+
+  var transaction = db.transaction([metaStoreName, assetStoreName], 'readwrite')
+  var metas = transaction.objectStore(metaStoreName)
+  var assets = transaction.objectStore(assetStoreName)
+  var metaGameIndex = metas.index(gameIndex)
+
+  const assetMetaKeys = await promiseMe(metaGameIndex.getAllKeys(IDBKeyRange.only(game.toLowerCase()))) as any
+
+  return Promise.all(assetMetaKeys.map(key =>
+    Promise.all([
+      promiseMe(assets.delete(key)),
+      promiseMe(metas.delete(key))
+    ])
+  ))
+}
+

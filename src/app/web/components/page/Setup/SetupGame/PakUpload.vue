@@ -1,5 +1,5 @@
 <template lang="pug">
-  .upload-zone
+  .upload-zone(@drop="handleFileDrop" @dragover.prevent)
     .columns
       .column.col-12.text Drop pak files here 
         label.browse
@@ -9,39 +9,34 @@
 </template>
 
 <script>
+
 export default {
   methods: {
-    processReadFile({fileName, data}) {
-      const packFiles = readPackFile(data)
-      if (packFiles.length === 0) {
-        return Promise.reject("Not a valid quake pack file")
+    handleFileDrop (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (e.dataTransfer.items) {
+        var files = [...e.dataTransfer.items]
+          .filter(item => item.kind === 'file')
+          .map(item => item.getAsFile())
+          
+        if (!files.length) {
+          return
+        }
+        this.$emit('uploadFiles', files)
+      } else {
+        if (!e.dataTransfer.files.length) {
+          return
+        }
+        this.$emit('uploadFiles', [...e.dataTransfer.files])
       }
-      if (this.assetVerifier && !this.assetVerifier(packFiles, data)) {
-        return Promise.reject(this.assetVerifierFailMessage)
-      }
-      return this.saveAsset({game: this.game, fileName, fileCount: packFiles.length, data})
     },
     handleFileSelect (e) {
-      const files = e.target.files
-      if (files.length > 1) {
+      if (!e.target.files.length) {
         return
       }
-      const reader = new FileReader()
-      this.loading = true;
-      return readFile(files[0])
-        .then(readFile => {
-          return this.processReadFile(readFile)
-            .then((assetId) => {
-              this.loading = true;
-              this.loadError = ''
-            })
-            .catch(err => {
-              this.loadError = err
-            })
-        })
-        .then(() => {
-          this.loading = false;
-        })
+      this.$emit('uploadFiles', [...e.target.files])
     }
   }
 }

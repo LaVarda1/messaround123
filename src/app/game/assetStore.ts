@@ -4,7 +4,7 @@ import * as crc from '../../engine/crc'
 import * as com from '../../engine/com'
 import * as sys from '../../engine/sys'
 import * as con from '../../engine/console'
-import * as indexeddb from './indexeddb'
+import * as indexeddb from '../../shared/indexeddb'
 import IPackedFile from '../../engine/interfaces/store/IPackedFile'
 
 

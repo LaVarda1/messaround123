@@ -1,4 +1,4 @@
-import * as indexedDb from '../helpers/indexeddb'
+import * as indexedDb from '../../../shared/indexeddb'
 const recommendedCfg = 
 `bind "TAB" "+showscores"
 bind "ENTER" "+jump"

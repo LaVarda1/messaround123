@@ -6,7 +6,6 @@ import * as con from '../../engine/console'
 import IPackedFile from '../../engine/interfaces/store/IPackedFile'
 import * as fs from 'fs'
 
-
 export const writeFile = (filename: string, data: Uint8Array, len: number) =>
 {
   return Promise.reject(new Error('Not Implemented'))
