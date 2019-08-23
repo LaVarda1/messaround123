@@ -1,8 +1,12 @@
 <template lang="pug">
   .setup-game.container
     h4 Currently loaded files in your browser
-    .card
+    .card.id1-loade
       h5 Pak files from your id1 directory
+      p In order to play later episodes or modified games, 
+       | you must provide your own pak1 file - usually located
+       | in your quake\id1 directory.
+
       ID1Assets
     .card
       CustomAssets
@@ -26,5 +30,10 @@ export default {
   }
 }
 </script>
-<style>
+<style lang="scss">
+.setup-game.container {
+  .card {
+    padding: 0 .8rem;
+  }
+}
 </style>

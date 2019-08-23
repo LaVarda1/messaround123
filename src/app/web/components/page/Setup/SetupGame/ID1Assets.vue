@@ -3,13 +3,15 @@
     .pack-upload(v-if="!packOne || !packZero")
       PakUpload(@uploadFiles="uploadFilesRequest" :loading="loading")
     .columns
-      .column.col-12
-        H4(v-if="assetMetas.length") Loaded Id1 packs
-        H4(v-else) No packs loaded
+      .column.col-12.mb-2
+        H5(v-if="assetMetas.length") Loaded Id1 packs:
+          
+        H5(v-else) No packs loaded
         Asset(v-for="meta in assetMetas"
           :assetMeta="meta"
           :label="meta.filename"
           game="id1")
+    
 
 </template>
 
