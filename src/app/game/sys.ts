@@ -302,3 +302,12 @@ export const getExternalCommand = () => {
 export const registerHooks = (hooks) => {
 	state.hooks = hooks
 }
+
+export const requestPak = () => {
+	if (state.hooks && state.hooks.startRequestPak) {
+		return new Promise((resolve, reject) => {
+			state.hooks.startRequestPak(resolve)
+		})
+	}
+	return Promise.resolve()
+}

@@ -25,9 +25,9 @@ export const loadFile = async function(filename: string)
 		for (j = search.packs.length - 1; j >= 0; --j)
 		{
 			pak = search.packs[j];
-			for (k = 0; k < pak.length; ++k)
+			for (k = 0; k < pak.contents.length; ++k)
 			{
-				file = pak[k];
+				file = pak.contents[k];
 				if (file.name !== filename)
 					continue;
 				if (file.filelen === 0)

@@ -5,10 +5,10 @@
         div.basic-button(@click="toggleExpand")
           i.icon(style="margin: .3rem;" :class="expanded ? 'icon-minus' : 'icon-plus'")
       td.title {{gameDisplay}}
-      td.size {{metaList.length}} KB
+      td.size {{metaList.length}} Files
       td.removal
         div.basic-button(@click="remove")
-          i.icon.icon-cross(style="margin: .3rem;")
+          i.icon.icon-cross(style="margin: .3rem; color: red")
     
     tr.scroll(v-if="expanded")
       table.file-table

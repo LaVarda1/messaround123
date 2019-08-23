@@ -1,6 +1,6 @@
 <template lang="pug">
   .custom-assets
-    h2.container Mods / Maps
+    h4.container Mods / Maps
     table.table.table-hover(:class="loading ? 'loading-lg loading' : ''")
       GameTable(v-for="(value, prop, idx) in groupedAssets" 
         :metaList="value" 

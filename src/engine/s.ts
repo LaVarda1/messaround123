@@ -48,10 +48,10 @@ export const init = async function () {
 	cvr.ambient_fade = cvar.registerVariable('ambient_fade', '100');
 
 	// createBuffer is broken, disable Web Audio for now.
-	// if ((window as any).AudioContext != null)
-	// 	context = new (window as any).AudioContext();
-	// else if ((window as any).webkitAudioContext != null)
-	// 	context = new (window as any).webkitAudioContext();
+	if ((window as any).AudioContext != null)
+		context = new (window as any).AudioContext();
+	else if ((window as any).webkitAudioContext != null)
+		context = new (window as any).webkitAudioContext();
 
 	var i, ambient_sfx = ['water1', 'wind2'], ch, nodes;
 	for (i = 0; i < ambient_sfx.length; ++i) {

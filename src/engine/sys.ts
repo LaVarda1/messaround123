@@ -27,3 +27,7 @@ export const floatTime = (): number =>
 export const getExternalCommand = (): string => {
 	return sysImpl.getExternalCommand()
 }
+
+export const requestPak = () => {
+	return sysImpl.requestPak()
+}

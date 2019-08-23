@@ -75,3 +75,7 @@ export const init = async (argv: string) => {
 	process.stdin.on('data', onConsoleInput);
 	process.nextTick(startGameLoop);
 }
+
+export const requestPak = () => {
+	return Promise.resolve()
+}

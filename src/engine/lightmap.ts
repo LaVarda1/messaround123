@@ -250,8 +250,7 @@ const buildLightMap = (model, surf, buffofs: number, stride: number) => {
 
 	if (model) //if (cl.worldmodel->lightdata)
 	{
-		state.blocklights.fill(0)
-
+		state.blocklights.fill(0, 0, size * 3)
 		// add all the lightmaps
 		if (buffidx > -1)
 		{
@@ -364,14 +363,15 @@ const renderDynamicLightmaps = (model, surf) => {
 
 
 export const buildLightmapChains = (model, chain) => {
+	var i = 0, t, s
 	for (var i = 0; i < model.textures.length; i++)
 	{
-		var t = model.textures[i];
+		t = model.textures[i];
 
-		if (!t || !t.texturechains || !t.texturechains[chain])
+		if (!t || !t.texturechains[chain])
 			continue;
 
-		for (var s = t.texturechains[chain]; s; s = s.texturechain)
+		for (s = t.texturechains[chain]; s; s = s.texturechain)
 			if (!s.culled)
 				renderDynamicLightmaps (model, s);
 	}

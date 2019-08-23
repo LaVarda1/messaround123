@@ -25,14 +25,27 @@ export const uuidv4 = () => {
   })
 }
 
-const checkRegistered = async function()
-{
+const checkRegistered = async function() {
   var h = await state.assetStore.loadFile('gfx/pop.lmp');
-  if (h == null)
+  if (!h)
   {
     con.print('Playing shareware version.\n');
-    if (state.modified === true)
-      sys.error('You must have the registered version to use modified games');
+    if (state.modified === true) {
+      try {
+        await sys.requestPak()
+        state.searchpaths = state.searchpaths.filter(sp => sp.dir !== 'id1')
+        state.searchpaths.unshift({
+          dir: 'id1',
+          packs: await getGamePacks('id1')
+        })
+        h = await state.assetStore.loadFile('gfx/pop.lmp');
+        if (!h) {
+          throw new Error('Still no registered asset')
+        }
+      } catch (e) {
+        sys.error('You must have the registered version to use modified games');;
+      }
+    }
     return;
   }
   var check = new Uint8Array(h);
@@ -78,9 +91,8 @@ const path_f = function()
   }
 };
 
-
-const addGameDirectory = async function(game) {
-  var pak, i = 0, packs = []
+const getGamePacks = async game => {
+  var i = 0, packs = [], pak
   for (;;)
   {
     pak = await state.assetStore.loadPackFile(game, 'pak' + i + '.pak');
@@ -89,9 +101,12 @@ const addGameDirectory = async function(game) {
     packs.push(pak)
     ++i;
   }
+  return packs
+}
+const addGameDirectory = async function(game) {
   state.searchpaths[state.searchpaths.length] = {
     dir: game,
-    packs
+    packs: await getGamePacks(game)
   };
 };
 
