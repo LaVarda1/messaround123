@@ -25,8 +25,7 @@ export const uuidv4 = () => {
   })
 }
 
-const checkRegistered = async function()
-{
+const checkRegistered = async function() {
   var h = await state.assetStore.loadFile('gfx/pop.lmp');
   if (!h)
   {
@@ -44,11 +43,10 @@ const checkRegistered = async function()
           throw new Error('Still no registered asset')
         }
       } catch (e) {
-        sys.error('You must have the registered version to use modified games');
-
-        return;
+        sys.error('You must have the registered version to use modified games');;
       }
     }
+    return;
   }
   var check = new Uint8Array(h);
   var pop =

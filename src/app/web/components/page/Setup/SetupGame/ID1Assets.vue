@@ -1,6 +1,7 @@
 <template lang="pug">
   .base-assets.container
-    PakUpload(@uploadFiles="uploadFilesRequest" :loading="loading")
+    .pack-upload(v-if="!packOne || !packZero")
+      PakUpload(@uploadFiles="uploadFilesRequest" :loading="loading")
     .columns
       .column.col-12
         H4(v-if="assetMetas.length") Loaded Id1 packs
@@ -46,7 +47,13 @@ export default {
   },
   computed: {
     ...mapGetters('game', ['allAssetMetas']),
-    assetMetas () { return this.allAssetMetas.filter(assetMeta => assetMeta.game === 'id1') }
+    assetMetas () { return this.allAssetMetas.filter(assetMeta => assetMeta.game === 'id1') },
+    packOne() {
+      return this.assetMetas.find(assetMeta => assetMeta.fileName.toLowerCase() === 'pak1.pak')
+    },
+    packZero() { 
+      return this.assetMetas.find(assetMeta => assetMeta.fileName.toLowerCase() === 'pak0.pak')
+    }
   },
   methods: {
     ...mapActions('game', ['saveAsset']),
