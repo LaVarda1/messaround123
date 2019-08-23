@@ -1,7 +1,7 @@
 <template lang="pug">
   .upload-zone(@drop="handleFileDrop" @dragover.prevent)
     .columns
-      .column.col-12.text Drop pak files here 
+      .column.col-12.text Drop pak files here&nbsp;
         label.browse
           | or browse
           i(:class="'icon icon-upload' + (loading ? 'loading' : '')")
@@ -45,14 +45,15 @@ export default {
 <style lang="scss" scoped>
 .upload-zone {
   padding: 2rem;
-  border:  1px grey dashed;
+  border:  2px grey dashed;
   .text {
-    margin: auto;
-    width: 100%;
+    font-size: 1.5rem;
+    display:flex;
+    justify-content: center;
   }
   .browse {
     cursor: pointer;
-    color: blue;
+    color: #8f4e28;
   }
 }
 </style>

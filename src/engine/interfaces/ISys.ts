@@ -7,5 +7,6 @@ export interface ISys {
   error: (text: string) => void,
   getExternalCommand: () => string,
   init: (argv: string) => void,
-  assetStore: IAssetStore
+  assetStore: IAssetStore,
+  requestPak: () => Promise<any>
 }

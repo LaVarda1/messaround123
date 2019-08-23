@@ -1,13 +1,10 @@
 <template lang="pug">
   .base-assets.container
-    h3 Base Game
-    h5 Here you may configure the base game "pak" files found in the id1 directory. Pak0 is optional, but Pak1 is required if you want to play the full registered game or any custom maps or mods.
-
     PakUpload(@uploadFiles="uploadFilesRequest" :loading="loading")
     .columns
       .column.col-12
-        H6(v-if="assetMetas.length") Loaded Id1 packs
-        H6(v-else) No packs loaded
+        H4(v-if="assetMetas.length") Loaded Id1 packs
+        H4(v-else) No packs loaded
         Asset(v-for="meta in assetMetas"
           :assetMeta="meta"
           :label="meta.filename"
@@ -21,7 +18,7 @@ import PakUpload from './PakUpload.vue'
 import {isId1Pak1, readPackFile} from '../../../../helpers/assetChecker'
 import {mapActions, mapGetters} from 'vuex'
 
-const readFile = file => {
+const readFile = async file => {
   return new Promise((resolve, reject) => {
     const fileName = file.name
     const reader = new FileReader()
@@ -49,39 +46,38 @@ export default {
   },
   computed: {
     ...mapGetters('game', ['allAssetMetas']),
-    assetMetas () { return this.allAssetMetas.filter(assetMeta => assetMeta.game === 'id1') },
-    packOne() {
-      return this.assetMetas.find(assetMeta => assetMeta.fileName.toLowerCase() === 'pak1.pak')
-    },
-    packZero() { 
-      return this.assetMetas.find(assetMeta => assetMeta.fileName.toLowerCase() === 'pak0.pak')
-    }
+    assetMetas () { return this.allAssetMetas.filter(assetMeta => assetMeta.game === 'id1') }
   },
   methods: {
     ...mapActions('game', ['saveAsset']),
-    processReadFile ({fileName, data}) {
+    async processReadFile ({fileName, data}) {
       const packFiles = readPackFile(data)
       if (packFiles.length === 0) {
-        return Promise.reject("Not a valid quake pack file")
+        throw new Error("Not a valid quake pack file")
       }
       if (fileName.toLowerCase() === 'pak1.pak' && !isId1Pak1(packFiles, data)) {
-        return Promise.reject("Pak1.pak is not the original registered quake pak")
+        throw new Error("Pak1.pak is not the original registered quake pak")
       }
-      const payload = {game: 'id1', fileName, fileCount: packFiles.length, data}
-
-      return this.saveAsset(payload)
+      
+      return this.saveAsset({game: 'id1', fileName, fileCount: packFiles.length, data})
     },
     async uploadFilesRequest (files) {
       this.loading = true
       
-      files.forEach(async file => {
+      const promises = files.map(async file => {
         try {
-          await this.processReadFile(await readFile(file))
+          const fileObj = await readFile(file)
+          await this.processReadFile(fileObj)
+          return file.name
         } catch (e) {
+          console.log(e)
           // meh.
         }
       });
 
+      const uploadedFiles = (await Promise.all(promises)).filter(f => !!f)
+
+      this.$emit('uploaded', uploadedFiles)
       this.loading = false
     },
   }

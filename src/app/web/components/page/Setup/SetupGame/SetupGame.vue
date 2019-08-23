@@ -1,7 +1,8 @@
 <template lang="pug">
   .setup-game.container
-    h2 Use this screen to configure what pack files you want to provide to the game
+    h4 Currently loaded files in your browser
     .card
+      h5 Pak files from your id1 directory
       ID1Assets
     .card
       CustomAssets

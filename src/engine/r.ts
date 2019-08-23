@@ -305,7 +305,7 @@ state.refdef = {
 	vieworg: [0.0, 0.0, 0.0],
 	viewangles: [0.0, 0.0, 0.0]
 };
-const cullBox2 = function(mins, maxs)
+const cullBox = function(mins, maxs)
 {
 	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[0]) === 2)
 		return true;
@@ -316,47 +316,47 @@ const cullBox2 = function(mins, maxs)
 	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[3]) === 2)
 		return true;
 };
-export const cullBox = function (emins, emaxs) {
-	for (var i = 0; i < 4; i++) {
-		var p = state.frustum[i];
-		switch (p.signbits) {
-			default:
-			case 0:
-				if (p.normal[0] * emaxs[0] + p.normal[1] * emaxs[1] + p.normal[2] * emaxs[2] < p.dist)
-					return true;
-				break;
-			case 1:
-				if (p.normal[0] * emins[0] + p.normal[1] * emaxs[1] + p.normal[2] * emaxs[2] < p.dist)
-					return true;
-				break;
-			case 2:
-				if (p.normal[0] * emaxs[0] + p.normal[1] * emins[1] + p.normal[2] * emaxs[2] < p.dist)
-					return true;
-				break;
-			case 3:
-				if (p.normal[0] * emins[0] + p.normal[1] * emins[1] + p.normal[2] * emaxs[2] < p.dist)
-					return true;
-				break;
-			case 4:
-				if (p.normal[0] * emaxs[0] + p.normal[1] * emaxs[1] + p.normal[2] * emins[2] < p.dist)
-					return true;
-				break;
-			case 5:
-				if (p.normal[0] * emins[0] + p.normal[1] * emaxs[1] + p.normal[2] * emins[2] < p.dist)
-					return true;
-				break;
-			case 6:
-				if (p.normal[0] * emaxs[0] + p.normal[1] * emins[1] + p.normal[2] * emins[2] < p.dist)
-					return true;
-				break;
-			case 7:
-				if (p.normal[0] * emins[0] + p.normal[1] * emins[1] + p.normal[2] * emins[2] < p.dist)
-					return true;
-				break;
-		}
-	}
-	return false;
-};
+// export const cullBox = function (emins, emaxs) {
+// 	for (var i = 0; i < 4; i++) {
+// 		var p = state.frustum[i];
+// 		switch (p.signbits) {
+// 			default:
+// 			case 0:
+// 				if (p.normal[0] * emaxs[0] + p.normal[1] * emaxs[1] + p.normal[2] * emaxs[2] < p.dist)
+// 					return true;
+// 				break;
+// 			case 1:
+// 				if (p.normal[0] * emins[0] + p.normal[1] * emaxs[1] + p.normal[2] * emaxs[2] < p.dist)
+// 					return true;
+// 				break;
+// 			case 2:
+// 				if (p.normal[0] * emaxs[0] + p.normal[1] * emins[1] + p.normal[2] * emaxs[2] < p.dist)
+// 					return true;
+// 				break;
+// 			case 3:
+// 				if (p.normal[0] * emins[0] + p.normal[1] * emins[1] + p.normal[2] * emaxs[2] < p.dist)
+// 					return true;
+// 				break;
+// 			case 4:
+// 				if (p.normal[0] * emaxs[0] + p.normal[1] * emaxs[1] + p.normal[2] * emins[2] < p.dist)
+// 					return true;
+// 				break;
+// 			case 5:
+// 				if (p.normal[0] * emins[0] + p.normal[1] * emaxs[1] + p.normal[2] * emins[2] < p.dist)
+// 					return true;
+// 				break;
+// 			case 6:
+// 				if (p.normal[0] * emaxs[0] + p.normal[1] * emins[1] + p.normal[2] * emins[2] < p.dist)
+// 					return true;
+// 				break;
+// 			case 7:
+// 				if (p.normal[0] * emins[0] + p.normal[1] * emins[1] + p.normal[2] * emins[2] < p.dist)
+// 					return true;
+// 				break;
+// 		}
+// 	}
+// 	return false;
+// };
 
 export const drawSpriteModel = function (e) {
 	var program = GL.useProgram('Sprite', true);
@@ -1080,6 +1080,7 @@ export const init = function () {
   cvr.lavaalpha = cvar.registerVariable('r_lavaalpha', '0')
   cvr.telealpha = cvar.registerVariable('r_telealpha', '0')
   cvr.slimealpha = cvar.registerVariable('r_slimealpha', '0')
+  cvr.test = cvar.registerVariable('r_test', '0')
 
 	cvar.registerChangedEvent('r_novis', () => state.vis_changed = true)
 	
@@ -1670,8 +1671,7 @@ const cullSurfaces = (model, chain) => {
 			continue;
 
 		for (s = t.texturechains[chain]; s; s = s.texturechain) { 
-			//if (cullBox(s.mins, s.maxs) && backFaceCull(s)) // Quakespasm. Slower, but better?
-			if (cullBox2(s.mins, s.maxs)) 
+			if (cullBox(s.mins, s.maxs) && backFaceCull(s)) 
 				s.culled = true;
 			else {
 				s.culled = false;
