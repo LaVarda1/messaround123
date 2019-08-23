@@ -15,7 +15,7 @@
 import {groupBy, keys, find} from 'ramda'
 import {mapGetters, mapActions} from 'vuex'
 import GameTable from './GameTable.vue'
-import {removeGame} from '../../../../../helpers/indexeddb'
+import {removeGame} from '../../../../../../../shared/indexeddb'
 
 export default {
   components: {

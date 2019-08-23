@@ -1651,7 +1651,6 @@ const readClientMessage = async function () {
 				continue;
 			if (_cmd === protocol.CLC.stringcmd) {
 				s = msg.readString();
-				console.log('read -> ' + s)
 				for (i = 0; i < cmds.length; ++i) {
 					if (s.substring(0, cmds[i].length).toLowerCase() !== cmds[i])
 						continue;

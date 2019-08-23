@@ -1,0 +1,58 @@
+<template lang="pug">
+  .upload-zone(@drop="handleFileDrop" @dragover.prevent)
+    .columns
+      .column.col-12.text Drop pak files here 
+        label.browse
+          | or browse
+          i(:class="'icon icon-upload' + (loading ? 'loading' : '')")
+          input.loader-file-input(type="file" multiple name="files[]" @change="handleFileSelect")
+</template>
+
+<script>
+
+export default {
+  methods: {
+    handleFileDrop (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (e.dataTransfer.items) {
+        var files = [...e.dataTransfer.items]
+          .filter(item => item.kind === 'file')
+          .map(item => item.getAsFile())
+          
+        if (!files.length) {
+          return
+        }
+        this.$emit('uploadFiles', files)
+      } else {
+        if (!e.dataTransfer.files.length) {
+          return
+        }
+        this.$emit('uploadFiles', [...e.dataTransfer.files])
+      }
+    },
+    handleFileSelect (e) {
+      if (!e.target.files.length) {
+        return
+      }
+      this.$emit('uploadFiles', [...e.target.files])
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.upload-zone {
+  padding: 2rem;
+  border:  1px grey dashed;
+  .text {
+    margin: auto;
+    width: 100%;
+  }
+  .browse {
+    cursor: pointer;
+    color: blue;
+  }
+}
+</style>

@@ -1,16 +1,15 @@
 <template lang="pug">
   .setup-game.container
-    h1 Use this screen to configure what pack files you want to provide to the game
+    h2 Use this screen to configure what pack files you want to provide to the game
     .card
-      BaseAssets(:assetMetas="baseAssets")
+      ID1Assets
     .card
       CustomAssets
 </template>
 
 <script>
 import CustomAssets from './CustomAssets/CustomAssets.vue'
-import BaseAssets from './BaseAssets.vue'
-import { mapGetters } from 'vuex'
+import ID1Assets from './ID1Assets.vue'
 
 export default {
   data () {
@@ -20,11 +19,9 @@ export default {
   },
   components: {
     CustomAssets,
-    BaseAssets
+    ID1Assets
   },
   computed: {
-    ...mapGetters('game', ['allAssetMetas']),
-    baseAssets() { return this.allAssetMetas.filter(assetMeta => assetMeta.game === 'id1') }
   }
 }
 </script>

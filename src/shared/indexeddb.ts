@@ -63,18 +63,6 @@ const dbOperation = async (storeName: string, fn: (db: IDBObjectStore) => IDBReq
   })
 }
 
-export const hasGame = async (game) => {
-  const db = await open()
-
-  var transaction = db.transaction(['meta'], 'readonly');
-  var meta = transaction.objectStore('meta');
-  var index = meta.index(gameIndex);
-
-  // Select the first matching record, if any exists, assume game exists
-  const assetMeta = await promiseMe(index.get(IDBKeyRange.only(game.toLowerCase()))) as any
-  return !!assetMeta
-}
-
 export const getAllMeta = async (): Promise<Array<any>> => {
   const db = await open()
 
@@ -94,6 +82,7 @@ export const getAllMeta = async (): Promise<Array<any>> => {
   }))
 }
 
+
 export const getAllMetaPerGame = async (game): Promise<Array<any>> => {
   const assetMetas = await getAllMeta()
   return assetMetas.filter(meta => meta.game === game.toLowerCase())
@@ -105,11 +94,35 @@ export const getAllAssets = async () => {
 
 export const getAllAssetsPerGame = async (game) => {
   const assetMetas = await getAllMetaPerGame(game)
-  const assetIds = assetMetas
-    .map(meta => meta.assetId)
   
-  return Promise.all(assetIds.map(async assetId => await dbOperation(metaStoreName, store => store.get(assetId))))
+  return Promise.all(assetMetas.map(async assetMeta => {
+    const asset = await dbOperation(assetStoreName, store => store.get(assetMeta.assetId))
+    return {
+      ...assetMeta,
+      ...asset
+    }
+  }))
 }
+
+export const getAsset = async (game, fileName) => {
+  const db = await open()
+
+  var transaction = db.transaction(['assets', 'meta'], 'readonly');
+  var meta = transaction.objectStore('meta');
+  var assets = transaction.objectStore('assets');
+  var index = meta.index(gameAndFileIndex);
+
+  // Select the first matching record
+  const assetMeta = await promiseMe(index.get(IDBKeyRange.only([game.toLowerCase(), fileName.toLowerCase()]))) as any
+  if (assetMeta) {
+    const assetId = await promiseMe(index.getKey(IDBKeyRange.only([game.toLowerCase(), fileName.toLowerCase()]))) as any
+    return {
+      ...assetMeta,
+      ...(await promiseMe(assets.get(assetId)))
+    }
+  }
+  return null
+} 
 
 export const saveAsset = async (game: string, fileName: string, fileCount: number, blob: any) => {
   if (!game || !fileName || blob.length <= 0) {
@@ -130,6 +143,18 @@ export const removeAsset = async (assetId): Promise<void> => {
   return await dbOperation(assetStoreName, store => store.delete(assetId))
 }
 
+export const hasGame = async (game) => {
+  const db = await open()
+
+  var transaction = db.transaction(['meta'], 'readonly');
+  var meta = transaction.objectStore('meta');
+  var index = meta.index(gameIndex);
+
+  // Select the first matching record, if any exists, assume game exists
+  const assetMeta = await promiseMe(index.get(IDBKeyRange.only(game.toLowerCase()))) as any
+  return !!assetMeta
+}
+
 export const removeGame = async (game) => {
   const db = await open()
 
@@ -147,3 +172,4 @@ export const removeGame = async (game) => {
     ])
   ))
 }
+

@@ -1,6 +1,6 @@
 import axios from 'axios'
 import * as JSZip from 'jszip'
-import * as indexedDb from '../helpers/indexeddb'
+import * as indexedDb from '../../../shared/indexeddb'
 import {any, tail} from 'ramda'
 
 const quaddictedMapsUrl = 'http://maps.netquake.io/api/maps'
@@ -15,7 +15,6 @@ const state = {
     message: ''
   },
   downloaded: {
-
   }
 }
 

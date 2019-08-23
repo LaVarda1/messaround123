@@ -18,7 +18,7 @@
 
 
 <script>
-// import {getAllMeta} from '../../../../helpers/indexeddb'
+// import {getAllMeta} from '../../../../../shared/indexeddb'
 import {groupBy, keys, find} from 'ramda'
 import {mapGetters} from 'vuex'
 
