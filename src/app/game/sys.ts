@@ -14,7 +14,8 @@ export const state = {
   looping: false,
   scantokey: [],
 	oldtime: 0.0,
-	onQuit: null
+	onQuit: null,
+	quitRequest: false
 } as any
 
 const onbeforeunload = function()
@@ -223,6 +224,9 @@ export const init = async (argv: string) =>
 		window[eventNames[i]] = events[eventNames[i]];
 
 	const gameLoop = async () => {
+		if(!state.looping)
+			return;
+			
 		var timeIn = new Date().getTime()
 		try{
 			await host.frame();
@@ -237,8 +241,20 @@ export const init = async (argv: string) =>
 			}
 		}
 
-		if(!state.looping)
+		if(state.quitRequest) {
+			if (state.looping)
+				state.looping = false;
+			var i;
+			const eventNames = Object.keys(events)
+			for (i = 0; i < eventNames.length; ++i)
+				window[eventNames[i]] = null;
+			host.shutdown();
+			document.body.style.cursor = 'auto';
+			if (state.hooks && state.hooks.quit) {
+				state.hooks.quit()
+			}
 			return;
+		}
 			
 		var timeOut = new Date().getTime()
 		var putzAroundTime = Math.max((1000.0 / (state.maxFps || 60)) - (timeOut - timeIn), 1);
@@ -247,6 +263,7 @@ export const init = async (argv: string) =>
 	}
 
 	state.looping = true;
+	state.quitRequest = false
 	gameLoop();
 };
 
@@ -276,17 +293,7 @@ export const print = function(text: string)
 
 export const quit = function()
 {
-	if (state.looping)
-  state.looping = false;
-  var i;
-  const eventNames = Object.keys(events)
-	for (i = 0; i < eventNames.length; ++i)
-		window[eventNames[i]] = null;
-	host.shutdown();
-	document.body.style.cursor = 'auto';
-	if (state.hooks && state.hooks.quit) {
-		state.hooks.quit()
-	}
+	state.quitRequest = true
 };
 
 export const error = function(text)

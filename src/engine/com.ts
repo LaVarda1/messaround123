@@ -195,6 +195,7 @@ export const loadTextFile = async function(filename: string)
 
 export const initArgv = function(argv)
 {
+  state.argv = []
   state.cmdline = (argv.join(' ') + ' ').substring(0, 256);
   var i;
   for (i = 0; i < argv.length; ++i)

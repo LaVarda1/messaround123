@@ -402,3 +402,11 @@ export const freeTextureForOwner = owner => {
     }
   }
 }
+
+export const freeTextures = () => {
+  for(var i = state.textures.length - 1; i >= 0; i--) {
+    const texture = state.textures[i]
+    freeTexture(texture)
+    state.textures.splice(i, 1)
+  }
+}

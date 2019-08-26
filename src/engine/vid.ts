@@ -1,6 +1,7 @@
 import * as com from './com'
 import * as sys from './sys'
 import * as GL from './GL'
+import * as tx from './texture'
 
 export const state = {
 
@@ -28,3 +29,8 @@ export const init = async function()
 	GL.init();
 	await setPalette()
 };
+
+export const free = () => {
+	GL.freePrograms()
+	tx.freeTextures()
+}

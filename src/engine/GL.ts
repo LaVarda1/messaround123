@@ -17,8 +17,6 @@ export const getContext = () => {
   return gl
 }
 export const state = {
-  textures: [],
-  currenttextures: [],
   programs: []
 } as any
 
@@ -307,11 +305,35 @@ export const streamDrawColoredQuad = function(x, y, w, h, r, g, b, a)
   streamWriteFloat2(x2, y2);
   streamWriteUByte4(r, g, b, a);
 }
-state.glCalls = []
-export const init = function()
-{
-  state.textures = []
-  state.currenttextures =[]
+
+export const freePrograms = () => {
+  for (var i = state.programs.length -1; i >=0; i--) {
+    const program = state.programs[i]
+    gl.deleteProgram(program.program)
+    state.programs.splice(i, 1)
+  }
+  var numTextureUnits = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
+  for (var unit = 0; unit < numTextureUnits; ++unit) {
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
+  }
+  var buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  var numAttributes = gl.getParameter(gl.MAX_VERTEX_ATTRIBS);
+  for (var attrib = 0; attrib < numAttributes; ++attrib) {
+    gl.vertexAttribPointer(attrib, 1, gl.FLOAT, false, 0, 0);
+  }
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, null);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+  gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.deleteBuffer(state.streamBuffer);
+}
+
+
+export const init = function() {
   state.programs = []
 
   vid.state.mainwindow = document.getElementById('mainwindow');
@@ -332,8 +354,6 @@ export const init = function()
 
   if (gl == null)
     sys.error('Unable to initialize WebGL. Your browser may not support it.');
-
-  state.maxtexturesize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
 
   gl.clearColor(0.0, 0.0, 0.0, 0.0);
   gl.cullFace(gl.FRONT);

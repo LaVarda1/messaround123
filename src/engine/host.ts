@@ -1491,7 +1491,6 @@ export const init = async function(
     await tx.init();
     await draw.init();
     await scr.init();
-    tx.init();
     mapAlpha.init();
     fog.init();
     r.init();
@@ -1544,6 +1543,7 @@ export const shutdown = function()
   net.shutdown();
   s.stopAllSounds();
   input.shutdown();
+  vid.free()
 };
 
 export const shutdownServer = async function(crash: boolean = false)

@@ -9,6 +9,7 @@
         H5(v-else) No packs loaded
         Asset(v-for="meta in assetMetas"
           :assetMeta="meta"
+          :key="meta.filename"
           :label="meta.filename"
           game="id1")
     
