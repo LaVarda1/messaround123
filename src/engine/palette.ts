@@ -6,9 +6,18 @@ export var d_8to24table_nobright_fence = new Uint32Array(new ArrayBuffer(1024))
 export var d_8to24table_conchars = new Uint32Array(new ArrayBuffer(1024))
 export var d_8to24table_shirt = new Uint32Array(new ArrayBuffer(1024))
 export var d_8to24table_pants = new Uint32Array(new ArrayBuffer(1024))
+import * as com from './com'
+import * as sys from './sys'
 
-export const setPallet = async (palletData) => {
-	var pal = new Uint8Array(palletData)
+const loadPalette = async () => {
+	var palette = await com.loadFile('gfx/palette.lmp');
+	if (palette == null)
+		sys.error('Couldn\'t load gfx/palette.lmp');
+	return new Uint8Array(palette);
+}
+
+export const setPalette = async () => {
+	var pal = await loadPalette()
   var src = 0, i = 0
   
 	for (i = 0; i < 255; ++i) {

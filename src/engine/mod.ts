@@ -8,6 +8,7 @@ import * as q from './q'
 import * as vec from './vec'
 import * as host from './host'
 import * as def from './def'
+import * as tx from './texture'
 
 export const EFFECTS = {
   brightfield: 1,
@@ -182,15 +183,13 @@ export const leafPVS = function(leaf, model)
 
 export const clearAll = function()
 {
-  const gl = GL.getContext()
   var i, mod 
   for (i = 0; i < known.length; ++i)
   {
     mod = known[i];
     if (mod.type !== TYPE.brush)
       continue;
-    if (mod.cmds != null)
-      gl.deleteBuffer(mod.cmds);
+    tx.freeTextureForOwner(mod)
     known[i] = {
       name: mod.name,
       needload: true
@@ -303,7 +302,7 @@ export const loadTextures = function(buf)
   loadmodel.textures = [];
   var nummiptex = view.getUint32(fileofs, true);
   var dataofs = fileofs + 4;
-  var i, miptexofs, tx, glt;
+  var i, miptexofs, texture, glt;
   for (i = 0; i < nummiptex; ++i)
   {
     miptexofs = view.getInt32(dataofs, true);
@@ -314,82 +313,82 @@ export const loadTextures = function(buf)
       continue;
     }
     miptexofs += fileofs;
-    tx =
+    texture =
     {
       name: q.memstr(new Uint8Array(buf, miptexofs, 16)),
       width: view.getUint32(miptexofs + 16, true),
       height: view.getUint32(miptexofs + 20, true),
       texturechains: []
     }
-    if (tx.name.substring(0, 3).toLowerCase() === 'sky')
+    if (texture.name.substring(0, 3).toLowerCase() === 'sky')
     {
       r.initSky(new Uint8Array(buf, miptexofs + view.getUint32(miptexofs + 24, true), 32768));
-      tx.texturenum = r.state.solidskytexture;
+      texture.texturenum = r.state.solidskytexture;
       r.state.skytexturenum = i;
-      tx.sky = true;
+      texture.sky = true;
     }
     else
     {
       if (GL.getContext()) {
-        glt = GL.loadTexture(tx.name, tx.width, tx.height, new Uint8Array(buf, miptexofs + view.getUint32(miptexofs + 24, true), tx.width * tx.height));
-        tx.texturenum = glt.texnum;
+        glt = tx.loadTexture(loadmodel, texture.name, texture.width, texture.height, new Uint8Array(buf, miptexofs + view.getUint32(miptexofs + 24, true), texture.width * texture.height));
+        texture.texturenum = glt.texnum;
       }
-      if (tx.name.charCodeAt(0) === 42)
-        tx.turbulent = true;
+      if (texture.name.charCodeAt(0) === 42)
+        texture.turbulent = true;
     }
-    loadmodel.textures[i] = tx;
+    loadmodel.textures[i] = texture;
   }
 
-  var j, tx2, num, name;
+  var j, texture2, num, name;
   for (i = 0; i < nummiptex; ++i)
   {
-    tx = loadmodel.textures[i];
-    if (tx.name.charCodeAt(0) !== 43)
+    texture = loadmodel.textures[i];
+    if (texture.name.charCodeAt(0) !== 43)
       continue;
-    if (tx.name.charCodeAt(1) !== 48)
+    if (texture.name.charCodeAt(1) !== 48)
       continue;
-    name = tx.name.substring(2);
-    tx.anims = [i];
-    tx.alternate_anims = [];
+    name = texture.name.substring(2);
+    texture.anims = [i];
+    texture.alternate_anims = [];
     for (j = 0; j < nummiptex; ++j)
     {
-      tx2 = loadmodel.textures[j];
-      if (tx2.name.charCodeAt(0) !== 43)
+      texture2 = loadmodel.textures[j];
+      if (texture2.name.charCodeAt(0) !== 43)
         continue;
-      if (tx2.name.substring(2) !== name)
+      if (texture2.name.substring(2) !== name)
         continue;
-      num = tx2.name.charCodeAt(1);
+      num = texture2.name.charCodeAt(1);
       if (num === 48)
         continue;
       if ((num >= 49) && (num <= 57))
       {
-        tx.anims[num - 48] = j;
-        tx2.anim_base = i;
-        tx2.anim_frame = num - 48;
+        texture.anims[num - 48] = j;
+        texture2.anim_base = i;
+        texture2.anim_frame = num - 48;
         continue;
       }
       if (num >= 97)
         num -= 32;
       if ((num >= 65) && (num <= 74))
       {
-        tx.alternate_anims[num - 65] = j;
-        tx2.anim_base = i;
-        tx2.anim_frame = num - 65;
+        texture.alternate_anims[num - 65] = j;
+        texture2.anim_base = i;
+        texture2.anim_frame = num - 65;
         continue;
       }
-      sys.error('Bad animating texture ' + tx.name);
+      sys.error('Bad animating texture ' + texture.name);
     }
-    for (j = 0; j < tx.anims.length; ++j)
+    for (j = 0; j < texture.anims.length; ++j)
     {
-      if (tx.anims[j] == null)
-        sys.error('Missing frame ' + j + ' of ' + tx.name);
+      if (texture.anims[j] == null)
+        sys.error('Missing frame ' + j + ' of ' + texture.name);
     }
-    for (j = 0; j < tx.alternate_anims.length; ++j)
+    for (j = 0; j < texture.alternate_anims.length; ++j)
     {
-      if (tx.alternate_anims[j] == null)
-        sys.error('Missing frame ' + j + ' of ' + tx.name);
+      if (texture.alternate_anims[j] == null)
+        sys.error('Missing frame ' + j + ' of ' + texture.name);
     }
-    loadmodel.textures[i] = tx;
+    loadmodel.textures[i] = texture;
   }
 
   loadmodel.textures[loadmodel.textures.length] = r.state.notexture_mip;
@@ -1141,7 +1140,7 @@ export const translatePlayerSkin = function(data, skin)
 {
   const gl = GL.getContext()
   if ((loadmodel.skinwidth !== 512) || (loadmodel.skinheight !== 256))
-    data = GL.resampleTexture(data, loadmodel.skinwidth, loadmodel.skinheight, 512, 256);
+    data = tx.resampleTexture(data, loadmodel.skinwidth, loadmodel.skinheight, 512, 256);
   var out = new Uint8Array(new ArrayBuffer(524288));
   var i, original;
   for (i = 0; i < 131072; ++i)
@@ -1159,11 +1158,11 @@ export const translatePlayerSkin = function(data, skin)
     }
   }
   skin.playertexture = gl.createTexture();
-  GL.bind(0, skin.playertexture);
+  tx.bind(0, skin.playertexture);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 512, 256, 0, gl.RGBA, gl.UNSIGNED_BYTE, out);
   gl.generateMipmap(gl.TEXTURE_2D);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, GL.state.filter_min);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, GL.state.filter_max);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, tx.state.filter_min);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, tx.state.filter_max);
 };
 
 export const floodFillSkin = function(skin)
@@ -1223,7 +1222,7 @@ export const loadAllSkins = function(buffer, inmodel)
         floodFillSkin(skin);
         loadmodel.skins[i] = {
           group: false,
-          texturenum: GL.loadTexture(loadmodel.name + '_' + i,
+          texturenum: tx.loadTexture(loadmodel, loadmodel.name + '_' + i,
             loadmodel.skinwidth,
             loadmodel.skinheight,
             skin)
@@ -1253,7 +1252,7 @@ export const loadAllSkins = function(buffer, inmodel)
         if (GL.getContext()) {
           skin = new Uint8Array(buffer, inmodel, skinsize);
           floodFillSkin(skin);
-          group.skins[j].texturenum = GL.loadTexture(loadmodel.name + '_' + i + '_' + j,
+          group.skins[j].texturenum = tx.loadTexture(loadmodel, loadmodel.name + '_' + i + '_' + j,
             loadmodel.skinwidth,
             loadmodel.skinheight,
             skin);
@@ -1575,9 +1574,9 @@ export const loadSpriteFrame = function(identifier, buffer, inframe, frame)
   var size = frame.width * frame.height;
 
   var glt;
-  for (i = 0; i < GL.state.textures.length; ++i)
+  for (i = 0; i < tx.state.textures.length; ++i)
   {
-    glt = GL.state.textures[i];
+    glt = tx.state.textures[i];
     if (glt.identifier === identifier)
     {
       // JOE:FIXME: width height undefined! This was in the original code though
@@ -1607,15 +1606,15 @@ export const loadSpriteFrame = function(identifier, buffer, inframe, frame)
     scaled_height |= (scaled_height >> 16);
     ++scaled_height;
   }
-  if (scaled_width > GL.state.maxtexturesize)
-    scaled_width = GL.state.maxtexturesize;
-  if (scaled_height > GL.state.maxtexturesize)
-    scaled_height = GL.state.maxtexturesize;
+  if (scaled_width > tx.state.maxtexturesize)
+    scaled_width = tx.state.maxtexturesize;
+  if (scaled_height > tx.state.maxtexturesize)
+    scaled_height = tx.state.maxtexturesize;
   if ((scaled_width !== frame.width) || (scaled_height !== frame.height))
   {
     size = scaled_width * scaled_height;
     if (gl) {
-      data = GL.resampleTexture(data, frame.width, frame.height, scaled_width, scaled_height);
+      data = tx.resampleTexture(data, frame.width, frame.height, scaled_width, scaled_height);
     }
   }
 
@@ -1628,12 +1627,12 @@ export const loadSpriteFrame = function(identifier, buffer, inframe, frame)
   }
   if (gl) {
     glt = {texnum: gl.createTexture(), identifier: identifier, width: frame.width, height: frame.height};
-    GL.bind(0, glt.texnum);
+    tx.bind(0, glt.texnum);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, scaled_width, scaled_height, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(trans));
     gl.generateMipmap(gl.TEXTURE_2D);
-    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, GL.state.filter_min);
-    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, GL.state.filter_max);
-    GL.state.textures[GL.state.textures.length] = glt;
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, tx.state.filter_min);
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, tx.state.filter_max);
+    tx.state.textures[tx.state.textures.length] = glt;
     frame.texturenum = glt.texnum;
   }
   return inframe + 16 + frame.width * frame.height;

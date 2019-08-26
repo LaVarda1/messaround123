@@ -174,43 +174,6 @@ export const loadFile = async (filename: string) : Promise<ArrayBuffer> => {
   return data
 }
 
-// export const loadPackFile = async (dir: string, packName: string) : Promise<IPackedFile[]> => 
-// {
-//   const packfile = dir + '/' + packName
-//   const gotHeader = await getFileRange(packfile, 0, 11) as any;
-//   if ((gotHeader.status <= 199) || (gotHeader.status >= 300) || (gotHeader.responseText.length !== 12))
-//     return;
-//   var header = new DataView(q.strmem(gotHeader.responseText));
-//   if (header.getUint32(0, true) !== 0x4b434150)
-//     sys.error(packfile + ' is not a packfile');
-//   var dirofs = header.getUint32(4, true);
-//   var dirlen = header.getUint32(8, true);
-//   var numpackfiles = dirlen >> 6;
-//   if (numpackfiles !== 339)
-//     com.state.modified = true;
-//   var pack: IPackedFile[] = [];
-//   if (numpackfiles !== 0)
-//   {
-//     const fileInfo = await getFileRange(packfile, dirofs, (dirofs + dirlen - 1)) as any
-//     if ((fileInfo.status <= 199) || (fileInfo.status >= 300) || (fileInfo.responseText.length !== dirlen))
-//       return;
-//     var info = q.strmem(fileInfo.responseText);
-//     if (crc.block(new Uint8Array(info)) !== 32981)
-//       com.state.modified = true;
-//     var i;
-//     for (i = 0; i < numpackfiles; ++i)
-//     {
-//       pack[pack.length] = {
-//         name: q.memstr(new Uint8Array(info, i << 6, 56)).toLowerCase(),
-//         filepos: (new DataView(info)).getUint32((i << 6) + 56, true),
-//         filelen: (new DataView(info)).getUint32((i << 6) + 60, true)
-//       }
-//     }
-//   }
-//   con.print('Added packfile ' + packfile + ' (' + numpackfiles + ' files)\n');
-//   return pack;
-// }
-
 const getPackFileContents = (game, name, data) => {
   var header = new DataView(data);
   if (header.getUint32(0, true) !== 0x4b434150)
@@ -241,26 +204,6 @@ const getPackFileContents = (game, name, data) => {
     return pack;
   }
 }
-
-// export const loadStorePackFiles = async (game: string): Promise<Array<{name: string, data: ArrayBuffer, contents: IPackedFile[]}>> => {
-//   let entries = null
-//   try {
-//     entries = (await indexeddb.getAllAssetsPerGame(game) as any)
-//       .filter(g => g.fileName.toLowerCase().indexOf('.pak') > -1)
-
-//     if (!entries || entries.length === 0) {
-//       return null
-//     }
-//   } catch{
-//     return null
-//   }
-
-//   return entries.map(entry => ({
-//     name: entry.fileName,
-//     data: entry.data,
-//     contents: getPackFileContents(game, entry.fileName, entry.data)
-//   }))
-// }
 
 const loadStorePackFile = async (game: string, packName: string): Promise<{name: string, data: ArrayBuffer, type: string, contents: IPackedFile[]}> => {
   let entry = null

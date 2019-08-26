@@ -1,9 +1,11 @@
 import * as com from './com'
-import * as vid from './vid'
+import * as palette from './palette'
 import * as sys from './sys'
 import * as def from './def'
 import * as GL from './GL'
 import * as w from './w'
+import * as tx from './texture'
+import * as vid from './vid'
 
 export const state = {
   chars: null,
@@ -37,11 +39,11 @@ export const init = async function()
   for (i = 0; i < 16384; ++i)
   {
     if (state.chars[i] !== 0)
-      trans32[i] = com.state.littleLong(vid.d_8to24table[state.chars[i]] + 0xff000000);
+      trans32[i] = com.state.littleLong(palette.d_8to24table[state.chars[i]]);
   }
   const gl = GL.getContext()
   state.char_texture = gl.createTexture();
-  GL.bind(0, state.char_texture);
+  tx.bind(0, state.char_texture);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 128, 128, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(trans));
   gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -50,13 +52,14 @@ export const init = async function()
   var cb = await com.loadFile('gfx/conback.lmp');
   if (cb == null)
     sys.error('Couldn\'t load gfx/conback.lmp');
-  state.conback.width = 320;
-  state.conback.height = 200;
-  state.conback.data = new Uint8Array(cb, 8, 64000);
+  const size = new Uint32Array(cb, 0, 2)
+  state.conback.width = size[0];
+  state.conback.height = size[1];
+  state.conback.data = new Uint8Array(cb, 8, state.conback.height * state.conback.width);
   var ver = '(WebQuake build ' + def.webquake_version + ') 1.09';
   for (i = 0; i < ver.length; ++i)
     charToConback(ver.charCodeAt(i), 59829 - ((ver.length - i) << 3));
-  state.conback.texnum = GL.loadPicTexture(state.conback);
+  state.conback.texnum = tx.loadPicTexture(state.conback);
 
   state.loading = await cachePic('loading');
   state.loadingCont = document.getElementById('loading');
@@ -91,14 +94,14 @@ export const char = function(x, y, num)
 export const character = function(x, y, num)
 {
   var program = GL.useProgram('Pic', true);
-  GL.bind(program.tTexture, state.char_texture, true);
+  tx.bind(program.tTexture, state.char_texture, true);
   char(x, y, num);
 };
 
 export const string = function(x, y, str)
 {
   var program = GL.useProgram('Pic', true);
-  GL.bind(program.tTexture, state.char_texture, true);
+  tx.bind(program.tTexture, state.char_texture, true);
   for (var i = 0; i < str.length; ++i)
   {
     char(x, y, str.charCodeAt(i));
@@ -109,7 +112,7 @@ export const string = function(x, y, str)
 export const stringWhite = function(x, y, str)
 {
   var program = GL.useProgram('Pic', true);
-  GL.bind(program.tTexture, state.char_texture, true);
+  tx.bind(program.tTexture, state.char_texture, true);
   for (var i = 0; i < str.length; ++i)
   {
     char(x, y, str.charCodeAt(i) + 128);
@@ -125,7 +128,7 @@ export const picFromWad = function(name)
   p.width = view.getUint32(0, true);
   p.height = view.getUint32(4, true);
   p.data = new Uint8Array(buf, 8, p.width * p.height);
-  p.texnum = GL.loadPicTexture(p);
+  p.texnum = tx.loadPicTexture(p);
   return p;
 };
 
@@ -140,14 +143,14 @@ export const cachePic = async function(path)
   dat.width = view.getUint32(0, true);
   dat.height = view.getUint32(4, true);
   dat.data = new Uint8Array(buf, 8, dat.width * dat.height);
-  dat.texnum = GL.loadPicTexture(dat);
+  dat.texnum = tx.loadPicTexture(dat);
   return dat;
 };
 
 export const pic = function(x, y, pic)
 {
   var program = GL.useProgram('Pic', true);
-  GL.bind(program.tTexture, pic.texnum, true);
+  tx.bind(program.tTexture, pic.texnum, true);
   GL.streamDrawTexturedQuad(x, y, pic.width, pic.height, 0.0, 0.0, 1.0, 1.0);
 };
 
@@ -156,8 +159,8 @@ export const picTranslate = function(x, y, pic, top, bottom)
   const gl = GL.getContext()
   GL.streamFlush();
   var program = GL.useProgram('PicTranslate');
-  GL.bind(program.tTexture, pic.texnum);
-  GL.bind(program.tTrans, pic.translate);
+  tx.bind(program.tTexture, pic.texnum);
+  tx.bind(program.tTrans, pic.translate);
 
   var p = vid.d_8to24table[top];
   var scale = 1.0 / 191.25;
@@ -173,7 +176,7 @@ export const picTranslate = function(x, y, pic, top, bottom)
 export const consoleBackground = function(lines)
 {
   var program = GL.useProgram('Pic', true);
-  GL.bind(program.tTexture, state.conback.texnum, true);
+  tx.bind(program.tTexture, state.conback.texnum, true);
   GL.streamDrawTexturedQuad(0, lines - vid.state.height, vid.state.width, vid.state.height, 0.0, 0.0, 1.0, 1.0);
 };
 
@@ -217,7 +220,7 @@ export const picToDataURL = function(pic)
   var trans32 = new Uint32Array(trans);
   var i;
   for (i = 0; i < pic.data.length; ++i)
-    trans32[i] = com.state.littleLong(vid.d_8to24table[pic.data[i]] + 0xff000000);
+    trans32[i] = com.state.littleLong(palette.d_8to24table[pic.data[i]]);
   data.data.set(new Uint8Array(trans));
   ctx.putImageData(data, 0, 0);
   return canvas.toDataURL();

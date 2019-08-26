@@ -1488,6 +1488,7 @@ export const init = async function(
   con.print(def.timedate);
   if (!dedicated) {
     await vid.init();
+    await tx.init();
     await draw.init();
     await scr.init();
     tx.init();

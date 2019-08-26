@@ -20,7 +20,7 @@ import * as def from './def'
 import * as batchRender from './batchRender'
 import * as s from './s'
 import * as lm from './lightmap'
-import * as texture from './texture'
+import * as tx from './texture'
 import * as mapAlpha from './mapAlpha'
 import * as fog from './fog'
 
@@ -378,7 +378,7 @@ export const drawSpriteModel = function (e) {
 		frame = frame.frames[i];
 	}
 
-	GL.bind(program.tTexture, frame.texturenum, true);
+	tx.bind(program.tTexture, frame.texturenum, true);
 	var r = [], u = []
 	if (e.model.oriented === true) {
 		vec.angleVectors(e.angles, null, r, u);
@@ -697,9 +697,9 @@ export const drawAliasModel = function (e) {
 		}
 		skin = skin.skins[i];
 	}
-	GL.bind(program.tTexture, skin.texturenum.texnum);
+	tx.bind(program.tTexture, skin.texturenum.texnum);
 	if ((e.colormap !== 0) && (clmodel.player === true) && (cvr.nocolors.value === 0))
-		GL.bind(program.tPlayer, skin.playertexture);
+		tx.bind(program.tPlayer, skin.playertexture);
 
 	gl.drawArrays(gl.TRIANGLES, 0, clmodel.numtris * 3);
 };
@@ -1015,41 +1015,41 @@ export const initTextures = function () {
 		}
 	}
 	state.notexture_mip = { name: 'notexture', width: 16, height: 16, texturenum: gl.createTexture(), texturechains: [null, null] };
-	GL.bind(0, state.notexture_mip.texturenum);
-	GL.upload(data, 16, 16);
+	tx.bind(0, state.notexture_mip.texturenum);
+	tx.upload(data, 16, 16);
 
 	state.solidskytexture = gl.createTexture();
-	GL.bind(0, state.solidskytexture);
+	tx.bind(0, state.solidskytexture);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 	state.alphaskytexture = gl.createTexture();
-	GL.bind(0, state.alphaskytexture);
+	tx.bind(0, state.alphaskytexture);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
 	state.lightmap_texture = gl.createTexture();
-	GL.bind(0, state.lightmap_texture);
+	tx.bind(0, state.lightmap_texture);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
 	state.dlightmap_texture = gl.createTexture();
-	GL.bind(0, state.dlightmap_texture);
+	tx.bind(0, state.dlightmap_texture);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
 	state.lightstyle_texture = gl.createTexture();
-	GL.bind(0, state.lightstyle_texture);
+	tx.bind(0, state.lightstyle_texture);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
 	state.fullbright_texture = gl.createTexture();
-	GL.bind(0, state.fullbright_texture);
+	tx.bind(0, state.fullbright_texture);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 0, 0, 0]));
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
 	state.null_texture = gl.createTexture();
-	GL.bind(0, state.null_texture);
+	tx.bind(0, state.null_texture);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
@@ -1125,7 +1125,7 @@ export const init = function () {
 
 	state.warpbuffer = gl.createFramebuffer();
 	state.warptexture = gl.createTexture();
-	GL.bind(0, state.warptexture);
+	tx.bind(0, state.warptexture);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -1188,7 +1188,7 @@ export const newMap = function () {
 
 	buildModelVertexBuffer(gl)
 
-	GL.bind(0, state.dlightmap_texture);
+	tx.bind(0, state.dlightmap_texture);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 1024, 1024, 0, gl.ALPHA, gl.UNSIGNED_BYTE, null);
 };
 
@@ -1855,7 +1855,7 @@ const drawTextureChains_water = (gl: WebGLRenderingContext, model, ent, chain) =
 			if (!s.culled) {
 				if (!bound) //only bind once we are sure we need this texture
 				{
-					GL.bind(0, animatedTexture.texturenum);
+					tx.bind(0, animatedTexture.texturenum);
 					bound = true;
 				}
 				
@@ -1960,12 +1960,12 @@ const drawTextureChains = (gl, model, ent, chain) => {
 		// Enable/disable TMU 2 (fullbrights)
 		// FIXME: Move below to where we bind GL_TEXTURE0
 		if (cvr.fullbrights.value && (fullbright = animatedTexture.fullbright)) {
-			GL.bind(2, fullbright);
+			tx.bind(2, fullbright);
 			gl.uniform1i(brushProgram.uUseFullbrightTex, 1);
 		}
 		else {
 			gl.uniform1i(brushProgram.uUseFullbrightTex, 0);
-			GL.bind(2, texture.state.null_texture)
+			tx.bind(2, tx.state.null_texture)
 		}
 
 		batchRender.clearBatch();
@@ -1977,7 +1977,7 @@ const drawTextureChains = (gl, model, ent, chain) => {
 			if (!s.culled) {
 				if (!bound) //only bind once we are sure we need this texture
 				{
-					GL.bind(0, animatedTexture.texturenum);
+					tx.bind(0, animatedTexture.texturenum);
 
 					if (t.texturechains[chain].flags & def.SURF.drawfence)
 						gl.uniform1i(brushProgram.uUseAlphaTest, 1);
@@ -1989,7 +1989,7 @@ const drawTextureChains = (gl, model, ent, chain) => {
 				if (s.lightmaptexturenum !== lastlightmap)
 					batchRender.flushBatch(gl);
 
-				GL.bind(1, texture.state.lightmap_textures[s.lightmaptexturenum].texnum);
+				tx.bind(1, tx.state.lightmap_textures[s.lightmaptexturenum].texnum);
 				lastlightmap = s.lightmaptexturenum;
 				batchRender.batchSurface(gl, s);
 
@@ -2288,7 +2288,7 @@ export const warpScreen = function () {
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	gl.bindRenderbuffer(gl.RENDERBUFFER, null);
 	var program = GL.useProgram('Warp');
-	GL.bind(program.tTexture, state.warptexture);
+	tx.bind(program.tTexture, state.warptexture);
 	gl.uniform1f(program.uTime, host.state.realtime % (Math.PI * 2.0));
 	var vrect = state.refdef.vrect;
 	GL.streamDrawTexturedQuad(vrect.x, vrect.y, vrect.width, vrect.height, 0.0, 1.0, 1.0, 0.0);
@@ -2367,8 +2367,8 @@ export const drawSkyBox = function () {
 
 	program = GL.useProgram('Sky', false);
 	gl.uniform2f(program.uTime, (host.state.realtime * 0.125) % 1.0, (host.state.realtime * 0.03125) % 1.0);
-	GL.bind(program.tSolid, state.solidskytexture, false);
-	GL.bind(program.tAlpha, state.alphaskytexture, false);
+	tx.bind(program.tSolid, state.solidskytexture, false);
+	tx.bind(program.tAlpha, state.alphaskytexture, false);
 	gl.bindBuffer(gl.ARRAY_BUFFER, state.skyvecs);
 	gl.vertexAttribPointer(program.aPosition.location, 3, gl.FLOAT, false, 12, 0);
 
@@ -2408,7 +2408,7 @@ export const initSky = function (src) {
 			trans32[(i << 7) + j] = com.state.littleLong(vid.d_8to24table[src[(i << 8) + j + 128]] + 0xff000000);
 	}
 	if (gl) {
-		GL.bind(0, state.solidskytexture, false);
+		tx.bind(0, state.solidskytexture, false);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 128, 128, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(trans));
 		gl.generateMipmap(gl.TEXTURE_2D);
 
@@ -2421,7 +2421,7 @@ export const initSky = function (src) {
 					trans32[(i << 7) + j] = 0;
 			}
 		}
-		GL.bind(0, state.alphaskytexture, false);
+		tx.bind(0, state.alphaskytexture, false);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 128, 128, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(trans));
 		gl.generateMipmap(gl.TEXTURE_2D);
 	}

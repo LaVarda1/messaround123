@@ -31,63 +31,6 @@ export const ortho = [
 
 export const identity = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
 
-export const cvr = {
-
-} as any
-
-export const bind = function(target, texnum, flushStream = false)
-{
-  if (state.currenttextures[target] !== texnum)
-  {
-    if (flushStream === true)
-      streamFlush();
-    if (state.activetexture !== target)
-    {
-      state.activetexture = target;
-      gl.activeTexture(gl.TEXTURE0 + target);
-    }
-    state.currenttextures[target] = texnum;
-    gl.bindTexture(gl.TEXTURE_2D, texnum);
-  }
-};
-
-export const textureMode_f = function()
-{
-  var i;
-  if (cmd.state.argv.length <= 1)
-  {
-    for (i = 0; i < state.modes.length; ++i)
-    {
-      if (state.filter_min === state.modes[i][1])
-      {
-        con.print(state.modes[i][0] + '\n');
-        return;
-      }
-    }
-    con.print('current filter is unknown???\n');
-    return;
-  }
-  var name = cmd.state.argv[1].toUpperCase();
-  for (i = 0; i < state.modes.length; ++i)
-  {
-    if (state.modes[i][0] === name)
-      break;
-  }
-  if (i === state.modes.length)
-  {
-    con.print('bad filter name\n');
-    return;
-  }
-  state.filter_min = state.modes[i][1];
-  state.filter_max = state.modes[i][2];
-  for (i = 0; i < state.textures.length; ++i)
-  {
-    bind(0, state.textures[i].texnum);
-    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, state.filter_min);
-    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, state.filter_max);
-  }
-};
-
 export const set2D = function()
 {
   gl.viewport(0, 0, (vid.state.width * scr.state.devicePixelRatio) >> 0, (vid.state.height * scr.state.devicePixelRatio) >> 0);
@@ -103,161 +46,6 @@ export const set2D = function()
   }
   gl.disable(gl.DEPTH_TEST);
   gl.enable(gl.BLEND);
-};
-
-export const resampleTexture = function(data, inwidth, inheight, outwidth, outheight)
-{
-  var outdata = new ArrayBuffer(outwidth * outheight);
-  var out = new Uint8Array(outdata);
-  var xstep = inwidth / outwidth, ystep = inheight / outheight;
-  var src, dest = 0, y;
-  var i, j;
-  for (i = 0; i < outheight; ++i)
-  {
-    src = Math.floor(i * ystep) * inwidth;
-    for (j = 0; j < outwidth; ++j)
-      out[dest + j] = data[src + Math.floor(j * xstep)];
-    dest += outwidth;
-  }
-  return out;
-};
-
-export const upload = function(data, width, height)
-{
-  var scaled_width = width, scaled_height = height;
-  if (((width & (width - 1)) !== 0) || ((height & (height - 1)) !== 0))
-  {
-    --scaled_width;
-    scaled_width |= (scaled_width >> 1);
-    scaled_width |= (scaled_width >> 2);
-    scaled_width |= (scaled_width >> 4);
-    scaled_width |= (scaled_width >> 8);
-    scaled_width |= (scaled_width >> 16);
-    ++scaled_width;
-    --scaled_height;
-    scaled_height |= (scaled_height >> 1);
-    scaled_height |= (scaled_height >> 2);
-    scaled_height |= (scaled_height >> 4);
-    scaled_height |= (scaled_height >> 8);
-    scaled_height |= (scaled_height >> 16);
-    ++scaled_height;
-  }
-  if (scaled_width > state.maxtexturesize)
-    scaled_width = state.maxtexturesize;
-  if (scaled_height > state.maxtexturesize)
-    scaled_height = state.maxtexturesize;
-  if ((scaled_width !== width) || (scaled_height !== height))
-    data = resampleTexture(data, width, height, scaled_width, scaled_height);
-  var trans = new ArrayBuffer((scaled_width * scaled_height) << 2)
-  var trans32 = new Uint32Array(trans);
-  var i;
-  for (i = scaled_width * scaled_height - 1; i >= 0; --i)
-  {
-    trans32[i] = com.state.littleLong(vid.d_8to24table[data[i]] + 0xff000000);
-    if (data[i] >= 224)
-      trans32[i] &= 0xffffff;
-  }
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, scaled_width, scaled_height, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(trans));
-  gl.generateMipmap(gl.TEXTURE_2D);
-  gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, state.filter_min);
-  gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, state.filter_max);
-};
-export const loadTexture = function(identifier, width, height, data)
-{
-  var glt, i;
-  if (identifier.length !== 0)
-  {
-    for (i = 0; i < state.textures.length; ++i)
-    {
-      glt = state.textures[i];
-      if (glt.identifier === identifier)
-      {
-        if ((width !== glt.width) || (height !== glt.height))
-          sys.error('GL.LoadTexture: cache mismatch');
-        return glt;
-      }
-    }
-  }
-
-  var scaled_width = width, scaled_height = height;
-  if (((width & (width - 1)) !== 0) || ((height & (height - 1)) !== 0))
-  {
-    --scaled_width ;
-    scaled_width |= (scaled_width >> 1);
-    scaled_width |= (scaled_width >> 2);
-    scaled_width |= (scaled_width >> 4);
-    scaled_width |= (scaled_width >> 8);
-    scaled_width |= (scaled_width >> 16);
-    ++scaled_width;
-    --scaled_height;
-    scaled_height |= (scaled_height >> 1);
-    scaled_height |= (scaled_height >> 2);
-    scaled_height |= (scaled_height >> 4);
-    scaled_height |= (scaled_height >> 8);
-    scaled_height |= (scaled_height >> 16);
-    ++scaled_height;
-  }
-  if (scaled_width > state.maxtexturesize)
-    scaled_width = state.maxtexturesize;
-  if (scaled_height > state.maxtexturesize)
-    scaled_height = state.maxtexturesize;
-  scaled_width >>= cvr.picmip.value;
-  if (scaled_width === 0)
-    scaled_width = 1;
-  scaled_height >>= cvr.picmip.value;
-  if (scaled_height === 0)
-    scaled_height = 1;
-  if ((scaled_width !== width) || (scaled_height !== height))
-    data = resampleTexture(data, width, height, scaled_width, scaled_height);
-
-  glt = {texnum: gl.createTexture(), identifier: identifier, width: width, height: height};
-  bind(0, glt.texnum);
-  upload(data, scaled_width, scaled_height);
-  state.textures[state.textures.length] = glt;
-  return glt;
-};
-
-export const loadPicTexture = function(pic)
-{
-  var data = pic.data, scaled_width = pic.width, scaled_height = pic.height;
-  if (((pic.width & (pic.width - 1)) !== 0) || ((pic.height & (pic.height - 1)) !== 0))
-  {
-    --scaled_width ;
-    scaled_width |= (scaled_width >> 1);
-    scaled_width |= (scaled_width >> 2);
-    scaled_width |= (scaled_width >> 4);
-    scaled_width |= (scaled_width >> 8);
-    scaled_width |= (scaled_width >> 16);
-    ++scaled_width;
-    --scaled_height;
-    scaled_height |= (scaled_height >> 1);
-    scaled_height |= (scaled_height >> 2);
-    scaled_height |= (scaled_height >> 4);
-    scaled_height |= (scaled_height >> 8);
-    scaled_height |= (scaled_height >> 16);
-    ++scaled_height;
-  }
-  if (scaled_width > state.maxtexturesize)
-    scaled_width = state.maxtexturesize;
-  if (scaled_height > state.maxtexturesize)
-    scaled_height = state.maxtexturesize;
-  if ((scaled_width !== pic.width) || (scaled_height !== pic.height))
-    data = resampleTexture(data, pic.width, pic.height, scaled_width, scaled_height);
-
-  var texnum = gl.createTexture();
-  bind(0, texnum);
-  var trans = new ArrayBuffer((scaled_width * scaled_height) << 2)
-  var trans32 = new Uint32Array(trans);
-  var i;
-  for (i = scaled_width * scaled_height - 1; i >= 0; --i)
-  {
-    if (data[i] !== 255)
-      trans32[i] = com.state.littleLong(vid.d_8to24table[data[i]] + 0xff000000);
-  }
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, scaled_width, scaled_height, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(trans));
-  gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-  return texnum;
 };
 
 export const createProgram = function(identifier, uniforms, attribs, textures)
@@ -535,12 +323,13 @@ export const init = function()
     const context = vid.state.mainwindow.getContext('webgl2')
      || vid.state.mainwindow.getContext('webgl')
      || vid.state.mainwindow.getContext('experimental-webgl')
-    // =const opengl = WebGLDebugUtils.default.makeDebugContext( context, onError, null, null);
+    //gl = WebGLDebugUtils.default.makeDebugContext( context, onError, null, null);
     gl = context
   }
   catch (e) {
     debugger
   }
+
   if (gl == null)
     sys.error('Unable to initialize WebGL. Your browser may not support it.');
 
@@ -549,20 +338,6 @@ export const init = function()
   gl.clearColor(0.0, 0.0, 0.0, 0.0);
   gl.cullFace(gl.FRONT);
   gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE);
-
-  state.modes = [
-    ['GL_NEAREST', gl.NEAREST, gl.NEAREST],
-    ['GL_LINEAR', gl.LINEAR, gl.LINEAR],
-    ['GL_NEAREST_MIPMAP_NEAREST', gl.NEAREST_MIPMAP_NEAREST, gl.NEAREST],
-    ['GL_LINEAR_MIPMAP_NEAREST', gl.LINEAR_MIPMAP_NEAREST, gl.LINEAR],
-    ['GL_NEAREST_MIPMAP_LINEAR', gl.NEAREST_MIPMAP_LINEAR, gl.NEAREST],
-    ['GL_LINEAR_MIPMAP_LINEAR', gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR]
-  ];
-  state.filter_min = gl.LINEAR_MIPMAP_NEAREST;
-  state.filter_max = gl.LINEAR;
-
-  cvr.picmip = cvar.registerVariable('gl_picmip', '0');
-  cmd.addCommand('gl_texturemode', textureMode_f);
 
   state.streamArray = new ArrayBuffer(8192); // Increasing even a little bit ruins all performance on Mali.
   state.streamArrayBytes = new Uint8Array(state.streamArray);

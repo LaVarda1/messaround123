@@ -13,6 +13,7 @@ import * as s from './s'
 import * as sbar from './sbar'
 import * as m from './m'
 import * as GL from './GL'
+import * as tx from './texture'
 
 export const state = {
   con_current: 0,
@@ -164,7 +165,7 @@ export const calcRefdef = function()
 		const gl = GL.getContext()
 		r.state.oldwarpwidth = r.state.warpwidth;
 		r.state.oldwarpheight = r.state.warpheight;
-		GL.bind(0, r.state.warptexture, false);
+		tx.bind(0, r.state.warptexture);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, r.state.warpwidth, r.state.warpheight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 		gl.bindRenderbuffer(gl.RENDERBUFFER, r.state.warprenderbuffer);
 		gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, r.state.warpwidth, r.state.warpheight);

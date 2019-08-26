@@ -1,10 +1,14 @@
 import {state as comState} from './com'
 import { d_8to24table, d_8to24table_fbright_fence, d_8to24table_fbright, 
-  d_8to24table_conchars, d_8to24table_nobright, d_8to24table_nobright_fence
-} from './pallete'
+  d_8to24table_conchars, d_8to24table_nobright, d_8to24table_nobright_fence,
+  setPalette
+} from './palette'
 import * as defs from './def'
 import * as GL from './GL'
 import * as con from './console'
+import * as cmd from './cmd'
+import * as com from './com'
+import * as cvar from './cvar'
 
 export const state = {
   maxtexturesize: -1,
@@ -19,10 +23,58 @@ export const state = {
   lightmap_textures: [],
   lightstyle_texture: null,
   null_texture: null,
-  fullbright_texture: null
+  fullbright_texture: null,
+  modes: []
+} as any
+
+let gl: any = null
+
+export const getContext = () => {
+  return gl
 }
 
-const resampleTexture = function(data, inwidth, inheight, outwidth, outheight)
+export const cvr = {
+
+} as any
+
+export const textureMode_f = function()
+{
+  var i;
+  if (cmd.state.argv.length <= 1)
+  {
+    for (i = 0; i < state.modes.length; ++i)
+    {
+      if (state.filter_min === state.modes[i][1])
+      {
+        con.print(state.modes[i][0] + '\n');
+        return;
+      }
+    }
+    con.print('current filter is unknown???\n');
+    return;
+  }
+  var name = cmd.state.argv[1].toUpperCase();
+  for (i = 0; i < state.modes.length; ++i)
+  {
+    if (state.modes[i][0] === name)
+      break;
+  }
+  if (i === state.modes.length)
+  {
+    con.print('bad filter name\n');
+    return;
+  }
+  state.filter_min = state.modes[i][1];
+  state.filter_max = state.modes[i][2];
+  for (i = 0; i < state.textures.length; ++i)
+  {
+    bind(0, state.textures[i].texnum);
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, state.filter_min);
+    gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, state.filter_max);
+  }
+};
+
+export const resampleTexture = function(data, inwidth, inheight, outwidth, outheight)
 {
   var outdata = new ArrayBuffer(outwidth * outheight);
   var out = new Uint8Array(outdata);
@@ -49,7 +101,7 @@ export const loadSky = (gl: WebGLRenderingContext, src) => {
 		for (j = 0; j < 128; ++j)
 			trans32[(i << 7) + j] = comState.littleLong(d_8to24table[src[(i << 8) + j + 128]]);
 	}
-  bind(gl, 0, state.solidskytexture);
+  bind(0, state.solidskytexture);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 128, 128, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(trans));
   gl.generateMipmap(gl.TEXTURE_2D);
 
@@ -64,15 +116,27 @@ export const loadSky = (gl: WebGLRenderingContext, src) => {
         trans32[(i << 7) + j] = 0;
     }
   }
-  bind(gl, 0, state.alphaskytexture);
+  bind(0, state.alphaskytexture);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 128, 128, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(trans));
   gl.generateMipmap(gl.TEXTURE_2D);
 }
 
-export const init = () => {
+export const init = async () => {
   const gl = GL.getContext()
-  state.filter_min = gl.LINEAR_MIPMAP_NEAREST
-  state.filter_max = gl.LINEAR
+  state.modes = [
+    ['GL_NEAREST', gl.NEAREST, gl.NEAREST],
+    ['GL_LINEAR', gl.LINEAR, gl.LINEAR],
+    ['GL_NEAREST_MIPMAP_NEAREST', gl.NEAREST_MIPMAP_NEAREST, gl.NEAREST],
+    ['GL_LINEAR_MIPMAP_NEAREST', gl.LINEAR_MIPMAP_NEAREST, gl.LINEAR],
+    ['GL_NEAREST_MIPMAP_LINEAR', gl.NEAREST_MIPMAP_LINEAR, gl.NEAREST],
+    ['GL_LINEAR_MIPMAP_LINEAR', gl.LINEAR_MIPMAP_LINEAR, gl.LINEAR]
+  ];
+  state.filter_min = gl.LINEAR_MIPMAP_NEAREST;
+  state.filter_max = gl.LINEAR;
+
+  cvr.picmip = cvar.registerVariable('gl_picmip', '0');
+  cmd.addCommand('gl_texturemode', textureMode_f);
+
   state.maxtexturesize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
 	var data = new Uint8Array(new ArrayBuffer(256));
 	var i, j;
@@ -83,51 +147,58 @@ export const init = () => {
 			data[(i << 4) + j] = data[136 + (i << 4) + j] = 255;
 			data[8 + (i << 4) + j] = data[128 + (i << 4) + j] = 0;
 		}
-	}
+  }
+  
+  await setPalette();
+  
 	state.notexture_mip = {name: 'notexture', width: 16, height: 16, texturenum: gl.createTexture(), texturechains: [null, null]};
-	bind(gl, 0, state.notexture_mip.texturenum);
-  upload(gl, data, 16, 16);
+	bind(0, state.notexture_mip.texturenum);
+  upload(data, 16, 16);
   
 	state.solidskytexture = gl.createTexture();
-	bind(gl, 0, state.solidskytexture);
+	bind(0, state.solidskytexture);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   
 	state.alphaskytexture = gl.createTexture();
-	bind(gl, 0, state.alphaskytexture);
+	bind(0, state.alphaskytexture);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
   state.lightmap_textures = []
   for (i = 0; i < 4; i++) {
     state.lightmap_textures[i] = gl.createTexture();
-    bind(gl, 0, state.lightmap_textures[i]);
+    bind(0, state.lightmap_textures[i]);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     
   }
 	state.lightstyle_texture = gl.createTexture();
-	bind(gl, 0, state.lightstyle_texture);
+	bind(0, state.lightstyle_texture);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
 
 	state.fullbright_texture = gl.createTexture();
-	bind(gl, 0, state.fullbright_texture);
+	bind(0, state.fullbright_texture);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 0, 0, 0]));
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
   
 	state.null_texture = gl.createTexture();
-	bind(gl, 0, state.null_texture);
+	bind(0, state.null_texture);
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 }
 
-export const bind = (gl: WebGLRenderingContext, target: number, texnum: number) => {
+export const bind = (target: number, texnum: number, flushStream = false) => {
+  const gl = GL.getContext()
   if (state.currenttextures[target] !== texnum)
   {
+    if (flushStream)
+      GL.streamFlush();
+
     if (state.activetexture !== target)
     {
       state.activetexture = target;
@@ -138,8 +209,53 @@ export const bind = (gl: WebGLRenderingContext, target: number, texnum: number) 
   }
 }
 
-export const upload = function(gl, data, width, height, flags = 0)
+export const loadPicTexture = function(pic)
 {
+  const gl = GL.getContext()
+  var data = pic.data, scaled_width = pic.width, scaled_height = pic.height;
+  if (((pic.width & (pic.width - 1)) !== 0) || ((pic.height & (pic.height - 1)) !== 0))
+  {
+    --scaled_width ;
+    scaled_width |= (scaled_width >> 1);
+    scaled_width |= (scaled_width >> 2);
+    scaled_width |= (scaled_width >> 4);
+    scaled_width |= (scaled_width >> 8);
+    scaled_width |= (scaled_width >> 16);
+    ++scaled_width;
+    --scaled_height;
+    scaled_height |= (scaled_height >> 1);
+    scaled_height |= (scaled_height >> 2);
+    scaled_height |= (scaled_height >> 4);
+    scaled_height |= (scaled_height >> 8);
+    scaled_height |= (scaled_height >> 16);
+    ++scaled_height;
+  }
+  if (scaled_width > state.maxtexturesize)
+    scaled_width = state.maxtexturesize;
+  if (scaled_height > state.maxtexturesize)
+    scaled_height = state.maxtexturesize;
+  if ((scaled_width !== pic.width) || (scaled_height !== pic.height))
+    data = resampleTexture(data, pic.width, pic.height, scaled_width, scaled_height);
+
+  var texnum = gl.createTexture();
+  bind(0, texnum);
+  var trans = new ArrayBuffer((scaled_width * scaled_height) << 2)
+  var trans32 = new Uint32Array(trans);
+  var i;
+  for (i = scaled_width * scaled_height - 1; i >= 0; --i)
+  {
+    if (data[i] !== 255)
+      trans32[i] = com.state.littleLong(d_8to24table[data[i]] + 0xff000000);
+  }
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, scaled_width, scaled_height, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(trans));
+  gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  return texnum;
+};
+
+export const upload = function(data, width, height, flags = 0)
+{
+  const gl = GL.getContext()
   var scaled_width = width, scaled_height = height;
   if (((width & (width - 1)) !== 0) || ((height & (height - 1)) !== 0))
   {
@@ -206,8 +322,9 @@ export const upload = function(gl, data, width, height, flags = 0)
 }
 
 
-export const loadTexture = (gl, identifier, width, height, data, flags = 0) => {
+export const loadTexture = (owner, identifier, width, height, data, flags = 0) => {
   var glt, i;
+  const gl = GL.getContext()
   if (identifier.length !== 0)
   {
     for (i = 0; i < state.textures.length; ++i)
@@ -216,7 +333,7 @@ export const loadTexture = (gl, identifier, width, height, data, flags = 0) => {
       if (glt.identifier === identifier)
       {
         if ((width !== glt.width) || (height !== glt.height))
-          con.print('GL.LoadTexture: cache mismatch\n')
+          con.print('TX.LoadTexture: cache mismatch\n')
         return glt
       }
     }
@@ -253,9 +370,9 @@ export const loadTexture = (gl, identifier, width, height, data, flags = 0) => {
   if ((scaled_width !== width) || (scaled_height !== height))
     data = resampleTexture(data, width, height, scaled_width, scaled_height);
 
-  glt = {texnum: gl.createTexture(), identifier: identifier, width: width, height: height};
-  bind(gl, 0, glt.texnum);
-  upload(gl, data, scaled_width, scaled_height, flags);
+  glt = {owner, texnum: gl.createTexture(), identifier: identifier, width: width, height: height};
+  bind(0, glt.texnum);
+  upload(data, scaled_width, scaled_height, flags);
   state.textures[state.textures.length] = glt;
   return glt;
 }
@@ -263,7 +380,7 @@ export const loadTexture = (gl, identifier, width, height, data, flags = 0) => {
 export const loadLightmapTexture = (gl: WebGLRenderingContext, lmNum, name, width, height, data,) => {
   var glt
   glt = {texnum: gl.createTexture(), identifier: name, width: width, height: height};
-  bind(gl, 0, glt.texnum);
+  bind(0, glt.texnum);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
   gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -271,6 +388,17 @@ export const loadLightmapTexture = (gl: WebGLRenderingContext, lmNum, name, widt
   return glt
 }
 
-// const loadTexture = (gl, model, name, width, height, type, data, flags) => {
+export const freeTexture = glt => {
+  const gl = GL.getContext()
+  gl.deleteTexture(glt.texnum)
+}
 
-// }
+export const freeTextureForOwner = owner => {
+  for(var i = state.textures.length - 1; i >= 0; i--) {
+    const texture = state.textures[i]
+    if (texture.owner === owner) {
+      freeTexture(texture)
+      state.textures.splice(i, 1)
+    }
+  }
+}

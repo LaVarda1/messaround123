@@ -26,5 +26,5 @@ export const init = async function()
 {
 	document.getElementById('progress').style.display = 'none';
 	GL.init();
-	await setPalette();
+	await setPalette()
 };

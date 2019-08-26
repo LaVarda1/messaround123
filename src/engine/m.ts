@@ -13,6 +13,7 @@ import * as cmd from './cmd'
 import * as cvar from './cvar'
 import * as v from './v'
 import * as net from './net'
+import * as tx from './texture'
 
 let gl = null
 const MENU_STATE =
@@ -1020,7 +1021,7 @@ export const init = async function()
   state.bigbox = await draw.cachePic('bigbox');
   state.menuplyr = await draw.cachePic('menuplyr');
   var buf = await com.loadFile('gfx/menuplyr.lmp');
-  var data = GL.resampleTexture(state.menuplyr.data, state.menuplyr.width, state.menuplyr.height, 64, 64);
+  var data = tx.resampleTexture(state.menuplyr.data, state.menuplyr.width, state.menuplyr.height, 64, 64);
   var trans = new Uint8Array(new ArrayBuffer(16384));
   var i, p;
   for (i = 0; i < 4096; ++i)
@@ -1038,7 +1039,7 @@ export const init = async function()
     }
   }
   state.menuplyr.translate = gl.createTexture();
-  GL.bind(0, state.menuplyr.translate);
+  tx.bind(0, state.menuplyr.translate);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 64, 64, 0, gl.RGBA, gl.UNSIGNED_BYTE, trans);
   gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);

@@ -406,7 +406,7 @@ export const uploadLightmaps = (gl: WebGLRenderingContext) => {
 		if (!state.lightmap_modified[i])
 			continue;
 
-		GL.bind(0, texture.state.lightmap_textures[i].texnum);
+		texture.bind(0, texture.state.lightmap_textures[i].texnum);
 		uploadLightmap(gl, i);
 	}
 }
