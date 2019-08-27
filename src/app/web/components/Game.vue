@@ -5,7 +5,7 @@
         H3 You must load the original Pak1.pak to play registered games
         a(href="/") Nevermind, take me back.
         Id1Assets(@uploaded="pakUploaded")
-    tempalte(v-else)
+    template(v-else)
       h4#progress Starting Quake...
       canvas#mainwindow
       #loading(style="display: none; position: fixed;")
