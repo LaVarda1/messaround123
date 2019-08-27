@@ -1775,12 +1775,52 @@ export const unlinkEdict = function (ent) {
 		ent.area.next.prev = ent.area.prev;
 	ent.area.prev = ent.area.next = null;
 };
+/*
+====================
+SV_AreaTriggerEdicts
 
-const touchLinks = async function (ent, node) {
-	var l, next, touch, old_self, old_other;
+Spike -- just builds a list of entities within the area, rather than walking
+them and risking the list getting corrupt.
+====================
+*/
+const areaTriggerEdicts = (ent, node, list) => {
+	var l, next, touch
+
+	// touch linked edicts
 	for (l = node.trigger_edicts.next; l !== node.trigger_edicts; l = next) {
 		next = l.next;
 		touch = l.ent;
+		if (touch === ent)
+			continue;
+		if ((touch.v_int[pr.entvars.touch] === 0) || (touch.v_float[pr.entvars.solid] !== SOLID.trigger))
+			continue;
+		if ((ent.v_float[pr.entvars.absmin] > touch.v_float[pr.entvars.absmax]) ||
+			(ent.v_float[pr.entvars.absmin1] > touch.v_float[pr.entvars.absmax1]) ||
+			(ent.v_float[pr.entvars.absmin2] > touch.v_float[pr.entvars.absmax2]) ||
+			(ent.v_float[pr.entvars.absmax] < touch.v_float[pr.entvars.absmin]) ||
+			(ent.v_float[pr.entvars.absmax1] < touch.v_float[pr.entvars.absmin1]) ||
+			(ent.v_float[pr.entvars.absmax2] < touch.v_float[pr.entvars.absmin2]))
+			continue;
+
+		list.push(touch)
+	}
+
+	if (node.axis === -1)
+		return;
+	if (ent.v_float[pr.entvars.absmax + node.axis] > node.dist)
+		areaTriggerEdicts(ent, node.children[0], list);
+	if (ent.v_float[pr.entvars.absmin + node.axis] < node.dist)
+		areaTriggerEdicts(ent, node.children[1], list);
+}
+
+const touchLinks = async function (ent, node) {
+	var list = [], old_self, old_other
+	areaTriggerEdicts(ent, node, list)
+	for (var i = 0; i < list.length; i++) {
+		var touch = list[i]
+
+		// re-validate in case of PR_ExecuteProgram having side effects that make
+		// edicts later in the list no longer touch
 		if (touch === ent)
 			continue;
 		if ((touch.v_int[pr.entvars.touch] === 0) || (touch.v_float[pr.entvars.solid] !== SOLID.trigger))
@@ -1801,12 +1841,6 @@ const touchLinks = async function (ent, node) {
 		pr.state.globals_int[pr.globalvars.self] = old_self;
 		pr.state.globals_int[pr.globalvars.other] = old_other;
 	}
-	if (node.axis === -1)
-		return;
-	if (ent.v_float[pr.entvars.absmax + node.axis] > node.dist)
-		await touchLinks(ent, node.children[0]);
-	if (ent.v_float[pr.entvars.absmin + node.axis] < node.dist)
-		await touchLinks(ent, node.children[1]);
 };
 
 const findTouchedLeafs = function (ent, node) {
