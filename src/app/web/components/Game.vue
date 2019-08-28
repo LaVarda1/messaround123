@@ -24,9 +24,10 @@ export default Vue.extend({
   data() {
     return {
       gameSys: null,
-      gameQuit: false,
       uploadPromise: null,
-      showUpload: false
+      showUpload: false,
+      isQuot: false,
+      onQuit: null
     }
   },
   components: {
@@ -36,8 +37,12 @@ export default Vue.extend({
     this.gameSys = GameInit(this.args, {
       // hooks
       quit: () => {
-        this.gameQuit = true
-        this.$router.go(-1)
+        this.isQuit = true
+        if (this.onQuit) {
+          this.onQuit()
+        } else {
+          this.$router.go(-1)
+        }
       },
       startRequestPak: resolve => {
         this.showUpload = true;
@@ -67,13 +72,13 @@ export default Vue.extend({
     }
   },
   beforeRouteLeave (to, from, next) {
-    if (this.gameQuit) {
+    if (this.isQuit) {
       return next()
     }
     const answer = window.confirm('Do you really want to leave?')
     if (answer) {
+      this.onQuit = next
       this.gameSys.quit()
-      next()
     } else {
       next(false)
     }
