@@ -919,89 +919,6 @@ export const renderView = function () {
 	}
 };
 
-// mesh
-
-export const makeBrushModelDisplayLists = function (m) {
-	const gl = GL.getContext()
-	if (m.cmds != null)
-		gl.deleteBuffer(m.cmds);
-	var i, j, k;
-	var cmds = [];
-	var texture, chain, leaf, surf, vert, styles = [0.0, 0.0, 0.0, 0.0];
-	var verts = 0;
-	m.chains = [];
-	for (i = 0; i < m.textures.length; ++i) {
-		texture = m.textures[i];
-		if ((texture.sky === true) || (texture.turbulent === true))
-			continue;
-		chain = [i, verts, 0];
-		for (j = 0; j < m.numfaces; ++j) {
-			surf = m.faces[m.firstface + j];
-			if (surf.texture !== i)
-				continue;
-			styles[0] = styles[1] = styles[2] = styles[3] = 0.0;
-			switch (surf.styles.length) {
-				case 4:
-					styles[3] = surf.styles[3] * 0.015625 + 0.0078125;
-				case 3:
-					styles[2] = surf.styles[2] * 0.015625 + 0.0078125;
-				case 2:
-					styles[1] = surf.styles[1] * 0.015625 + 0.0078125;
-				case 1:
-					styles[0] = surf.styles[0] * 0.015625 + 0.0078125;
-			}
-			chain[2] += surf.verts.length;
-			for (k = 0; k < surf.verts.length; ++k) {
-				vert = surf.verts[k];
-				cmds[cmds.length] = vert[0];
-				cmds[cmds.length] = vert[1];
-				cmds[cmds.length] = vert[2];
-				cmds[cmds.length] = vert[3];
-				cmds[cmds.length] = vert[4];
-				cmds[cmds.length] = vert[5];
-				cmds[cmds.length] = vert[6];
-				cmds[cmds.length] = styles[0];
-				cmds[cmds.length] = styles[1];
-				cmds[cmds.length] = styles[2];
-				cmds[cmds.length] = styles[3];
-			}
-		}
-		if (chain[2] !== 0) {
-			m.chains[m.chains.length] = chain;
-			verts += chain[2];
-		}
-	}
-	m.waterchain = verts * 44;
-	verts = 0;
-	for (i = 0; i < m.textures.length; ++i) {
-		texture = m.textures[i];
-		if (texture.turbulent !== true)
-			continue;
-		chain = [i, verts, 0];
-		for (j = 0; j < m.numfaces; ++j) {
-			surf = m.faces[m.firstface + j];
-			if (surf.texture !== i)
-				continue;
-			chain[2] += surf.verts.length;
-			for (k = 0; k < surf.verts.length; ++k) {
-				vert = surf.verts[k];
-				cmds[cmds.length] = vert[0];
-				cmds[cmds.length] = vert[1];
-				cmds[cmds.length] = vert[2];
-				cmds[cmds.length] = vert[3];
-				cmds[cmds.length] = vert[4];
-			}
-		}
-		if (chain[2] !== 0) {
-			m.chains[m.chains.length] = chain;
-			verts += chain[2];
-		}
-	}
-	m.cmds = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, m.cmds);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(cmds), gl.STATIC_DRAW);
-};
-
 // misc
 
 export const initTextures = function () {
@@ -1022,31 +939,11 @@ export const initTextures = function () {
 	tx.bind(0, state.solidskytexture);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
 	state.alphaskytexture = gl.createTexture();
 	tx.bind(0, state.alphaskytexture);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-	state.lightmap_texture = gl.createTexture();
-	tx.bind(0, state.lightmap_texture);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-	state.dlightmap_texture = gl.createTexture();
-	tx.bind(0, state.dlightmap_texture);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-	state.lightstyle_texture = gl.createTexture();
-	tx.bind(0, state.lightstyle_texture);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-
-	state.fullbright_texture = gl.createTexture();
-	tx.bind(0, state.fullbright_texture);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 0, 0, 0]));
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
 	state.null_texture = gl.createTexture();
 	tx.bind(0, state.null_texture);
@@ -1187,9 +1084,6 @@ export const newMap = function () {
 	}
 
 	buildModelVertexBuffer(gl)
-
-	tx.bind(0, state.dlightmap_texture);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.ALPHA, 1024, 1024, 0, gl.ALPHA, gl.UNSIGNED_BYTE, null);
 };
 
 export const timeRefresh_f = function () {
@@ -2277,6 +2171,21 @@ const buildModelVertexBuffer = (gl: WebGLRenderingContext) => {
 	state.model_vbo = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, state.model_vbo);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(v_buffer), gl.STATIC_DRAW);
+}
+
+export const freeResources = () => {
+	const gl = GL.getContext()
+	gl.deleteFramebuffer(state.warpbuffer)
+	gl.deleteBuffer(state.model_vbo)
+	gl.deleteBuffer(state.skyvecs)
+	gl.deleteBuffer(state.dlightvecs)
+	gl.deleteRenderbuffer(state.warprenderbuffer)
+
+	gl.deleteTexture(state.notexture_mip && state.notexture_mip.texturenum)
+	gl.deleteTexture(state.warptexture)
+	gl.deleteTexture(state.solidskytexture)
+	gl.deleteTexture(state.alphaskytexture)
+	gl.deleteTexture(state.null_texture)
 }
 
 // scan

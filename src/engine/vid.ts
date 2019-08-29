@@ -2,6 +2,7 @@ import * as com from './com'
 import * as sys from './sys'
 import * as GL from './GL'
 import * as tx from './texture'
+import * as r from './r'
 
 export const state = {
 
@@ -33,4 +34,5 @@ export const init = async function()
 export const free = () => {
 	GL.freePrograms()
 	tx.freeTextures()
+	r.freeResources()
 }

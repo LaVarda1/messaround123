@@ -32,7 +32,7 @@ export default [
     },
     { 
         name: 'e1m5',
-        title: 'Glomo Keep',
+        title: 'Gloom Keep',
         collection: 'Episode 1',
         game:  gameType.ShareWare
     },

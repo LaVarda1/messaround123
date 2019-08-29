@@ -27,7 +27,8 @@ export default Vue.extend({
       uploadPromise: null,
       showUpload: false,
       isQuot: false,
-      onQuit: null
+      onQuit: null,
+      quitToPath: ''
     }
   },
   components: {
@@ -38,11 +39,17 @@ export default Vue.extend({
       // hooks
       quit: () => {
         this.isQuit = true
-        if (this.onQuit) {
-          this.onQuit()
-        } else {
-          this.$router.go(-1)
-        }
+        // Navigating to force clear memory.
+        
+        window.location.href = this.quitToPath
+        // Joe - Originally this is navigate back. 
+        // if (this.onQuit) {
+        //   this.onQuit()
+        // } else {
+        //   
+        //   // this.$router.go(-1)
+        //   window.location.href = this.quitToPath
+        // }
       },
       startRequestPak: resolve => {
         this.showUpload = true;
@@ -70,6 +77,11 @@ export default Vue.extend({
         this.uploadResolve()
       }
     }
+  },
+  beforeRouteEnter (to, from, next) {
+    next(vm => {
+      vm.quitToPath = from.path
+    })
   },
   beforeRouteLeave (to, from, next) {
     if (this.isQuit) {

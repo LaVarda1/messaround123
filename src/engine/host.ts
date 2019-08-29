@@ -1472,8 +1472,9 @@ export const init = async function(
   state.dedicated = dedicated
   state.oldrealtime = sys.floatTime();
   state.connectOnLoad = getConnectUrl()
+  cvar.init();
+  
   sv.init();
-  cvar.init()
   cmd.init();
   v.init();
   chase.init();

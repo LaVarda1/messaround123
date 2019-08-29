@@ -689,7 +689,7 @@ export const loadSound = async function (s) {
 		return;
 	}
 	var p, fmt, dataofs, datalen, cue, loopstart, samples;
-	for (p = 12; p < data.byteLength;) {
+	for (p = 12; p < data.byteLength - 4;) {
 		switch (view.getUint32(p, true)) {
 			case 0x20746d66: // fmt
 				if (view.getInt16(p + 8, true) !== 1) {

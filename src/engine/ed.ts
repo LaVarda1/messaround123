@@ -283,7 +283,8 @@ export const parseEdict = async function (data, ent) {
     //johnfitz
     key = findField(keyname);
     if (key == null) {
-      con.print('\'' + keyname + '\' is not a field\n');
+      if (key !== 'alpha' && key !== 'fog' && key !== 'sky')
+        con.dPrint('\'' + keyname + '\' is not a field\n');
       continue;
     }
     if (anglehack == true)
