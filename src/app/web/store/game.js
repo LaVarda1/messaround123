@@ -103,7 +103,8 @@ const getters = {
   allAssetMetas: state => state.assetMetas,
   getConfigFile: state => state.configFile,
   getAutoexecFile: state => state.autoexecFile,
-  hasRegistered: state => !!state.assetMetas.find(a => a.game === 'id1' && a.fileName.toLowerCase() === 'pak1.pak')
+  hasRegistered: state => !!state.assetMetas.find(a => a.game === 'id1' && a.fileName.toLowerCase() === 'pak1.pak'),
+  hasGame: state => game => !!state.assetMetas.some(a => a.game === game)
 }
 
 const mutations = {

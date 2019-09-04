@@ -230,6 +230,9 @@ export const init = async (argv: string) =>
 		var timeIn = new Date().getTime()
 		try{
 			await host.frame();
+			if (com.state.inAsync) {
+				debugger
+			}
 		} 
 		catch(e) {
 			if(e && e.message)

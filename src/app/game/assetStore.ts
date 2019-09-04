@@ -7,13 +7,15 @@ import * as con from '../../engine/console'
 import * as indexeddb from '../../shared/indexeddb'
 import IPackedFile from '../../engine/interfaces/store/IPackedFile'
 
-
 function getBinarySize (url) {
+  com.state.inAsync = com.getStack()
   return new Promise((resolve, reject) => {
     var xhr = new XMLHttpRequest();
     xhr.open("HEAD", url, true); // Notice "HEAD" instead of "GET",
                                  //  to get only the header
     xhr.onreadystatechange = function() {
+
+      com.state.inAsync = false
       if (this.readyState == this.DONE) {
         return xhr.status === 200 
           ? resolve(xhr.getResponseHeader("Content-Length"))
@@ -26,6 +28,7 @@ function getBinarySize (url) {
 }
 
 const getFileWithProgress = (url, progress) : Promise<any> => {
+  com.state.inAsync = com.getStack()
   return getBinarySize(url)
     .then(total => {
       return new Promise((resolve, reject) => {
@@ -33,6 +36,7 @@ const getFileWithProgress = (url, progress) : Promise<any> => {
         xhr.overrideMimeType('text\/plain; charset=x-user-defined')
         xhr.open('GET', url)
         xhr.onload = () => {
+          com.state.inAsync = false
           return xhr.status === 200 
             ? resolve(q.strmem(xhr.responseText))
             : reject(xhr.status)
@@ -48,11 +52,13 @@ const getFileWithProgress = (url, progress) : Promise<any> => {
 }
 
 const getFile = async function(file: string) {
+  com.state.inAsync = com.getStack()
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.overrideMimeType('text\/plain; charset=x-user-defined');
     xhr.open('GET', file);
     xhr.onload = () => {
+      com.state.inAsync = false
       resolve({
         status: xhr.status,
         responseText: xhr.responseText
@@ -110,12 +116,11 @@ const getLocalStorage = (game, filename) => {
 }
 const _loadFile = async (filename: string) : Promise<ArrayBuffer> => {
   filename = filename.toLowerCase();
-  var i, j, search, netpath;
+  var i, j, search;
   
   for (i = com.state.searchpaths.length - 1; i >= 0; --i)
   {
     search = com.state.searchpaths[i];
-    netpath = search.dir + '/' + filename;
 
     const data = getLocalStorage(search.dir, filename)
     if (data) {
@@ -139,22 +144,15 @@ const _loadFile = async (filename: string) : Promise<ArrayBuffer> => {
     if (tryIndexedDb) {
       return tryIndexedDb.data
     }
+    const netpath = search.dir + '/' + filename;
 
-    // Meh. Problem is - if there's a  "game" search path, 
+    // Problem is - if there's a  "game" search path, 
     // we end up searching the server
     // for ALL id1 assets. IS this necessary?
+    // It's "only" necessary if the server is serving mods.
+    // Ok HOw can we tell?
+    // I donno...
     // 
-    // const gotFile = await getFile(netpath) as any;
-    // if ((gotFile.status >= 200) && (gotFile.status <= 299))
-    // {
-    //   sys.print('FindFile: ' + netpath + '\n');
-    //   return q.strmem(gotFile.responseText);
-    // }
-  }
-
-  // As a workaround to the above, lets only search the server if we can't
-  // find it in known packs
-  for (i = com.state.searchpaths.length - 1; i >= 0; --i) {
     const gotFile = await getFile(netpath) as any;
     if ((gotFile.status >= 200) && (gotFile.status <= 299))
     {
@@ -162,6 +160,19 @@ const _loadFile = async (filename: string) : Promise<ArrayBuffer> => {
       return q.strmem(gotFile.responseText);
     }
   }
+
+  // As a workaround to the above, lets only search the server if we can't
+  // find it in known packs
+  // for (i = com.state.searchpaths.length - 1; i >= 0; --i) {
+  //   search = com.state.searchpaths[i];
+  //   const netpath = search.dir + '/' + filename;
+  //   const gotFile = await getFile(netpath) as any;
+  //   if ((gotFile.status >= 200) && (gotFile.status <= 299))
+  //   {
+  //     sys.print('FindFile: ' + netpath + '\n');
+  //     return q.strmem(gotFile.responseText);
+  //   }
+  // }
 
   sys.print('FindFile: can\'t find ' + filename + '\n');
 };
