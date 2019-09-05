@@ -1,7 +1,9 @@
 import axios from 'axios'
 import * as JSZip from 'jszip'
 import * as indexedDb from '../../../shared/indexeddb'
-import {any, tail} from 'ramda'
+import {any, tail, find} from 'ramda'
+
+var mapListingPromise = null
 
 const quaddictedMapsUrl = 'http://maps.netquake.io/api/maps'
 // const quaddictedMapsUrl = 'http://localhost:3000/api/maps'
@@ -28,6 +30,7 @@ const getters = {
   getMapListing: state => state.mapListing,
   getMapLoadProgress: state => state.mapLoadProgress,
   getMapIsLoading: state => state.mapIsLoading,
+  getMapFromId: state => id => find(map => map.id === id, state.mapListing)
 }
 
 const mutations = {
@@ -157,8 +160,11 @@ const saveToIndexedDb = (mapId, fileName, data) => {
 
 const actions = {
   loadMapListing ({commit}) { 
-    return axios.get(quaddictedMapsUrl)
-      .then(response => commit(mutationTypes.setMapListing, response.data))
+    if (!mapListingPromise) {
+      mapListingPromise = axios.get(quaddictedMapsUrl)
+        .then(response => commit(mutationTypes.setMapListing, response.data))
+    }
+    return mapListingPromise
   },
   async loadMap ({commit, dispatch}, mapId) {
     const hasGame = await indexedDb.hasGame(mapId)

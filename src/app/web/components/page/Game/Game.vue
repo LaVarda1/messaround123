@@ -2,8 +2,8 @@
   .game-container
     template(v-if="showRequiresPak")
       PakLoader(@done="pakUploaded")
-    template(v-else-if="hasMapDownloaded")
-      MapLoader
+    template(v-else-if="needsMapDownload")
+      MapLoader(:game="game")
     template(v-else)
       h4#progress Starting Quake...
       canvas#mainwindow
@@ -59,9 +59,11 @@ export default Vue.extend({
     })
   },
   computed: {
-    hasMapDownloaded () {
-      const game = params['-game']
-      return !game || this.hasGame(game)
+    needsMapDownload () {
+      return this.game && !this.hasGame(this.game)
+    },
+    game () {
+      return this.$route.query && this.$route.query['-game']
     },
     args () {
       const params = this.$route.query

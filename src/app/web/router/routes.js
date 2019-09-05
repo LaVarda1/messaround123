@@ -6,7 +6,7 @@ import Setup from '../components/page/Setup/Setup.vue'
 import Config from '../components/page/Setup/Config.vue'
 import Autoexec from '../components/page/Setup/Autoexec.vue'
 import SetupGame from '../components/page/Setup/SetupGame/SetupGame.vue'
-import Game from '../components/Game.vue'
+import Game from '../components/page/Game/Game.vue'
 
 import Frontend from '../components/layout/Frontend.vue'
 
