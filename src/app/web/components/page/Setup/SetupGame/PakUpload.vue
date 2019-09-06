@@ -4,13 +4,16 @@
       .column.col-12.text Drop pak files here&nbsp;
         label.browse
           | or browse
-          i(:class="'icon icon-upload' + (loading ? 'loading' : '')")
+          i(:class="'icon icon-upload'")
           input.loader-file-input(type="file" multiple name="files[]" @change="handleFileSelect")
 </template>
 
 <script>
 
 export default {
+  data () {
+    return { loading: false }
+  },
   methods: {
     handleFileDrop (e) {
       e.preventDefault();

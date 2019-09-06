@@ -48,7 +48,7 @@ export default Vue.extend({
         // }
       },
       startRequestPak: resolve => {
-        this.showUpload = true;
+        this.showRequiresPak = true;
         this.uploadResolve = resolve
       }
     })

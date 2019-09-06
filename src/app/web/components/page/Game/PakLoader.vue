@@ -9,6 +9,9 @@
 <script>
 import Id1Assets from '../../page/Setup/SetupGame/ID1Assets.vue'
 export default {
+  components: {
+    Id1Assets
+  },
   methods: {
     pakUploaded (files) {
       if (files.some(f => f.toLowerCase() === 'pak1.pak')) {
