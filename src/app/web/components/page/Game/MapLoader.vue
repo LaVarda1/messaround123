@@ -1,16 +1,23 @@
 <template lang="pug">
   .hello
-    .map-load-title Need to load {{game}}
-    .map-load-error(v-if="error")
-    .map-load-progress(v-else)
-      .container
-        .columns
-          .column.col-8
-            div {{getMapLoadProgress.message}} {{map.fileName}}
-            .bar.light-dark(ref="bar")
-              .bar-text-dark {{loadedKb}}
-              .bar-item(role="progressbar" :style="'width:' + progressPercent+ '%;'" :aria-valuenow="progressPercent" aria-valuemin="0" aria-valuemax="100")
-                .bar-text-light(ref="barHack") {{loadedKb}}
+    .container.grid-lg
+      .column.col-12
+        .panel
+          .panel-header
+            .panel-title
+              h5 Loading from Quaddicted: {{map.title}}
+          .panel-body
+            .map-load-error(v-if="error") {{error}}
+            .map-load-progress(v-else) 
+              .container
+                .columns
+                  .column.col-12
+                    div {{getMapLoadProgress.message}} {{map.fileName}}
+                    .bar.light-dark(ref="bar")
+                      .bar-text-dark {{loadedKb}}
+                      .bar-item(role="progressbar" :style="'width:' + progressPercent+ '%;'" :aria-valuenow="progressPercent" aria-valuemin="0" aria-valuemax="100")
+                        .bar-text-light(ref="barHack")
+          .panel-footer
 </template>
 
 <script>
@@ -31,8 +38,6 @@ export default {
     }
   },
   mounted () {
-    debugger
-    // hack to make progress bar effect work.
     this.loadMapListing()
       .catch(e => {
         this.error = "Error loading map list " + e.message
@@ -41,6 +46,7 @@ export default {
       .then(() => {
         this.map = this.getMapFromId(this.game)
         return this.loadMap(this.game)
+          .then(() => this.$emit('done'))
           .catch(e => {
             this.error = "Error loading map " + e.message
           })
@@ -79,6 +85,7 @@ export default {
 
 <style lang="scss" scoped>
 .bar.light-dark {
+  height: 1.8rem;
   position: relative;
   .bar-item {
     overflow: hidden;
@@ -87,17 +94,17 @@ export default {
       position: absolute;
       text-align: right;
       color: white;
-      font-size: .6rem;
+      font-size: 1.4rem;
     }
   }
   .bar-text-dark {
-    line-height: 0.8rem;
-    height: 0.8rem;
+    line-height: 1.8rem;
+    height: 1.8rem;
     position: absolute;
     width: 100%;
     text-align: right;
     color: black;
-    font-size: .6rem;
+    font-size: 1.4rem;
   }
 }
 </style>

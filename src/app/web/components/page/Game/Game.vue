@@ -2,8 +2,6 @@
   .game-container
     template(v-if="showRequiresPak")
       PakLoader(@done="pakUploaded")
-    template(v-else-if="needsMapDownload")
-      MapLoader(:game="game")
     template(v-else)
       h4#progress Starting Quake...
       canvas#mainwindow
@@ -16,7 +14,6 @@
 <script>
 import Vue from 'vue'
 import GameInit from '../../../../game'
-import MapLoader from './MapLoader.vue'
 import PakLoader from './PakLoader.vue'
 import {mapGetters} from 'vuex'
 
@@ -24,7 +21,6 @@ export default Vue.extend({
   data() {
     return {
       gameSys: null,
-      uploadPromise: null,
       showRequiresPak: false,
       isQuot: false,
       onQuit: null,
@@ -32,8 +28,7 @@ export default Vue.extend({
     }
   },
   components: {
-    PakLoader,
-    MapLoader
+    PakLoader
   },
   mounted() {
     this.gameSys = GameInit(this.args, {
@@ -59,19 +54,13 @@ export default Vue.extend({
     })
   },
   computed: {
-    needsMapDownload () {
-      return this.game && !this.hasGame(this.game)
-    },
-    game () {
-      return this.$route.query && this.$route.query['-game']
-    },
     args () {
       const params = this.$route.query
       return Object.keys(params)
         .map(param => (!!params[param] ? param + ' ' + params[param] : param))
         .join(' ')
     },
-    ...mapGetters('game', ['allAssetMetas', 'hasGame']),
+    ...mapGetters('game', ['allAssetMetas']),
     pak1 () { 
       return this.allAssetMetas.filter(assetMeta => 
         assetMeta.game === 'id1' && assetMeta.fileName.toLowerCase() === 'pak1.pak') 
