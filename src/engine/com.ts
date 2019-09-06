@@ -5,6 +5,10 @@ import * as cvar from './cvar'
 import IAssetStore from './interfaces/store/IAssetStore'
 import ISearch from './interfaces/store/ISearch'
 
+export const getStack = () => {
+  var err = new Error();
+  return err.stack;
+}
 export let state = {
   standard_quake: true,
   argv: [],

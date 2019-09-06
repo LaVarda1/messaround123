@@ -1,3 +1,5 @@
+import * as com from '../engine/com.ts'
+
 const dbName = 'webQuakeAssets',
   metaStoreName = 'meta',
   assetStoreName = 'assets',
@@ -33,12 +35,16 @@ function open (): Promise<IDBDatabase> {
 }
 
 const promiseMe = (request: IDBRequest) => {
+
+  com.state.inAsync = com.getStack()
   return new Promise((resolve, reject) =>  {
     request.onerror = function(e) {
       console.log(e);
       reject(e);
     };
     request.onsuccess = function(event) {
+
+      com.state.inAsync = false
       resolve(request.result as any);
     };
   })
@@ -50,14 +56,17 @@ const dbOperation = async (storeName: string, fn: (db: IDBObjectStore) => IDBReq
     .transaction([storeName], 'readwrite')
     .objectStore(storeName); 
 
-  return new Promise((resolve, reject) =>  {
-    const request = fn(store) as IDBRequest;
-      
-    request.onerror = function(e) {
-      console.log(e);
-      reject(e);
-    };
-    request.onsuccess = function(event) {
+    com.state.inAsync = com.getStack()
+    return new Promise((resolve, reject) =>  {
+      const request = fn(store) as IDBRequest;
+        
+      request.onerror = function(e) {
+        console.log(e);
+        reject(e);
+      };
+      request.onsuccess = function(event) {
+
+      com.state.inAsync = false
       resolve(request.result as any);
     };
   })

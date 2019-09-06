@@ -17,6 +17,7 @@ var devMiddleware = require('webpack-dev-middleware')(compiler, {
 })
 
 app.use('/id1', express.static(path.join(__dirname, '../id1')))
+app.use('/af219f577d73362ddd220ef2e5178d73', express.static(path.join(__dirname, '../af219f577d73362ddd220ef2e5178d73')))
 app.use(connectHistory())
 compiler.hooks.afterEmit.tap('compilation', compilation => {
   // console.log(compilation)

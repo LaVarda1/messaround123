@@ -1,10 +1,7 @@
 <template lang="pug">
   .game-container
-    #lateregistered(v-if="showUpload")
-      .uploader
-        H3 You must load the original Pak1.pak to play registered games
-        a(href="/") Nevermind, take me back.
-        Id1Assets(@uploaded="pakUploaded")
+    template(v-if="showRequiresPak")
+      PakLoader(@done="pakUploaded")
     template(v-else)
       h4#progress Starting Quake...
       canvas#mainwindow
@@ -16,23 +13,22 @@
 
 <script>
 import Vue from 'vue'
-import GameInit from '../../game'
-import Id1Assets from '../components/page/Setup/SetupGame/ID1Assets.vue'
+import GameInit from '../../../../game'
+import PakLoader from './PakLoader.vue'
 import {mapGetters} from 'vuex'
 
 export default Vue.extend({
   data() {
     return {
       gameSys: null,
-      uploadPromise: null,
-      showUpload: false,
+      showRequiresPak: false,
       isQuot: false,
       onQuit: null,
       quitToPath: ''
     }
   },
   components: {
-    Id1Assets
+    PakLoader
   },
   mounted() {
     this.gameSys = GameInit(this.args, {
@@ -71,11 +67,9 @@ export default Vue.extend({
     }
   },
   methods: {
-    pakUploaded (files) {
-      if (files.some(f => f.toLowerCase() === 'pak1.pak')) {
-        this.showUpload = false
-        this.uploadResolve()
-      }
+    pakUploaded () {
+      this.showRequiresPak = false
+      this.uploadResolve()
     }
   },
   beforeRouteEnter (to, from, next) {

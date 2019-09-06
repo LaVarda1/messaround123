@@ -53,7 +53,7 @@ export default {
   }
 }
 </script>
-<style lang="scss">
+<style scoped lang="scss">
 // I spent more time on this than I'd like to admit.
 .bar.light-dark {
   position: relative;
