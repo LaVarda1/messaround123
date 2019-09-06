@@ -2,9 +2,9 @@ import {ISys} from './interfaces/ISys'
 
 var sysImpl: ISys = null
 
-export function init(argv, sys: ISys) {
+export async function init(argv, sys: ISys) {
 	sysImpl = sys
-	sysImpl.init(argv)
+	return await sysImpl.init(argv)
 }
 
 export const error = (text: string): void =>

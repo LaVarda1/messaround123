@@ -30,8 +30,8 @@ export default Vue.extend({
   components: {
     PakLoader
   },
-  mounted() {
-    this.gameSys = GameInit(this.args, {
+  async mounted () {
+    this.gameSys = await GameInit(this.args, {
       // hooks
       quit: () => {
         this.isQuit = true

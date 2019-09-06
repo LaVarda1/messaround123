@@ -45,11 +45,15 @@ export default {
       })
       .then(() => {
         this.map = this.getMapFromId(this.game)
-        return this.loadMap(this.game)
-          .then(() => this.$emit('done'))
-          .catch(e => {
-            this.error = "Error loading map " + e.message
-          })
+        if (this.map) {
+          return this.loadMap(this.game)
+            .then(() => this.$emit('done'))
+            .catch(e => {
+              this.error = "Error loading map " + e.message
+            })
+        } else {
+          this.error = 'Game is not recognized'
+        }
       })
     window.addEventListener('resize', this.onResize)
     this.onResize()
