@@ -18,13 +18,23 @@ import PakLoader from './PakLoader.vue'
 import {mapGetters} from 'vuex'
 
 export default Vue.extend({
+  props: {
+    quitRequest: {
+      type: Boolean,
+      default: false
+    }
+  },
   data() {
     return {
       gameSys: null,
-      showRequiresPak: false,
-      isQuot: false,
-      onQuit: null,
-      quitToPath: ''
+      showRequiresPak: false
+    }
+  },
+  watch:{
+    quitRequest () {
+      if (this.quitRequest) {
+        this.gameSys.quit()
+      }
     }
   },
   components: {
@@ -34,18 +44,7 @@ export default Vue.extend({
     this.gameSys = await GameInit(this.args, {
       // hooks
       quit: () => {
-        this.isQuit = true
-        // Navigating to force clear memory.
-        
-        window.location.href = this.quitToPath
-        // Joe - Originally this is navigate back. 
-        // if (this.onQuit) {
-        //   this.onQuit()
-        // } else {
-        //   
-        //   // this.$router.go(-1)
-        //   window.location.href = this.quitToPath
-        // }
+        this.$emit('quit')
       },
       startRequestPak: resolve => {
         this.showRequiresPak = true;
@@ -70,23 +69,6 @@ export default Vue.extend({
     pakUploaded () {
       this.showRequiresPak = false
       this.uploadResolve()
-    }
-  },
-  beforeRouteEnter (to, from, next) {
-    next(vm => {
-      vm.quitToPath = from.path
-    })
-  },
-  beforeRouteLeave (to, from, next) {
-    if (this.isQuit) {
-      return next()
-    }
-    const answer = window.confirm('Do you really want to leave?')
-    if (answer) {
-      this.onQuit = next
-      this.gameSys.quit()
-    } else {
-      next(false)
     }
   }
 })
