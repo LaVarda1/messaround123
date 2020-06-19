@@ -7,8 +7,8 @@
     "outDir": "./dist/",
     "noImplicitAny": false,
     "sourceMap": true,
-    "module": "commonjs",
-    "target": "esNext",
+    "module": "ESNext",
+    "target": "ESNext",
     "allowJs": true,
     "experimentalDecorators": true
   },
