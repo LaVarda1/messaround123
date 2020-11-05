@@ -1,6 +1,33 @@
-$primary-color: #8f4e28;
-$secondary-color: #c47f58;
-// $dark-color: #2a9614;
+
+$primary-color: #fc3;
+$secondary-color: #a71010;
+
+$light-color: #fff;
+$dark-color: #48587b;
+
+$old-bg-secondary: rgb(123, 105, 72);
+
+$bg-secondary: #48587b;
+
+$border-color: lighten($bg-secondary, 25%);
+$border-color-dark: darken($border-color, 10%);
+$border-color-light: lighten($border-color, 8%);
+
+$bg-color: darken($dark-color, 75%);
+$bg-color-dark: $dark-color;
+$bg-color-light: $light-color;
+
+$body-bg: #393939;
+$body-font-color: darken($light-color, 5%);
+
+$link-color: $primary-color;
+$link-color-dark: darken($link-color, 10%);
+$link-color-light: lighten($link-color, 10%);
+
 
 @import 'spectre.css/src/spectre.scss';
-@import 'spectre.css/src/spectre-icons.scss'
+@import 'spectre.css/src/spectre-icons.scss';
+@import 'button.scss';
+@import 'panel.scss';
+@import 'forms.scss';
+@import 'card.scss';

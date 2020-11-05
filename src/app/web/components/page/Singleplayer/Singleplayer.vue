@@ -36,8 +36,6 @@
               .column.col-12
                 Quaddicted
           .panel-footer
-
-        
 </template>
 
 <script>

@@ -3,7 +3,7 @@
     label.form-label Quake autoexec.cfg File
     button.btn(@click="loadRecommendedAutoexec") Load Recommended
     .config-editor
-      textarea(placeholder="Textarea" rows="20" cols="80" :value="getAutoexecFile" @input="saveAutoexec($event.target.value)")
+      textarea.form-input(placeholder="Textarea" rows="20" cols="80" :value="getAutoexecFile" @input="saveAutoexec($event.target.value)")
 </template>
 
 <script>

@@ -1,7 +1,7 @@
 <template lang="pug">
   .base-assets.container
     .pack-upload(v-if="!packOne || !packZero")
-      PakUpload(@uploadFiles="uploadFilesRequest" :loading="loading")
+      PakUpload.test2( @uploadFiles="uploadFilesRequest" :loading="loading")
     .columns
       .column.col-12.mb-2
         H5(v-if="assetMetas.length") Loaded Id1 packs:
@@ -12,8 +12,6 @@
           :key="meta.filename"
           :label="meta.filename"
           game="id1")
-    
-
 </template>
 
 <script>
@@ -70,7 +68,7 @@ export default {
       }
       
       return this.saveAsset({game: 'id1', fileName, fileCount: packFiles.length, data})
-    },
+    },  
     async uploadFilesRequest (files) {
       this.loading = true
       

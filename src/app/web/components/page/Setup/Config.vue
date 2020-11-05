@@ -3,7 +3,7 @@
     label.form-label Quake config.cfg File
     button.btn(@click="loadRecommendedConfig") Load Recommended
     .config-editor
-      textarea(placeholder="Textarea" rows="20" cols="80" :value="getConfigFile" @input="saveConfig($event.target.value)")
+      textarea.form-input(placeholder="Textarea" rows="20" cols="80" :value="getConfigFile" @input="saveConfig($event.target.value)")
 </template>
 
 <script>

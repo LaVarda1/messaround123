@@ -37,7 +37,7 @@
     "ramda": "^0.26.1",
     "rimraf": "^2.6.3",
     "sass-loader": "^7.1.0",
-    "spectre.css": "^0.5.8",
+    "spectre.css": "^0.5.9",
     "style-loader": "^0.23.1",
     "ts-loader": "^5.3.3",
     "tslint": "^5.12.1",

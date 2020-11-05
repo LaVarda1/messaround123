@@ -1,16 +1,23 @@
 <template lang="pug">
-  .upload-zone(@drop="handleFileDrop" @dragover.prevent)
-    .columns
-      .column.col-12.text Drop pak files here&nbsp;
-        label.browse
-          | or browse
-          i(:class="'icon icon-upload'")
-          input.loader-file-input(type="file" multiple name="files[]" @change="handleFileSelect")
+  .pak-upload
+    .upload-zone(@drop="handleFileDrop" @dragover.prevent)
+      input.loader-file-input(:id="inputId" type="file" multiple name="files[]" @change="handleFileSelect")
+      slot
+        .columns
+          .column.col-12.text Drop pak files here&nbsp;
+            label.browse
+              | or browse
+              i(:class="'icon icon-upload'")
 </template>
 
 <script>
-
 export default {
+  props: {
+    inputId: {
+      type: String,
+      default: 'pak-file-browse'
+    }
+  },
   data () {
     return { loading: false }
   },
