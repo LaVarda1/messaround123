@@ -1,18 +1,12 @@
 stages:
   - build
-  - push
   - deploy
 
 variables:
-
-  CONTAINER_FRONTEND_REF_IMAGE: 096121458971.dkr.ecr.us-east-2.amazonaws.com/webquake-frontend:$CI_COMMIT_SHORT_SHA
-  CONTAINER_FRONTEND_RELEASE_IMAGE: 096121458971.dkr.ecr.us-east-2.amazonaws.com/webquake-frontend:latest
-
-  CONTAINER_SERVER_REF_IMAGE: 096121458971.dkr.ecr.us-east-2.amazonaws.com/webquake-server:$CI_COMMIT_SHORT_SHA
-  CONTAINER_SERVER_RELEASE_IMAGE: 096121458971.dkr.ecr.us-east-2.amazonaws.com/webquake-server:latest
+  DEPLOY_BUCKET: us-east-2-webquake-netquakeio
 
 build_job:
-  image: node:carbon
+  image: node:fermium
   stage: build
   script:
     - npm --unsafe-perm install
@@ -21,42 +15,48 @@ build_job:
     paths:
       - dist/
 
-push_job:
-  image: docker:latest
-  services:
-    - docker:dind
-  before_script:
-    - apk add --no-cache curl jq python3 py3-pip
-    - pip install awscli
-  stage: push
-  script:
-    - $(aws ecr get-login --no-include-email --region us-east-2)
-    - docker build -t $CONTAINER_FRONTEND_REF_IMAGE -f Dockerfile.frontend .
-    - docker push $CONTAINER_FRONTEND_REF_IMAGE
-    - docker tag $CONTAINER_FRONTEND_REF_IMAGE $CONTAINER_FRONTEND_RELEASE_IMAGE
-    - docker push $CONTAINER_FRONTEND_RELEASE_IMAGE
-
-    - docker build -t $CONTAINER_SERVER_REF_IMAGE -f Dockerfile.server .
-    - docker push $CONTAINER_SERVER_REF_IMAGE
-    - docker tag $CONTAINER_SERVER_REF_IMAGE $CONTAINER_SERVER_RELEASE_IMAGE
-    - docker push $CONTAINER_SERVER_RELEASE_IMAGE
-
 deploy:
-  image: docker:latest
+  image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest  # see the note below
   stage: deploy
-  environment:
-    name: Production
-    url: http://www.netquake.io
-  before_script:
-    - apk update
-    - apk add openssh
-    - mkdir -p ~/.ssh     
-    - echo -e "$PROD_BUILD_SSH_KEY" > ~/.ssh/id_rsa     
-    - chmod 600 ~/.ssh/id_rsa     
-    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
   script:
-    - echo "Deploying to Production"
-    - ssh gitlab@$PROD_HOST "/srv/frontend $CI_COMMIT_SHORT_SHA"
-  when: manual
-  only:
-    - master
+    - aws s3 sync dist/app s3://$DEPLOY_BUCKET
+    - aws s3 cp dist/app/index.html s3://$DEPLOY_BUCKET --metadata-directive REPLACE --cache-control  max-age=0,no-cache,no-store,must-revalidate
+# push_job:
+#   image: docker:latest
+#   services:
+#     - docker:dind
+#   before_script:
+#     - apk add --no-cache curl jq python3 py3-pip
+#     - pip install awscli
+#   stage: push
+#   script:
+#     - $(aws ecr get-login --no-include-email --region us-east-2)
+#     - docker build -t $CONTAINER_FRONTEND_REF_IMAGE -f Dockerfile.frontend .
+#     - docker push $CONTAINER_FRONTEND_REF_IMAGE
+#     - docker tag $CONTAINER_FRONTEND_REF_IMAGE $CONTAINER_FRONTEND_RELEASE_IMAGE
+#     - docker push $CONTAINER_FRONTEND_RELEASE_IMAGE
+
+#     - docker build -t $CONTAINER_SERVER_REF_IMAGE -f Dockerfile.server .
+#     - docker push $CONTAINER_SERVER_REF_IMAGE
+#     - docker tag $CONTAINER_SERVER_REF_IMAGE $CONTAINER_SERVER_RELEASE_IMAGE
+#     - docker push $CONTAINER_SERVER_RELEASE_IMAGE
+
+# deploy:
+#   image: docker:latest
+#   stage: deploy
+#   environment:
+#     name: Production
+#     url: http://www.netquake.io
+#   before_script:
+#     - apk update
+#     - apk add openssh
+#     - mkdir -p ~/.ssh     
+#     - echo -e "$PROD_BUILD_SSH_KEY" > ~/.ssh/id_rsa     
+#     - chmod 600 ~/.ssh/id_rsa     
+#     - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+#   script:
+#     - echo "Deploying to Production"
+#     - ssh gitlab@$PROD_HOST "/srv/frontend $CI_COMMIT_SHORT_SHA"
+#   when: manual
+#   only:
+#     - master
