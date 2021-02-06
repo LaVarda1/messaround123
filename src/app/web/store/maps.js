@@ -56,38 +56,35 @@ const strmem = function(src)
 		dest[i] = src.charCodeAt(i) & 255
 	return buf
 }
-function getBinarySize (url) {
-  return new Promise((resolve, reject) => {
-    var xhr = new XMLHttpRequest();
-    xhr.open("HEAD", url, true); // Notice "HEAD" instead of "GET",
-                                 //  to get only the header
-    xhr.onreadystatechange = function() {
-      if (this.readyState == this.DONE) {
-        resolve(parseInt(xhr.getResponseHeader("Content-Length")));
-      }
-    };
-    xhr.onerror = reject
-    xhr.send();
-  })
-}
+// function getBinarySize (url) {
+//   return new Promise((resolve, reject) => {
+//     var xhr = new XMLHttpRequest();
+//     xhr.open("HEAD", url, true); // Notice "HEAD" instead of "GET",
+//                                  //  to get only the header
+//     xhr.onreadystatechange = function() {
+//       if (this.readyState == this.DONE) {
+//         resolve(parseInt(xhr.getResponseHeader("Content-Length")));
+//       }
+//     };
+//     xhr.onerror = reject
+//     xhr.send();
+//   })
+// }
 
-const getBinaryData = (url, progress) => {
-  return getBinarySize(url)
-    .then(total => {
-      return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest()
-        xhr.overrideMimeType('text\/plain; charset=x-user-defined')
-        xhr.open('GET', url)
-        xhr.onload = () => {
-          resolve(strmem(xhr.responseText));    
-        }
-        xhr.onerror = (e) => reject(e) 
-        xhr.addEventListener('progress', e => {
-          progress(e.loaded, total)
-        });
-        xhr.send()
-      })
-    })
+const getBinaryData = (url, total, progress) => {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.overrideMimeType('text\/plain; charset=x-user-defined')
+    xhr.open('GET', url)
+    xhr.onload = () => {
+      resolve(strmem(xhr.responseText));    
+    }
+    xhr.onerror = (e) => reject(e) 
+    xhr.addEventListener('progress', e => {
+      progress(e.loaded, total)
+    });
+    xhr.send()
+  })
 }
 
 const anyFirstElementContains = searchTerm =>
@@ -122,7 +119,7 @@ const loadMapZip = async (fileHandler, mapId, commit) => {
   try {
     const url = quaddictedMapsUrl + '/' + mapId
     const mapsMeta = prop('data', await axios.get(url))
-    const arrayBuf = await getBinaryData(mapsMeta.downloadLink, (loaded, total) => {
+    const arrayBuf = await getBinaryData(mapsMeta.downloadLink, mapsMeta.byteLength, (loaded, total) => {
       commit(mutationTypes.setMapLoadProgress, {loaded, total, message: 'Downloading...'})
     })
 
