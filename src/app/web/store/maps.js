@@ -1,11 +1,11 @@
 import axios from 'axios'
 import * as JSZip from 'jszip'
 import * as indexedDb from '../../../shared/indexeddb'
-import {any, tail, find} from 'ramda'
+import {any, tail, find, prop} from 'ramda'
 
 var mapListingPromise = null
 
-const quaddictedMapsUrl = 'http://maps.netquake.io/api/maps'
+const quaddictedMapsUrl = '/api/maps'
 // const quaddictedMapsUrl = 'http://localhost:3000/api/maps'
 
 const state = {
@@ -121,7 +121,8 @@ const loadMapZip = async (fileHandler, mapId, commit) => {
 
   try {
     const url = quaddictedMapsUrl + '/' + mapId
-    const arrayBuf = await getBinaryData(url, (loaded, total) => {
+    const mapsMeta = prop('data', await axios.get(url))
+    const arrayBuf = await getBinaryData(mapsMeta.downloadLink, (loaded, total) => {
       commit(mutationTypes.setMapLoadProgress, {loaded, total, message: 'Downloading...'})
     })
 
