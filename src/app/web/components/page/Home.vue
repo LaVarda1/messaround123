@@ -12,6 +12,8 @@
               | then forked and extended to support a few more features.
               br 
               | This version uses the latest HTML5 API's which will not work in older browsers.
+            p(style="color: orange;") This platform's backend is changing to reduce costs.  Multiplayer will be down for a bit. 
+              
 
     h2
       .containers
