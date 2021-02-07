@@ -5,6 +5,8 @@ var express = require('express')
 var webpack = require('webpack')
 var webpackConfig = require('./webpack/webpack.config.dev')
 var connectHistory = require('connect-history-api-fallback')
+var httpProxy = require('http-proxy-middleware')
+
 
 var app = express()
 
@@ -16,6 +18,11 @@ var devMiddleware = require('webpack-dev-middleware')(compiler, {
   quiet: true
 })
 
+
+app.use(
+  '/api',
+  httpProxy({ target: 'http://localhost:3000', changeOrigin: true })
+);
 app.use('/id1', express.static(path.join(__dirname, '../id1')))
 app.use('/af219f577d73362ddd220ef2e5178d73', express.static(path.join(__dirname, '../af219f577d73362ddd220ef2e5178d73')))
 app.use(connectHistory())
