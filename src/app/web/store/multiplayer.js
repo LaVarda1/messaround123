@@ -1,5 +1,5 @@
 import axios from 'axios'
-const masterServerUrl = 'http://master.netquake.io/api/server'
+const masterServerUrl = '/api/server'
 
 const state = {
   serverStatuses: [],
@@ -35,7 +35,7 @@ const mutations = {
 
 const refreshTime = 5000
 const pingServer = (hostport) => {
-  const url = `http://${hostport}/ping`
+  const url = `https://${hostport}/ping`
   const start = new Date().getTime()
   return axios.get(url, {timeout: 1000})
     .then(() => {
