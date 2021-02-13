@@ -21,6 +21,11 @@ build:
 deploy_frontend:
   image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest  # see the note below
   stage: deploy
+  only:
+    changes:
+      - "src/app/**/*"
+      - "src/shared/**/*"
+      - "src/server/**/*"
   variables:
     DEPLOY_BUCKET: us-east-2-webquake-netquakeio
   script:
