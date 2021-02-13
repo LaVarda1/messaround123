@@ -52,7 +52,8 @@ push_backend_image:
     - pip install awscli
   stage: push
   script:
-    - $(aws ecr get-login --no-include-email --region us-east-2)
+    - aws ecr-public get-login-password | docker login -u AWS --password-stdin "https://public.ecr.aws"
+    # - $(aws ecr get-login --no-include-email --region us-east-2)
     - docker build -t $CONTAINER_SERVER_REF_IMAGE -f Dockerfile.server .
     - docker push $CONTAINER_SERVER_REF_IMAGE
     - docker tag $CONTAINER_SERVER_REF_IMAGE $CONTAINER_SERVER_RELEASE_IMAGE
