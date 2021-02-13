@@ -1,11 +1,14 @@
 stages:
   - build
+  - push
   - deploy
 
-variables:
-  DEPLOY_BUCKET: us-east-2-webquake-netquakeio
 
-build_job:
+variables:
+  CONTAINER_SERVER_REF_IMAGE: public.ecr.aws/v9s4j9b0/webquake-server:$CI_COMMIT_SHORT_SHA
+  CONTAINER_SERVER_RELEASE_IMAGE: public.ecr.aws/v9s4j9b0/webquake-server:latest
+
+build:
   image: node:fermium
   stage: build
   script:
@@ -15,9 +18,11 @@ build_job:
     paths:
       - dist/
 
-deploy:
+deploy_frontend:
   image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest  # see the note below
   stage: deploy
+  variables:
+    DEPLOY_BUCKET: us-east-2-webquake-netquakeio
   script:
     - aws s3 sync dist/app s3://$DEPLOY_BUCKET
     - aws s3 cp dist/app/index.html s3://$DEPLOY_BUCKET --metadata-directive REPLACE --cache-control  max-age=0,no-cache,no-store,must-revalidate
@@ -27,29 +32,35 @@ deploy:
     - aws s3 cp dist/app/index.html s3://$DEPLOY_BUCKET/setup/assets --metadata-directive REPLACE --cache-control  max-age=0,no-cache,no-store,must-revalidate
     - aws s3 cp dist/app/index.html s3://$DEPLOY_BUCKET/setup/config --metadata-directive REPLACE --cache-control  max-age=0,no-cache,no-store,must-revalidate
     - aws s3 cp dist/app/index.html s3://$DEPLOY_BUCKET/setup/autoexec --metadata-directive REPLACE --cache-control  max-age=0,no-cache,no-store,must-revalidate
-# push_job:
-#   image: docker:latest
-#   services:
-#     - docker:dind
-#   before_script:
-#     - apk add --no-cache curl jq python3 py3-pip
-#     - pip install awscli
-#   stage: push
-#   script:
-#     - $(aws ecr get-login --no-include-email --region us-east-2)
-#     - docker build -t $CONTAINER_FRONTEND_REF_IMAGE -f Dockerfile.frontend .
-#     - docker push $CONTAINER_FRONTEND_REF_IMAGE
-#     - docker tag $CONTAINER_FRONTEND_REF_IMAGE $CONTAINER_FRONTEND_RELEASE_IMAGE
-#     - docker push $CONTAINER_FRONTEND_RELEASE_IMAGE
 
-#     - docker build -t $CONTAINER_SERVER_REF_IMAGE -f Dockerfile.server .
-#     - docker push $CONTAINER_SERVER_REF_IMAGE
-#     - docker tag $CONTAINER_SERVER_REF_IMAGE $CONTAINER_SERVER_RELEASE_IMAGE
-#     - docker push $CONTAINER_SERVER_RELEASE_IMAGE
+push_backend_image:
+  image: docker:latest
+  only:
+    changes:
+      - "src/engine/**/*"
+      - "src/shared/**/*"
+      - "src/server/**/*"
+  services:
+    - docker:dind
+  before_script:
+    - apk add --no-cache curl jq python3 py3-pip
+    - pip install awscli
+  stage: push
+  script:
+    - $(aws ecr get-login --no-include-email --region us-east-2)
+    - docker build -t $CONTAINER_SERVER_REF_IMAGE -f Dockerfile.server .
+    - docker push $CONTAINER_SERVER_REF_IMAGE
+    - docker tag $CONTAINER_SERVER_REF_IMAGE $CONTAINER_SERVER_RELEASE_IMAGE
+    - docker push $CONTAINER_SERVER_RELEASE_IMAGE
 
-# deploy:
+# deploy_backend:
 #   image: docker:latest
 #   stage: deploy
+#   only:
+#     changes:
+#       - "src/server/**/*"
+#       - "src/engine/**/*"
+#       - "src/shared/**/*"
 #   environment:
 #     name: Production
 #     url: http://www.netquake.io
