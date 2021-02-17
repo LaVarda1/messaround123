@@ -20,9 +20,9 @@ export const connect = (host: string): any =>
 {
 	if (host.length <= 5)
 		return null
-	if (host.charCodeAt(5) === 47)
+	if (host.charCodeAt(6) === 47)
 		return null
-	if (host.substring(0, 5) !== 'wss://')
+	if (host.substring(0, 6) !== 'wss://')
 		return null
 	host = 'wss://' + host.split('/')[2];
 	var sock = net.newQSocket();
