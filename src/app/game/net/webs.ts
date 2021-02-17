@@ -10,7 +10,7 @@ export var available: boolean = false;
 export const init = () => { 
 	if(typeof window === "undefined")
 		return
-	if ((window['WebSocket'] == null) || (document.location.protocol === 'https:'))
+	if (window['WebSocket'] == null)
 		return;
 	available = true;
 	return true;
