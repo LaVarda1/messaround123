@@ -1451,9 +1451,9 @@ const initLocal = () => {
   cvr.rcon_password = cvar.registerVariable('rcon_password', 'abcd');
  
   // server details for discovery
-  cvr.location = cvar.registerVariable('location', '');
-  cvr.description = cvar.registerVariable('description', '');
-  cvr.masterserver = cvar.registerVariable('masterserver', 'http://master.netquake.io');
+  cvr.web_location = cvar.registerVariable('web_location', '');
+  cvr.web_description = cvar.registerVariable('web_description', '');
+  cvr.web_masterserver = cvar.registerVariable('web_masterserver', 'https://www.netquake.io');
   findMaxClients();
 }
 

@@ -383,7 +383,7 @@ export const init = (drivers: INetworkDriver[]) => {
 
 	cvr.messagetimeout = cvar.registerVariable('net_messagetimeout', '300');
 	cvr.hostname = cvar.registerVariable('hostname', 'UNNAMED');
-	cvr.connecthostport = cvar.registerVariable('connecthostport', '');
+	cvr.web_connect_url = cvar.registerVariable('web_connect_url', '');
 	cmd.addCommand('listen', listen_f);
 	cmd.addCommand('maxplayers', maxPlayers_f);
 	cmd.addCommand('port', port_f);

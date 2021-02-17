@@ -1,3 +1,4 @@
+import * as https from 'https'
 import * as http from 'http'
 import * as host from '../../../engine/host'
 import * as pr from '../../../engine/pr'
@@ -193,7 +194,7 @@ export const createHttpServer = (port) => {
 
 export const registerWithMaster = () => {
   const gameVar = cvar.findVar('game')
-  const masterServer = host.cvr.masterserver.string
+  const masterServer = host.cvr.web_masterserver.string
   if (!masterServer) {
     return
   }
@@ -202,9 +203,9 @@ export const registerWithMaster = () => {
     game: gameVar && gameVar.string || '',
     gameType: 'what is this field for?',
     name: net.cvr.hostname.string,
-    connecthostport: net.cvr.connecthostport.string,
-    location: host.cvr.location.string,
-    description: host.cvr.description.string
+    connecthostport: net.cvr.web_connect_url.string,
+    location: host.cvr.web_location.string,
+    description: host.cvr.web_description.string
   })
 
   const options = {
@@ -215,7 +216,7 @@ export const registerWithMaster = () => {
     }
   }
 
-  const postReq = http.request(options, resp => {
+  const postReq = https.request(options, resp => {
     resp.on('data', (data) => {
       const statusCode = resp.statusCode
       const text = data.toString('ascii')

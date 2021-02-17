@@ -22,9 +22,9 @@ export const connect = (host: string): any =>
 		return null
 	if (host.charCodeAt(5) === 47)
 		return null
-	if (host.substring(0, 5) !== 'ws://')
+	if (host.substring(0, 5) !== 'wss://')
 		return null
-	host = 'ws://' + host.split('/')[2];
+	host = 'wss://' + host.split('/')[2];
 	var sock = net.newQSocket();
 	sock.disconnected = true;
 	sock.receiveMessage = []

@@ -544,8 +544,8 @@ export const multiPlayer_Key = async function(k)
       key.state.dest = key.KEY_DEST.game;
       state.menu = MENU_STATE.none;
       cmd.state.text += 'connect "';
-      if (state.multiplayer_joinname.substring(0, 5) !== 'ws://')
-        cmd.state.text += 'ws://';
+      if (state.multiplayer_joinname.substring(0, 5) !== 'wss://')
+        cmd.state.text += 'wss://';
       cmd.state.text += state.multiplayer_joinname + '"\n';
       return;
     case 2:

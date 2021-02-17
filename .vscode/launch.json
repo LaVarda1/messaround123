@@ -17,8 +17,13 @@
           "cwd": "${workspaceFolder}",
           "protocol": "inspector",
           "args": [
-            "-game", "dm",
-            "-udpportstart","50000"
+            //"-game", "dm",
+            "-port", "26003",
+            "+web_connect_url", "coop.netquake.io",
+            "+web_location", "Ohio",
+            "+web_description", "Test_Server",
+            "+udpportstart","26003",
+            "+map","dm3"
           ],
           "outFiles": [
             "${workspaceFolder}/dist/**/*.js"

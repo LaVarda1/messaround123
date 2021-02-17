@@ -40,7 +40,7 @@ export default {
     ...mapActions('multiplayer', ['refresh']),
     join(server) {
       var query = {
-        "-connect": `ws://${server.connecthostport}`,
+        "-connect": `wss://${server.connecthostport}`,
       }
       if (server.game && server.game !== 'id1') {
         query["-game"] = server.game
