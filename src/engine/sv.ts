@@ -1589,9 +1589,15 @@ const clientThink = function () {
 const readClientMove = function () {
 	var client = host.state.client;
 	client.ping_times[client.num_pings++ & 15] = state.server.time - msg.readFloat();
-	client.edict.v_float[pr.entvars.v_angle] = msg.readAngle();
-	client.edict.v_float[pr.entvars.v_angle1] = msg.readAngle();
-	client.edict.v_float[pr.entvars.v_angle2] = msg.readAngle();
+	if (state.server.protocol === protocol.fitzquake) {
+		client.edict.v_float[pr.entvars.v_angle] = msg.readAngle16();
+		client.edict.v_float[pr.entvars.v_angle1] = msg.readAngle16();
+		client.edict.v_float[pr.entvars.v_angle2] = msg.readAngle16();
+	} else {
+		client.edict.v_float[pr.entvars.v_angle] = msg.readAngle();
+		client.edict.v_float[pr.entvars.v_angle1] = msg.readAngle();
+		client.edict.v_float[pr.entvars.v_angle2] = msg.readAngle();
+	}
 	client.cmd.forwardmove = msg.readShort();
 	client.cmd.sidemove = msg.readShort();
 	client.cmd.upmove = msg.readShort();

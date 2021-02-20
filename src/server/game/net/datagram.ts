@@ -306,7 +306,6 @@ export const sendUnreliableMessage = function(sock, data)
 {
 	if (sock.driverdata == null)
 		return -1;
-	con.print(sock.driverdata.data_port + ' sending um')
 	var buf = new Buffer(def.max_message + HEADER_SIZE);
 	buf.writeUInt32BE(data.cursize + 0x00100008, 0);
 	buf.writeUInt32BE(sock.unreliableSendSequence++, 4);

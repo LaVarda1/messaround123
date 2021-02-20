@@ -56,12 +56,13 @@ export const beginReading = function()
 
 export const readChar = function()
 {
-	if (state.readcount >= net.state.message.cursize)
+	const count = state.readcount
+	if (count >= net.state.message.cursize)
 	{
 		state.badread = true;
 		return -1;
 	}
-	var c = (new Int8Array(net.state.message.data, state.readcount, 1))[0];
+	var c = (new Int8Array(net.state.message.data, count, 1))[0];
 	++state.readcount;
 	return c;
 };
@@ -135,4 +136,9 @@ export const readCoord = function()
 export const readAngle = function()
 {
 	return readChar() * 1.40625;
+};
+
+export const readAngle16 = function()
+{
+	return readShort() * (360.0 / 65536);;
 };
