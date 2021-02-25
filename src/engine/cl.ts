@@ -441,6 +441,7 @@ export const adjustAngles = function()
   }
 
   var up = keyState(KBUTTON.lookup), down = keyState(KBUTTON.lookdown);
+  
   if ((up !== 0.0) || (down !== 0.0))
   {
     angles[0] += speed * cvr.pitchspeed.value * (down - up);

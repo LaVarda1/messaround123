@@ -25,7 +25,7 @@ deploy_frontend:
     changes:
       - "src/app/**/*"
       - "src/shared/**/*"
-      - "src/server/**/*"
+      - "src/engine/**/*"
   variables:
     DEPLOY_BUCKET: us-east-2-webquake-netquakeio
   script:
