@@ -24,7 +24,6 @@ export const connect = (host: string): any =>
 		return null
 	if (host.substring(0, 6) !== 'wss://')
 		return null
-	host = 'wss://' + host.split('/')[2];
 	var sock = net.newQSocket();
 	sock.disconnected = true;
 	sock.receiveMessage = []
