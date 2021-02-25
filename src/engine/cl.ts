@@ -492,9 +492,9 @@ export const sendMove = async function()
   buf.cursize = 0;
   msg.writeByte(buf, protocol.CLC.move);
   msg.writeFloat(buf, clState.mtime[0]);
-  msg.writeAngle(buf, clState.viewangles[0]);
-  msg.writeAngle(buf, clState.viewangles[1]);
-  msg.writeAngle(buf, clState.viewangles[2]);
+  msg.writeAngle16(buf, clState.viewangles[0]);
+  msg.writeAngle16(buf, clState.viewangles[1]);
+  msg.writeAngle16(buf, clState.viewangles[2]);
   msg.writeShort(buf, clState.cmd.forwardmove);
   msg.writeShort(buf, clState.cmd.sidemove);
   msg.writeShort(buf, clState.cmd.upmove);

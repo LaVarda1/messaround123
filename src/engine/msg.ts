@@ -48,6 +48,11 @@ export const writeAngle = function(sb, f)
 	writeByte(sb, ((f >> 0) * (256.0 / 360.0)) & 255);
 };
 
+export const writeAngle16 = function(sb, f)
+{
+	writeShort(sb, ((f >> 0) * (65536.0 / 360.0)) & 65535);
+};
+
 export const beginReading = function()
 {
 	state.readcount = 0;
