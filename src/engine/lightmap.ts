@@ -269,7 +269,7 @@ const buildLightMap = (model, surf, buffofs: number, stride: number) => {
 
 					state.blocklights[blockidx++] += rgbVal
 					state.blocklights[blockidx++] += rgbVal
-					state.blocklights[blockidx++]	+= rgbVal
+					state.blocklights[blockidx++] += rgbVal
 				}
 
 				//johnfitz
@@ -283,7 +283,7 @@ const buildLightMap = (model, surf, buffofs: number, stride: number) => {
 	else
 	{
 		// set to full bright if no light data
-		state.blocklights.fill(255)
+		state.blocklights.fill(255 * 255)
 	}
 
 	// case GL_RGBA:
