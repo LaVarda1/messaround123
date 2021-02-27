@@ -318,7 +318,7 @@ export const stopSound = function (entnum, entchannel) {
 };
 
 export const stopAllSounds = function () {
-	if (cvr.nosound.value !== 0)
+	if (!cvr.nosound || cvr.nosound.value !== 0)
 		return;
 
 	var i, ch;

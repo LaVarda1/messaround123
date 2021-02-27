@@ -16,14 +16,14 @@
           "program": "${workspaceFolder}/src/server/game/index.ts",
           "cwd": "${workspaceFolder}",
           "protocol": "inspector",
-          "args": [
-            //"-game", "dm",
+          "env": {
+            "STARTUP_CFG": "web_connect_url coop.netquake.io\nweb_location Ohio\ncoop 1\ndeathmatch 0\nweb_description test-server"
+          },
+          "args":
+           [
             "-port", "26003",
-            "+web_connect_url", "coop.netquake.io",
-            "+web_location", "Ohio",
-            "+web_description", "Test_Server",
-            "+udpportstart","26003",
-            "+map","dm3"
+            "-udpportstart","26004",
+            "-game", "und"
           ],
           "outFiles": [
             "${workspaceFolder}/dist/**/*.js"

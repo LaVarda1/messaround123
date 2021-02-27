@@ -142,7 +142,7 @@ export const drawConsole = function(lines: number)
 
 export const dPrint = function(_msg: string)
 {
-  if (true|| host.cvr.developer.value !== 0)
+  if (host.cvr.developer.value !== 0)
     print(_msg);
 };
 

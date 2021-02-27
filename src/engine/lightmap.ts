@@ -248,7 +248,7 @@ const buildLightMap = (model, surf, buffofs: number, stride: number) => {
 	var blockidx = 0
 	var buffidx = surf.lightofs
 
-	if (model) //if (cl.worldmodel->lightdata)
+	if (model && model.lightdata) //if (cl.worldmodel->lightdata)
 	{
 		state.blocklights.fill(0, 0, size * 3)
 		// add all the lightmaps

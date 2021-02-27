@@ -189,7 +189,6 @@ const serverFrame = async function()
   await sv.sendClientMessages();
 };
 
-
 export const remoteCommand = function(from, data, password)
 {
 	if ((cvr.rcon_password.string.length === 0) || (password !== cvr.rcon_password.string))
@@ -1466,7 +1465,7 @@ export const init = async function(
   assetStore: IAssetStore,
   netDrivers: INetworkDriver[])
 {
-
+  
   initState()
   state.serverId = com.uuidv4()
   state.dedicated = dedicated
@@ -1502,7 +1501,12 @@ export const init = async function(
     await cl.init();
     input.init();
   }
-  cmd.state.text = 'exec quake.rc\n' + cmd.state.text;
+  cmd.state.text = ""
+  if (process.env.STARTUP_CFG) {
+    sys.print('Applying startup cfg...\n');
+    cmd.state.text += process.env.STARTUP_CFG + "\n"
+  }
+  cmd.state.text += 'exec quake.rc\n' + cmd.state.text;
   state.initialized = true;
   sys.print('========Quake Initialized=========\n');
 };
