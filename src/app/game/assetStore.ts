@@ -18,7 +18,7 @@ const checkRemoteFileList = async function (game, fileName) : Promise<boolean> {
       remoteIndexes[game] = []
     }
   }
-  return !!remoteIndexes[game][fileName]
+  return remoteIndexes[game].some(f => f.fileName === fileName)
 }
 function getBinarySize (url) {
   com.state.inAsync = com.getStack()
