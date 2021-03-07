@@ -6,7 +6,20 @@ import * as sys from '../../engine/sys'
 import * as con from '../../engine/console'
 import * as indexeddb from '../../shared/indexeddb'
 import IPackedFile from '../../engine/interfaces/store/IPackedFile'
+import axios from 'axios'
 
+const remoteIndexes = {}
+const checkRemoteFileList = async function (game, fileName) : Promise<boolean> {
+  if (!remoteIndexes[game]) {
+    try {
+      remoteIndexes[game] = (await axios.get('/api/assets/' + game)).data
+    } catch (err) {
+      sys.print('Error getting asset index from server: '+ err.message + '\n')
+      remoteIndexes[game] = []
+    }
+  }
+  return !!remoteIndexes[game][fileName]
+}
 function getBinarySize (url) {
   com.state.inAsync = com.getStack()
   return new Promise((resolve, reject) => {
@@ -153,11 +166,14 @@ const _loadFile = async (filename: string) : Promise<ArrayBuffer> => {
     // Ok HOw can we tell?
     // I donno...
     // 
-    const gotFile = await getFile(netpath) as any;
-    if ((gotFile.status >= 200) && (gotFile.status <= 299))
-    {
-      sys.print('FindFile: ' + netpath + '\n');
-      return q.strmem(gotFile.responseText);
+    // Joe - I think I figured it out - just ask the server for a file list..
+    if (await checkRemoteFileList(search.dir, netpath)) {
+      const gotFile = await getFile(netpath) as any;
+      if ((gotFile.status >= 200) && (gotFile.status <= 299))
+      {
+        sys.print('FindFile: ' + netpath + '\n');
+        return q.strmem(gotFile.responseText);
+      }
     }
   }
 

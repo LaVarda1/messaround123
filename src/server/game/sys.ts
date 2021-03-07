@@ -71,9 +71,9 @@ export const init = async (argv: string) => {
   
   await host.init(true, assetStore, [webs, datagram])
   
-	process.stdin.resume();
-	process.stdin.on('data', onConsoleInput);
-	process.nextTick(startGameLoop);
+  process.stdin.resume();
+  process.stdin.on('data', onConsoleInput);
+  process.nextTick(startGameLoop);
 }
 
 export const requestPak = () => {

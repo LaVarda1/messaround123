@@ -107,6 +107,7 @@ const getGamePacks = async game => {
   }
   return packs
 }
+
 const addGameDirectory = async function(game) {
   state.searchpaths[state.searchpaths.length] = {
     dir: game,

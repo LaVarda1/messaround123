@@ -13,9 +13,9 @@ export const assetStore = _assetStore
 export const state = {
   looping: false,
   scantokey: [],
-	oldtime: 0.0,
-	onQuit: null,
-	quitRequest: false
+  oldtime: 0.0,
+  onQuit: null,
+  quitRequest: false
 } as any
 
 const onbeforeunload = function()
@@ -165,9 +165,9 @@ export const init = async (argv: string) =>
 		}
 		text += argv.charAt(i);
 	}
-	if (text.length !== 0)
+	if (text.length !== 0){
 		args.push(text);
-	
+	}
 	com.initArgv(args);
 
 	var elem = document.documentElement;
@@ -220,9 +220,9 @@ export const init = async (argv: string) =>
 	await host.init(false, assetStore, [loop, webs]);
 
   const eventNames = Object.keys(events)
-	for (i = 0; i < eventNames.length; ++i)
+	for (i = 0; i < eventNames.length; ++i){
 		window[eventNames[i]] = events[eventNames[i]];
-
+  }
 	const gameLoop = async () => {
 		if(!state.looping)
 			return;
