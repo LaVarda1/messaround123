@@ -20,6 +20,7 @@ const checkRemoteFileList = async function (game, fileName) : Promise<boolean> {
   }
   return remoteIndexes[game].some(f => f.fileName === fileName)
 }
+
 function getBinarySize (url) {
   com.state.inAsync = com.getStack()
   return new Promise((resolve, reject) => {
@@ -256,6 +257,9 @@ const loadServerPackFile = async (game: string, packName: string) : Promise<{nam
   const packfile = game + '/' + packName
 
   try {
+    if (!await checkRemoteFileList(game, packfile)) {
+      return null
+    }
     const data = await getFileWithProgress(packfile, (current, total) => {
       // TODO UI Progress
     })
