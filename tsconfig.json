@@ -8,7 +8,7 @@
     "noImplicitAny": false,
     "sourceMap": true,
     "module": "commonjs",
-    "target": "ES2018",
+    "target": "ESNext",
     "allowJs": true,
     "experimentalDecorators": true
   },

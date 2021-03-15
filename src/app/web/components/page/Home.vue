@@ -2,6 +2,10 @@
   .home
     h1 Quake1 in your browser 
     p
+      .fade
+      .quake.teaser
+        Viewer
+    p
       .containers
         .columns
           .column.col-xs-6 
@@ -46,6 +50,7 @@
 import {mapActions, mapGetters} from 'vuex'
 import {isId1Pak1, readPackFile} from '../../helpers/assetChecker'
 import PakUpload from './Setup/SetupGame/PakUpload.vue'
+import Viewer from './Viewer/Viewer.vue'
 
 const readFile = async file => {
   return new Promise((resolve, reject) => {
@@ -67,7 +72,9 @@ export default {
     loading: false
   },
   components: {
-    PakUpload
+    PakUpload,
+    Viewer
+
   },
   computed: {
     ...mapGetters('game', ['allAssetMetas']),
@@ -121,5 +128,17 @@ export default {
 .upload-zone {
   padding: 0 !important;
   border: none !important;
+}
+.fade {
+  position: absolute;
+  left: 0;
+  z-index: -1;
+  width: 100%;
+  height: 50px;
+  background-image: -webkit-gradient(linear,  left bottom,left top, from(#393939), to(rgba(80,80,80,0.0)), color-stop(.2,#393939));
+}
+.quake.teaser {
+  position: absolute;
+  z-index: -2;
 }
 </style>
