@@ -6,10 +6,11 @@ import * as vid from './vid'
 import * as def from './def'
 import * as scr from './scr'
 import * as host from './host'
+import * as con from './console'
 
 const fragsort = [];
 export const state = {
-
+	scale: 2
 } as any;
 
 export const showScores = function()
@@ -187,25 +188,25 @@ export const init = async function()
 export const drawPic = function(x, y, pic)
 {
 	if (cl.clState.gametype === 1)
-		draw.pic(x, y + vid.state.height - 24, pic);
+		draw.pic(x * state.scale, y * state.scale + vid.state.height - (24 * state.scale), pic, state.scale);
 	else
-		draw.pic(x + (vid.state.width >> 1) - 160, y + vid.state.height - 24, pic);
+		draw.pic(x * state.scale + (vid.state.width >> 1) - (320 * state.scale >> 1), y * state.scale + vid.state.height - (24 * state.scale), pic, state.scale);
 };
 
 export const drawCharacter = function(x, y, num)
 {
 	if (cl.clState.gametype === 1)
-		draw.character(x + 4, y + vid.state.height - 24, num);
+		draw.character(x * state.scale + 4, y * state.scale + vid.state.height - (24 * state.scale), num, state.scale * 8);
 	else
-		draw.character(x + (vid.state.width >> 1) - 156, y + vid.state.height - 24, num);
+		draw.character((x + 4) * state.scale + (vid.state.width >> 1) - (320 * state.scale >> 1), y * state.scale + vid.state.height - (24 * state.scale), num, state.scale * 8);
 };
 
 export const drawString = function(x, y, str)
 {
 	if (cl.clState.gametype === 1)
-		draw.string(x, y + vid.state.height - 24, str);
+		draw.string(x * state.scale, y * state.scale + vid.state.height - (24 * state.scale), str, state.scale * 8);
 	else
-		draw.string(x + (vid.state.width >> 1) - 160, y + vid.state.height - 24, str);
+		draw.string(x * state.scale + (vid.state.width >> 1) - (320 * state.scale >> 1), y * state.scale + vid.state.height - (24 * state.scale), str, state.scale * 8);;
 };
 
 export const drawNum = function(x, y, num, digits, color)
@@ -404,25 +405,25 @@ export const drawFrags = function()
 	sortFrags();
 	var l = state.scoreboardlines <= 4 ? state.scoreboardlines : 4;
 	var x = 23;
-	var xofs = cl.clState.gametype === 1 ? 10 : (vid.state.width >> 1) - 150;
-	var y = vid.state.height - 47;
-	var i, k, s, num;
+	var xofs = cl.clState.gametype === 1 ? 10 * state.scale : (vid.state.width >> 1) - (300 * state.scale >> 1);
+	var y = vid.state.height - (47 * state.scale);
+	var i, k, s, num
 	for (i = 0; i < l; ++i)
 	{
 		k = fragsort[i];
 		s = cl.clState.scores[k];
 		if (s.name.length === 0)
 			continue;
-		draw.fill(xofs + (x << 3), y, 28, 4, (s.colors & 0xf0) + 8);
-		draw.fill(xofs + (x << 3), y + 4, 28, 3, ((s.colors & 0xf) << 4) + 8);
+		draw.fill((xofs + ((x * state.scale) << 3)), y, 28 * state.scale, 4 * state.scale, (s.colors & 0xf0) + 8);
+		draw.fill((xofs + ((x * state.scale) << 3)), y + 4 * state.scale, 28 * state.scale, 3 * state.scale, ((s.colors & 0xf) << 4) + 8);
 		num = s.frags.toString();
-		drawString(((x - num.length) << 3) + 36, -24, num);
+		drawString(((x  - num.length) << 3) + 36, -24, num);
 		if (k === (cl.clState.viewentity - 1))
 		{
-			drawCharacter((x << 3) + 2, -24, 16);
-			drawCharacter((x << 3) + 28, -24, 17);
+			drawCharacter((x << 3) + 4, -24, 16);
+			drawCharacter((x << 3) + 30, -24, 17);
 		}
-		x += 4;
+		x += 4
 	}
 };
 
@@ -482,7 +483,7 @@ export const drawSbar = function()
 	if (scr.state.con_current >= 200)
 		return;
 
-	if (state.lines > 24)
+	if (state.lines > (24 * state.scale))
 	{
 		drawInventory();
 		if (cl.clState.maxclients !== 1)
@@ -567,31 +568,31 @@ export const intermissionNumber = function(x, y, num)
 	for (i = 0; i < str.length; ++i)
 	{
 		frame = str.charCodeAt(i);
-		draw.pic(x, y, state.nums[0][frame === 45 ? 10 : frame - 48]);
+		draw.pic(x * state.scale, y * state.scale, state.nums[0][frame === 45 ? 10 : frame - 48], state.scale);
 		x += 24;
 	}
 };
 
 export const deathmatchOverlay = function()
 {
-	draw.pic((vid.state.width - state.ranking.width) >> 1, 8, state.ranking);
+	draw.pic((vid.state.width - (state.ranking.width * state.scale)) >> 1, 8 * state.scale, state.ranking, state.scale);
 	sortFrags();
 
-	var x = (vid.state.width >> 1) - 80, y = 40;
+	var x = ((vid.state.width >> 1) - (80 * state.scale)), y = (40 * state.scale);
 	var i, s, f;
 	for (i = 0; i < state.scoreboardlines; ++i)
 	{
 		s = cl.clState.scores[fragsort[i]];
 		if (s.name.length === 0)
 			continue;
-		draw.fill(x, y, 40, 4, (s.colors & 0xf0) + 8);
-		draw.fill(x, y + 4, 40, 4, ((s.colors & 0xf) << 4) + 8);
+		draw.fill(x, y, (40 * state.scale), 4 * state.scale, (s.colors & 0xf0) + 8);
+		draw.fill(x, y + (4 * state.scale), 40 * state.scale, 4 * state.scale, ((s.colors & 0xf) << 4) + 8);
 		f = s.frags.toString();
-		draw.string(x + 32 - (f.length << 3), y, f);
+		draw.string((x + (32 - (f.length << 3)) * state.scale), y, f);
 		if (fragsort[i] === (cl.clState.viewentity - 1))
-			draw.character(x - 8, y, 12);
-		draw.string(x + 64, y, s.name);
-		y += 10;
+			draw.character((x - 8 * state.scale), y, 12);
+		draw.string((x + (64 * state.scale)), y, s.name);
+		y += (10 * state.scale);
 	}
 };
 
@@ -622,17 +623,17 @@ export const miniDeathmatchOverlay = function()
 		s = cl.clState.scores[k];
 		if (s.name.length === 0)
 			continue;
-		draw.fill(324, y + 1, 40, 3, (s.colors & 0xf0) + 8);
-		draw.fill(324, y + 4, 40, 4, ((s.colors & 0xf) << 4) + 8);
+		draw.fill(324 * state.scale, y + 1 * state.scale, 40 * state.scale, 3 * state.scale, (s.colors & 0xf0) + 8);
+		draw.fill(324 * state.scale, y + 4 * state.scale, 40 * state.scale, 4 * state.scale, ((s.colors & 0xf) << 4) + 8);
 		num = s.frags.toString();
-		draw.string(356 - (num.length << 3), y, num);
+		draw.string((356 * state.scale) - (num.length * (8*state.scale)), y, num);
 		if (k === (cl.clState.viewentity - 1))
 		{
-			draw.character(324, y, 16);
-			draw.character(356, y, 17);
+			draw.character(324 * state.scale, y, 16, (8 * state.scale));
+			draw.character(356 * state.scale, y, 17, (8 * state.scale));
 		}
-		draw.string(372, y, s.name);
-		y += 8;
+		draw.string(372 * state.scale, y, s.name);
+		y += (8 * state.scale);
 	}
 };
 
@@ -643,22 +644,22 @@ export const intermissionOverlay = function()
 		deathmatchOverlay();
 		return;
 	}
-	draw.pic(64, 24, state.complete);
-	draw.pic(0, 56, state.inter);
+	draw.pic(64 * state.scale, 24 * state.scale, state.complete, state.scale);
+	draw.pic(0, 56 * state.scale, state.inter, state.scale);
 
 	var dig = Math.floor(cl.clState.completed_time / 60.0);
 	intermissionNumber(160, 64, dig);
 	var num = Math.floor(cl.clState.completed_time - dig * 60);
-	draw.pic(234, 64, state.colon);
-	draw.pic(246, 64, state.nums[0][Math.floor(num / 10)]);
-	draw.pic(266, 64, state.nums[0][Math.floor(num % 10)]);
+	draw.pic(234 * state.scale, 64 * state.scale, state.colon, state.scale);
+	draw.pic(246 * state.scale, 64 * state.scale, state.nums[0][Math.floor(num / 10)], state.scale);
+	draw.pic(266 * state.scale, 6 * state.scale4, state.nums[0][Math.floor(num % 10)], state.scale);
 
 	intermissionNumber(160, 104, cl.clState.stats[def.STAT.secrets]);
-	draw.pic(232, 104, state.slash);
+	draw.pic(232 * state.scale, 104 * state.scale, state.slash, state.scale);
 	intermissionNumber(240, 104, cl.clState.stats[def.STAT.totalsecrets]);
 
 	intermissionNumber(160, 144, cl.clState.stats[def.STAT.monsters]);
-	draw.pic(232, 144, state.slash);
+	draw.pic(232 * state.scale, 144 * state.scale, state.slash, state.scale);
 	intermissionNumber(240, 144, cl.clState.stats[def.STAT.totalmonsters]);
 };
 

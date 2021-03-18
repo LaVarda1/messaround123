@@ -64,23 +64,23 @@ export const drawCenterString = function()
 		for (i = 0; i < state.centerstring.length; ++i)
 		{
 			str = state.centerstring[i];
-			x = (vid.state.width - (str.length << 3)) >> 1;
+			x = (vid.state.width - (str.length * con.cvr.textsize.value)) >> 1;
 			for (j = 0; j < str.length; ++j)
 			{
 				draw.character(x, y, str.charCodeAt(j));
 				if ((remaining--) === 0)
 					return;
-				x += 8;
+				x += con.cvr.textsize.value;
 			}
-			y += 8;
+			y += con.cvr.textsize.value;
 		}
 		return;
 	}
 
 	for (i = 0; i < state.centerstring.length; ++i)
 	{
-		draw.string((vid.state.width - (state.centerstring[i].length << 3)) >> 1, y, state.centerstring[i]);
-		y += 8;
+		draw.string((vid.state.width - (state.centerstring[i].length * con.cvr.textsize.value)) >> 1, y, state.centerstring[i]);
+		y += con.cvr.textsize.value;
 	}
 };
 
@@ -106,9 +106,9 @@ export const calcRefdef = function()
 		if (size >= 120.0)
 			sbar.state.lines = 0;
 		else if (size >= 110.0)
-			sbar.state.lines = 24;
+			sbar.state.lines = 24 * sbar.state.scale;
 		else
-			sbar.state.lines = 48;
+			sbar.state.lines = 48 * sbar.state.scale;
 		if (size >= 100.0)
 		{
 			full = true;
@@ -380,7 +380,7 @@ export const updateScreen = function()
 	if (state.screenshot === true)
 	{
 		state.screenshot = false;
-    gl.finish();
+    	gl.finish();
 		// OPEN is not defined, wtf?
 		// oh it's browser API.
 		open(vid.state.mainwindow.toDataURL('image/jpeg'));

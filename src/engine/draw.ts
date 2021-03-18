@@ -6,6 +6,7 @@ import * as GL from './GL'
 import * as w from './w'
 import * as tx from './texture'
 import * as vid from './vid'
+import * as con from './console'
 
 export const state = {
   chars: null,
@@ -84,39 +85,39 @@ export const init = async function()
     ['tTexture', 'tTrans']);
 };
 
-export const char = function(x, y, num)
+export const char = function(x, y, num, size)
 {
-  GL.streamDrawTexturedQuad(x, y, 8, 8,
+  GL.streamDrawTexturedQuad(x, y, size, size,
     (num & 15) * 0.0625, (num >> 4) * 0.0625,
     ((num & 15) + 1) * 0.0625, ((num >> 4) + 1) * 0.0625);
 }
 
-export const character = function(x, y, num)
+export const character = function(x, y, num, size = con.cvr.textsize.value)
 {
   var program = GL.useProgram('Pic', true);
   tx.bind(program.tTexture, state.char_texture, true);
-  char(x, y, num);
+  char(x, y, num, size);
 };
 
-export const string = function(x, y, str)
+export const string = function(x, y, str, size = con.cvr.textsize.value)
 {
   var program = GL.useProgram('Pic', true);
   tx.bind(program.tTexture, state.char_texture, true);
   for (var i = 0; i < str.length; ++i)
   {
-    char(x, y, str.charCodeAt(i));
-    x += 8;
+    char(x, y, str.charCodeAt(i), size);
+    x += size;
   }
 };
 
-export const stringWhite = function(x, y, str)
+export const stringWhite = function(x, y, str, size = con.cvr.textsize.value)
 {
   var program = GL.useProgram('Pic', true);
   tx.bind(program.tTexture, state.char_texture, true);
   for (var i = 0; i < str.length; ++i)
   {
-    char(x, y, str.charCodeAt(i) + 128);
-    x += 8;
+    char(x, y, str.charCodeAt(i) + 128, size);
+    x += size;
   }
 };
 
@@ -147,14 +148,14 @@ export const cachePic = async function(path)
   return dat;
 };
 
-export const pic = function(x, y, pic)
+export const pic = function(x, y, pic, scale = 1)
 {
   var program = GL.useProgram('Pic', true);
   tx.bind(program.tTexture, pic.texnum, true);
-  GL.streamDrawTexturedQuad(x, y, pic.width, pic.height, 0.0, 0.0, 1.0, 1.0);
+  GL.streamDrawTexturedQuad(x, y, pic.width * scale, pic.height * scale, 0.0, 0.0, 1.0, 1.0);
 };
 
-export const picTranslate = function(x, y, pic, top, bottom)
+export const picTranslate = function(x, y, pic, top, bottom, scale = 1)
 {
   const gl = GL.getContext()
   GL.streamFlush();
@@ -163,12 +164,12 @@ export const picTranslate = function(x, y, pic, top, bottom)
   tx.bind(program.tTrans, pic.translate);
 
   var p = vid.d_8to24table[top];
-  var scale = 1.0 / 191.25;
-  gl.uniform3f(program.uTop, (p & 0xff) * scale, ((p >> 8) & 0xff) * scale, (p >> 16) * scale);
+  var _scale = 1.0 / 191.25;
+  gl.uniform3f(program.uTop, (p & 0xff) * _scale, ((p >> 8) & 0xff) * _scale, (p >> 16) * _scale);
   p = vid.d_8to24table[bottom];
-  gl.uniform3f(program.uBottom, (p & 0xff) * scale, ((p >> 8) & 0xff) * scale, (p >> 16) * scale);
+  gl.uniform3f(program.uBottom, (p & 0xff) * _scale, ((p >> 8) & 0xff) * _scale, (p >> 16) * _scale);
 
-  GL.streamDrawTexturedQuad(x, y, pic.width, pic.height, 0.0, 0.0, 1.0, 1.0);
+  GL.streamDrawTexturedQuad(x, y, pic.width * scale, pic.height * scale, 0.0, 0.0, 1.0, 1.0);
 
   GL.streamFlush();
 };

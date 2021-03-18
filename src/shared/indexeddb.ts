@@ -1,4 +1,4 @@
-import * as com from '../engine/com.ts'
+import * as com from '../engine/com'
 
 const dbName = 'webQuakeAssets',
   metaStoreName = 'meta',
@@ -82,7 +82,7 @@ export const getAllMeta = async (): Promise<Array<any>> => {
   const allKeys = await promiseMe(meta.getAllKeys()) as any[]
   
   return Promise.all(allKeys.map(async key => {
-    const metaObj = await promiseMe(meta.get(key))
+    const metaObj = await promiseMe(meta.get(key)) as any
 
     return {
       ...metaObj,
@@ -127,7 +127,7 @@ export const getAsset = async (game, fileName) => {
     const assetId = await promiseMe(index.getKey(IDBKeyRange.only([game.toLowerCase(), fileName.toLowerCase()]))) as any
     return {
       ...assetMeta,
-      ...(await promiseMe(assets.get(assetId)))
+      ...(await promiseMe(assets.get(assetId)) as any)
     }
   }
   return null

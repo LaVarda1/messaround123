@@ -77,10 +77,10 @@ const drawInput = function()
   if ((key.state.dest !== key.KEY_DEST.console) && (state.forcedup !== true))
     return;
   var text = ']' + key.state.edit_line + String.fromCharCode(10 + ((host.state.realtime * 4.0) & 1));
-  var width = (vid.state.width >> 3) - 2;
+  var width = (vid.state.width / cvr.textsize.value) - 2;
   if (text.length >= width)
     text = text.substring(1 + text.length - width);
-  draw.string(8, state.vislines - 16, text);
+  draw.string(16, state.vislines - cvr.textsize.value - 16, text);
 };
 
 export const drawNotify = function()
@@ -93,11 +93,11 @@ export const drawNotify = function()
   {
     if ((host.state.realtime - state.text[i].time) > cvr.notifytime.value)
       continue;
-    draw.string(8, v, state.text[i].text.substring(0, width));
-    v += 8;
+    draw.string(cvr.textsize.value, v, state.text[i].text.substring(0, width));
+    v += cvr.textsize.value;
   }
   if (key.state.dest === key.KEY_DEST.message)
-    draw.string(8, v, 'say: ' + key.state.chat_buffer + String.fromCharCode(10 + ((host.state.realtime * 4.0) & 1)));
+    draw.string(cvr.textsize.value, v, 'say: ' + key.state.chat_buffer + String.fromCharCode(10 + ((host.state.realtime * 4.0) & 1)));
 };
 
 export const drawConsole = function(lines: number)
@@ -107,16 +107,16 @@ export const drawConsole = function(lines: number)
   lines = Math.floor(lines * vid.state.height * 0.005);
   draw.consoleBackground(lines);
   state.vislines = lines;
-  var width = (vid.state.width >> 3) - 2;
+  var width = (vid.state.width * cvr.textsize.value) - 2;
   var rows;
-  var y = lines - 16;
+  var y = lines - cvr.textsize.value - 16;
   var i;
   for (i = state.text.length - 1 - state.backscroll; i >= 0;)
   {
     if (state.text[i].text.length === 0)
-      y -= 8;
+      y -= cvr.textsize.value;
     else
-      y -= Math.ceil(state.text[i].text.length / width) << 3;
+      y -= Math.ceil(state.text[i].text.length / width) * cvr.textsize.value;
     --i;
     if (y <= 0)
       break;
@@ -128,13 +128,13 @@ export const drawConsole = function(lines: number)
     rows = Math.ceil(text.length / width);
     if (rows === 0)
     {
-      y += 8;
+      y += cvr.textsize.value;
       continue;
     }
     for (j = 0; j < rows; ++j)
     {
-      draw.string(8, y, text.substr(j * width, width));
-      y += 8;
+      draw.string(16, y, text.substr(j * width, width));
+      y += cvr.textsize.value;
     }
   }
   drawInput();
@@ -204,6 +204,7 @@ export const init = function()
     com.writeTextFile('qconsole.log', '');
   print('Console initialized.\n');
 
+  cvr.textsize = cvar.registerVariable('con_textsize', "16");
   cvr.notifytime = cvar.registerVariable('con_notifytime', '3');
   cmd.addCommand('toggleconsole', toggleConsole_f);
   cmd.addCommand('messagemode', messageMode_f);

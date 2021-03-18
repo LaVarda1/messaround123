@@ -18,10 +18,17 @@ var devMiddleware = require('webpack-dev-middleware')(compiler, {
   quiet: true
 })
 
+const router = express.Router();
+router.get('/id1', (req, res, next) => {
+  res.json([{fileName: 'pak0.pak', filesize: 32424}, {fileName: 'pak1.pak'}])
+} )
+app.use('/api/assets', router)
 
 app.use(
-  '/api',
-  httpProxy({ target: 'http://localhost:3000', changeOrigin: true })
+  '/coop', httpProxy({ target: 'https://www.netquake.io', changeOrigin: true })
+);
+app.use(
+  '/api', httpProxy({ target: 'https://www.netquake.io', changeOrigin: true })
 );
 app.use('/id1', express.static(path.join(__dirname, '../id1')))
 app.use('/af219f577d73362ddd220ef2e5178d73', express.static(path.join(__dirname, '../af219f577d73362ddd220ef2e5178d73')))
