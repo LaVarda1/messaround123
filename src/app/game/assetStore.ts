@@ -257,7 +257,7 @@ const loadServerPackFile = async (game: string, packName: string) : Promise<{nam
   const packfile = game + '/' + packName
 
   try {
-    if (!await checkRemoteFileList(game, packfile)) {
+    if (!await checkRemoteFileList(game, packName)) {
       return null
     }
     const data = await getFileWithProgress(packfile, (current, total) => {
