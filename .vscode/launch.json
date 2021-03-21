@@ -23,8 +23,8 @@
            [
             "-port", "26003",
             "-udpportstart","26004",
-            "-game", "coop",
-            "+map", "undergate"
+            "-game", "crmod",
+            "+map", "e1m2"
           ],
           "outFiles": [
             "${workspaceFolder}/dist/**/*.js"

@@ -325,7 +325,7 @@ const status_f = function()
     print = con.print;
   }
   else
-    print = sv.state.ClientPrint;
+    print = clientPrint;
   print('host:    ' + net.cvr.hostname.string + '\n');
   print('version: 1.09\n');
   print('map:     ' + pr.getString(pr.state.globals_int[pr.globalvars.mapname]) + '\n');
