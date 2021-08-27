@@ -15,10 +15,10 @@
           td {{server.connecthostport}}
           td {{server.location}}
           td {{server.map}}
-          td {{formatPlayerCount(server)}}
+          td.tooltip.tooltip-left(:data-tooltip="playersToolTipText(server)")  {{formatPlayerCount(server)}}
           td {{server.ping}}
           td
-            button.btn.tooltip.tooltip-left(@click="join(server)" :disabled="isDisabled(server)" :data-tooltip="tooltipText(server)") Join
+            button.btn.tooltip.tooltip-left(@click="join(server)" :disabled="isDisabled(server)" :data-tooltip="joinToolTipText(server)") Join
         
 </template>
 
@@ -53,8 +53,15 @@ export default {
     isDisabled (server) {
       return !this.hasRegistered && !sharewareMaps.find(m => m === server.map)
     },
-    tooltipText (server) {
+    joinToolTipText (server) {
       return this.isDisabled(server) ? "Must add registered assets in setup\n before joining this server" : "Join this game server"
+    },
+    playersToolTipText (server) {
+      const players = server.players
+      players.sort((a, b) => parseInt(b.frags) - parseInt(a.frags))
+      return players.reduce((str, player) => {
+        return str += player.frags + "\t\t" + player.name + '\n'
+      }, "Online Players\nFrags\tName\n")
     }
   },
   beforeRouteEnter (to, from, next) {
