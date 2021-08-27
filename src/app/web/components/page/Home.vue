@@ -4,7 +4,7 @@
     p
       .containers
         .columns
-          .column.col-xs-6 
+          .column
             .content
               | First written by 
               a(href="https://github.com/Triang3l/WebQuake") Triang3l 
@@ -19,9 +19,9 @@
       .containers
         v-template(v-if="!packOne")
           .columns
-            .column.col-xs-6
+            .column.mt-2.col-md-6.col-xs-12
               .btn.solid.btn-large.full-width(@click="start()") Start Shareware
-            .column.col-xs-6
+            .column.mt-2.col-md-6.col-xs-12
               PakUpload(@uploadFiles="uploadFilesRequest" inputId="home-upload" :loading="loading")
                 .btn.solid.btn-large.full-width
                   label(for="home-upload")
