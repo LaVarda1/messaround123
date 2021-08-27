@@ -6,14 +6,14 @@
         .columns
           .column.col-xs-6 
             .content
-              | first written by 
+              | First written by 
               a(href="https://github.com/Triang3l/WebQuake") Triang3l 
               |
               | then forked and extended to support a few more features.
               br 
               | This version uses the latest HTML5 API's which will not work in older browsers.
-            p(style="color: orange;") This platform's backend is changing to reduce costs.  Multiplayer will be down for a bit. 
-              
+              p.upload Upload your pak1.pak from a purchased copy of quake in order to enjoy all mods and maps.
+
 
     h2
       .containers
@@ -35,10 +35,13 @@
           .column.col-xs-12
             .btn.solid.btn-large.full-width(@click="multiplayer()") Multiplayer
       
-    div.divider
 
-    p.text-small The source for this project is hosted here: 
-      a(href="https://gitlab.com/joe.lukacovic/netquake.io") https://gitlab.com/joe.lukacovic/netquake.io
+    .footer
+      .divider
+      p.text-small Made by Joe 
+        a(href="mailto:efessel@gmail.com") efessel@gmail.com
+        |  | Source: 
+        a(href="https://gitlab.com/joe.lukacovic/netquake.io") https://gitlab.com/joe.lukacovic/netquake.io  
 
     
 </template>
@@ -121,5 +124,11 @@ export default {
 .upload-zone {
   padding: 0 !important;
   border: none !important;
+}
+.upload {
+  margin-top: 1rem;
+}
+.footer {
+  margin-top: 200px;
 }
 </style>
