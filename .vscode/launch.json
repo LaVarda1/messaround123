@@ -17,7 +17,7 @@
           "cwd": "${workspaceFolder}",
           "protocol": "inspector",
           "env": {
-            "STARTUP_CFG": "web_connect_url coop.netquake.io\nweb_location Ohio\ncoop 1\ndeathmatch 0\nweb_description test-server"
+            "STARTUP_CFG": "web_connect_url dev.netquake.io\nweb_location Ohio\ncoop 1\ndeathmatch 0\nweb_description test-server"
           },
           "args":
            [

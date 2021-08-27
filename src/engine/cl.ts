@@ -699,13 +699,13 @@ export const connect = function(sock)
   cls.signon = 0;
 };
 
-export const establishConnection = async function(host)
+export const establishConnection = async function(host_url)
 {
   if (cls.demoplayback === true)
     return;
   await disconnect();
-  state.host = host;
-  var sock = net.connect(host);
+  state.host = host_url;
+  var sock = net.connect(host_url);
   if (sock == null)
     await host.error('CL.EstablishConnection: connect failed\n');
   connect(sock);

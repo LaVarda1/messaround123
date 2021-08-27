@@ -81,7 +81,7 @@ export const init = async function () {
 			ch.audio = ch.sfx.cache.data.cloneNode();
 	}
 
-	con.state.sfx_talk = precacheSound('misc/talk.wav');
+	con.state.sfx_talk = await precacheSound('misc/talk.wav');
 };
 
 export const noteOff = function (node) {
