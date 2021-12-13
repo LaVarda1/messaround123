@@ -1113,8 +1113,13 @@ const kick_f = async function()
   if (state.client === save)
     return;
   var who;
-  if (cmd.state.client !== true)
-    who = cl.cvr.name.string;
+  if (cmd.state.client !== true){
+    if (cl.cvr.name) {
+      who = cl.cvr.name.string;
+    } else {
+      who = "Server"
+    }
+  }
   else
   {
     if (state.client === save)
