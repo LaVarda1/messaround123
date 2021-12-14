@@ -5,7 +5,10 @@ const chalk = require('chalk')
 
 webpack(webpackProd, (err, stats) => {
   if (err) {
-    throw err
+    console.log("Webpack failed: " + err.message)
+    console.log(chalk.red('App build finished with errors'))
+    return
+  //throw err
   }
 
   process.stdout.write(stats.toString({

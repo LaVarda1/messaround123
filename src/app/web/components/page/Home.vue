@@ -42,6 +42,8 @@
         a(href="mailto:efessel@gmail.com") efessel@gmail.com
         |  | Source: 
         a(href="https://gitlab.com/joe.lukacovic/netquake.io") https://gitlab.com/joe.lukacovic/netquake.io  
+        |  |  
+        a(href="/privacy") Privacy 
 
     
 </template>

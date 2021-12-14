@@ -3,7 +3,6 @@ const merge = require('webpack-merge')
 const webpack = require('webpack')
 
 module.exports = merge(base, {
-  devtool: 'none',
   entry: {
     app: ['webpack-hot-middleware/client', "./src/app/web/index.js"]
   },
