@@ -1507,7 +1507,7 @@ export const init = async function(
     input.init();
   }
   cmd.state.text = ""
-  if (process && process.env && process.env.STARTUP_CFG) {
+  if (typeof process !== 'undefined' && process.env && process.env.STARTUP_CFG) {
     sys.print('Applying startup cfg...\n');
     cmd.state.text += process.env.STARTUP_CFG + "\n"
   }
