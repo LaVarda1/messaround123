@@ -1,13 +1,13 @@
 <template lang="pug">
-  .game-container
-    template(v-if="showRequiresPak")
-      PakLoader(@done="pakUploaded")
-    template(v-else)
-      h4#progress Starting Quake...
-      canvas#mainwindow
-      #loading(style="display: none; position: fixed;")
-        img(alt="Loading")
-        .loading-message(style="color: burlywood; font-family: monospace; font-weight:bold;background: RGBA(0,0,0,.2); padding: 3px 10px; margin-left: -7px;")
+.game-container
+  template(v-if="showRequiresPak")
+    PakLoader(@done="pakUploaded")
+  template(v-else)
+    h4#progress Starting Quake...
+    canvas#mainwindow
+    #loading(style="display: none; position: fixed;")
+      img(alt="Loading")
+      .loading-message(style="color: burlywood; font-family: monospace; font-weight:bold;background: RGBA(0,0,0,.2); padding: 3px 10px; margin-left: -7px;")
 
 </template>
 

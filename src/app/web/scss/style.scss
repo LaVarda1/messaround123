@@ -31,3 +31,7 @@ $link-color-light: lighten($link-color, 10%);
 @import 'panel.scss';
 @import 'forms.scss';
 @import 'card.scss';
+
+a {
+  cursor: pointer;
+}

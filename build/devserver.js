@@ -31,6 +31,7 @@ app.use(
   '/api', createProxyMiddleware({ target: 'https://www.netquake.io', changeOrigin: true })
 );
 app.use('/id1', express.static(path.join(__dirname, '../id1')))
+app.use('/static', express.static(path.join(__dirname, '../static')))
 app.use('/af219f577d73362ddd220ef2e5178d73', express.static(path.join(__dirname, '../af219f577d73362ddd220ef2e5178d73')))
 app.use(connectHistory())
 compiler.hooks.afterEmit.tap('compilation', compilation => {
