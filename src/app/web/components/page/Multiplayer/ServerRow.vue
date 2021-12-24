@@ -17,6 +17,9 @@ tr
 <script>
 import { createWriter } from "../../../helpers/charmap"
 import {mapGetters} from 'vuex'
+
+const sharewareMaps = ['start', 'e1m1', 'e1m2', 'e1m3', 'e1m4', 'e1m5', 'e1m6', 'e1m7']
+
 export default {
   props: {
     server: {
@@ -62,17 +65,6 @@ export default {
     }
   },
   methods: {
-    // playersToolTipText (server) {
-    //   const players = server.players
-    //   players.sort((a, b) => parseInt(b.frags) - parseInt(a.frags))
-    //   return players.reduce((str, player) => {
-    //     return str += player.frags + "\t\t" + player.name + '\n'
-    //   }, "Online Players\nFrags\tName\n")
-    // },
-    // playersImageToolTipText (server) {
-    //   const playersImg = this.playersTipImg.find(test => test.server.name === server.name)
-    //   return `<div class="players-tooltip"><img src="${playersImg.img}"></div>`
-    // },
     isDisabled (server) {
       return !this.hasRegistered && !sharewareMaps.find(m => m === server.map)
     },

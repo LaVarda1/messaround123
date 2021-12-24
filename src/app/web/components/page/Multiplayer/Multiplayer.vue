@@ -29,8 +29,6 @@ import QuakeText from '../../QuakeText.vue'
 import NameMaker from '../../input/NameMaker.vue'
 import ServerRow from './ServerRow.vue'
 
-const sharewareMaps = ['start', 'e1m1', 'e1m2', 'e1m3', 'e1m4', 'e1m5', 'e1m6', 'e1m7']
-
 export default {
   data () {
     return {
