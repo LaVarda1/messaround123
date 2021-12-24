@@ -31,7 +31,7 @@ export default {
   },
   methods: {
     generateImage() {
-      return createWriter('charset-6.png') 
+      return createWriter() 
         .then(writer => writer.write(this.size, btoa(this.value)))
         .then(nameImg => {
           this.valueImg = nameImg

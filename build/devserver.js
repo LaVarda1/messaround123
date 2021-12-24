@@ -7,7 +7,6 @@ var webpackConfig = require('./webpack/webpack.config.dev')
 var connectHistory = require('connect-history-api-fallback')
 var {createProxyMiddleware } = require('http-proxy-middleware')
 
-
 var app = express()
 
 var port = process.env.PORT || 8080

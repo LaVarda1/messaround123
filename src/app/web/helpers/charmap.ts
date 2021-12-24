@@ -19,20 +19,26 @@ export const playerColors = [
   '#8080ff',
   '#8080ff',
 ];
-
+let staticCharmap = null
 export const createWriter = (): Promise<Writer> => {
+  const canvas = document.createElement('CANVAS') as HTMLCanvasElement;
+  if (staticCharmap) {
+    return Promise.resolve({
+      writeScore: writeScore(canvas, staticCharmap),
+      write: write(canvas, staticCharmap),
+    })
+  }
   return new Promise((resolve, reject) => {
-    const canvas = document.createElement('CANVAS') as HTMLCanvasElement;
   
-    const charmap = new Image();
-    charmap.onload = function () {
+    staticCharmap = new Image();
+    staticCharmap.onload = function () {
       resolve({
-        writeScore: writeScore(canvas, charmap),
-        write: write(canvas, charmap),
+        writeScore: writeScore(canvas, staticCharmap),
+        write: write(canvas, staticCharmap),
       });
     };
-    charmap.onerror = reject;
-    charmap.src = '/static/img/charset.png';
+    staticCharmap.onerror = reject;
+    staticCharmap.src = '/static/img/charset.png';
   });
 };
 
@@ -60,9 +66,19 @@ const writeToCanvas = (
   const wPx = scale * origCharPxWidth;
 
   const nameLength = stringToWrite.length;
-
+  let lineNum = 0
+  let linePos = 0
+  let maxLength = 0
   for (let i = 0; i < nameLength; i++) {
     const nameChar = stringToWrite.charCodeAt(i);
+    if (linePos > maxLength) {
+      maxLength = linePos
+    }
+    if (nameChar === 10) {
+      lineNum++
+      linePos = 0
+      continue
+    }
 
     const vCharOffset = nameChar >> 4; // eslint-disable-line
     const hCharOffset = nameChar & 0x0f; // eslint-disable-line
@@ -74,15 +90,16 @@ const writeToCanvas = (
       vCharOffset * origCharPxHeight,
       origCharPxWidth,
       origCharPxHeight,
-      i * wPx,
-      0,
+      linePos * wPx,
+      lineNum * hPx,
       wPx,
       hPx,
     );
+    linePos++
   }
 
   return {
-    width: nameLength * wPx,
+    width: maxLength * wPx,
     height,
   };
 };
@@ -123,9 +140,10 @@ const write = (canvas: HTMLCanvasElement, charmap: HTMLImageElement) => (height:
   }
 
   const strToWrite = atob(base64String) || ' ';
-
-  ctx.canvas.width = strToWrite.length * height;
-  ctx.canvas.height = height;
+  const lines = strToWrite.split('\n')
+  const maxLine = lines.reduce((len, line) => len > line.length ? len : line.length, 0)
+  ctx.canvas.width = maxLine * height;
+  ctx.canvas.height = lines.length   * height;
 
   writeToCanvas(charmap, ctx, height, strToWrite);
 
