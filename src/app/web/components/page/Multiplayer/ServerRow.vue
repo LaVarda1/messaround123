@@ -45,7 +45,7 @@ export default {
         createWriter()
           .then(writer => {
             const body = [...this.server.players]
-              .sort((a, b) => b.currentFrags - a.currentFrags)
+              .sort((a, b) => b.frags - a.frags)
               .map((player) => {
                 return `<tr style="line-height: 1;">
                 <td style="text-align:right;">
