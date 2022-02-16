@@ -876,6 +876,9 @@ export const executeProgram = async function (fnum) {
       case OP.load_ent:
       case OP.load_s:
       case OP.load_fnc:
+        if (!sv.state.server.edicts[state.globals_int[st.a]]) {
+          debugger
+        }
         state.globals_int[st.c] = sv.state.server.edicts[state.globals_int[st.a]].v_int[state.globals_int[st.b]];
         continue;
       case OP.load_v:

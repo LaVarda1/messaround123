@@ -1238,7 +1238,7 @@ export const parseServerInfo = async function()
     if (clState.model_precache[i] == null)
     {
       con.print('Model ' + model_precache[i] + ' not found\n');
-      return;
+      break;
     }
     await keepaliveMessage();
   }

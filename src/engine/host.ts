@@ -838,7 +838,7 @@ const say = function(teamonly: boolean = false)
     client = sv.state.svs.clients[i];
     if ((client.active !== true) || (client.spawned !== true))
       continue;
-    if ((cvr.teamplay.value !== 0) && (teamonly === true) && (client.v_float[pr.entvars.team] !== save.v_float[pr.entvars.team]))
+    if ((cvr.teamplay.value !== 0) && (teamonly === true) && (client.edict.v_float[pr.entvars.team] !== save.edict.v_float[pr.entvars.team]))
       continue;
     state.client = client;
     clientPrint(text);

@@ -45,27 +45,22 @@
         {
           "type": "node",
           "request": "launch",
-          "name": "Debug Dedicated ctf",
-          "preLaunchTask": "npm: build:justserver",
-          "program": "${workspaceFolder}/src/server/game/index.ts",
+          "name": "Debug Dedicated crctf",
+          "runtimeExecutable":"${workspaceRoot}/node_modules/.bin/ts-node-dev",
           "cwd": "${workspaceFolder}",
           "protocol": "inspector",
           "env": {
-            "STARTUP_CFG": "web_description CTF\n  web_connect_url sv.netquake.io/crctf\n web_location Ohio\n maxplayers 16\n hostname \"WebQuake CTF\"\n exec ctfdm.cfg"
+            "STARTUP_CFG": "web_description CRCTF\n  web_connect_url sv.netquake.io/crctf\n web_location Ohio\n maxplayers 16\n hostname \"WebQuake CRCTF\"\n exec ctfdm.cfg"
           },
           "args":
            [
+            "${workspaceRoot}/src/server/game/index.ts",
             "-port", "26003",
             "-udpportstart","26004",
             "-game", "ctf",
             "+map", "e1m2"
           ],
-          "outFiles": [
-            "${workspaceFolder}/dist/**/*.js"
-          ],
-          "skipFiles": [
-            "<node_internals>/**/*.js"
-          ],
+          "restart":true,
           "console":"integratedTerminal"
         },
         {

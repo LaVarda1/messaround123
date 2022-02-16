@@ -80,6 +80,7 @@ m_forward "1"
 m_side "0.8"`
 
 const recommendedAutoexec = `+mlook
+bind e "impulse 22" // Hook
 `
 
 const configValueRx = (name) => `^([ \t]*${name}[ \t]+"?(.*?)"?)$`

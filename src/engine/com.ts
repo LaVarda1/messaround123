@@ -30,6 +30,7 @@ export const uuidv4 = () => {
 }
 
 const checkRegistered = async function() {
+  return true
   var h = await state.assetStore.loadFile('gfx/pop.lmp');
   if (!h)
   {
