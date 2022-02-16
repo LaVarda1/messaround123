@@ -18,7 +18,7 @@ tr
 import { createWriter } from "../../../helpers/charmap"
 import {mapGetters} from 'vuex'
 
-const sharewareMaps = ['start', 'e1m1', 'e1m2', 'e1m3', 'e1m4', 'e1m5', 'e1m6', 'e1m7']
+const sharewareMaps = ['start', 'e1m1', 'e1m2', 'e1m3', 'e1m4', 'e1m5', 'e1m6', 'e1m7', 'e1m8']
 
 export default {
   props: {

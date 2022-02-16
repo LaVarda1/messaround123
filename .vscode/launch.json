@@ -45,6 +45,32 @@
         {
           "type": "node",
           "request": "launch",
+          "name": "Debug Dedicated ctf",
+          "preLaunchTask": "npm: build:justserver",
+          "program": "${workspaceFolder}/src/server/game/index.ts",
+          "cwd": "${workspaceFolder}",
+          "protocol": "inspector",
+          "env": {
+            "STARTUP_CFG": "web_description CTF\n  web_connect_url sv.netquake.io/crctf\n web_location Ohio\n maxplayers 16\n hostname \"WebQuake CTF\"\n exec ctfdm.cfg"
+          },
+          "args":
+           [
+            "-port", "26003",
+            "-udpportstart","26004",
+            "-game", "ctf",
+            "+map", "e1m2"
+          ],
+          "outFiles": [
+            "${workspaceFolder}/dist/**/*.js"
+          ],
+          "skipFiles": [
+            "<node_internals>/**/*.js"
+          ],
+          "console":"integratedTerminal"
+        },
+        {
+          "type": "node",
+          "request": "launch",
           "name": "Debug Dedicated fortress",
           "preLaunchTask": "npm: build:justserver",
           "program": "${workspaceFolder}/src/server/game/index.ts",
