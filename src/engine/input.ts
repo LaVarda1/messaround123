@@ -144,7 +144,7 @@ export const move = function()
 export const onclick = function()
 {
   if (document[state.pointerLockElement] !== this)
-    this[state.requestPointerLock]();
+    this[state.requestPointerLock]({unadjustedMovement: true});
 };
 
 export const onmousemove = function(e)

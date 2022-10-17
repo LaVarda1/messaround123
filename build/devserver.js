@@ -29,6 +29,8 @@ app.use(
 app.use(
   '/api', createProxyMiddleware({ target: 'https://www.netquake.io', changeOrigin: true })
 );
+app.use('/hipnotic', express.static(path.join(__dirname, '../hipnotic')))
+app.use('/rogue', express.static(path.join(__dirname, '../rogue')))
 app.use('/id1', express.static(path.join(__dirname, '../id1')))
 app.use('/static', express.static(path.join(__dirname, '../static')))
 app.use('/af219f577d73362ddd220ef2e5178d73', express.static(path.join(__dirname, '../af219f577d73362ddd220ef2e5178d73')))
