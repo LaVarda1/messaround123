@@ -57,7 +57,7 @@ bind "MOUSE2" "+forward"
 bind "MOUSE3" "+mlook"
 bind "PAUSE" "pause"
 crosshair "1"
-gamma "0.4"
+gamma "0.7"
 savedgamecfg "0"
 saved1 "0"
 saved2 "0"
@@ -80,8 +80,10 @@ m_forward "1"
 m_side "0.8"`
 
 const recommendedAutoexec = `+mlook
+bind e "impulse 22" // Hook
 `
 
+const configValueRx = (name) => `^([ \t]*${name}[ \t]+"?(.*?)"?)$`
 const configFileName = 'Quake.id1/config.cfg'
 const autoExecFileName = 'Quake.id1/autoexec.cfg'
 
@@ -96,13 +98,27 @@ const mutationTypes = {
   setAssetMetas: 'setAssetMetas',
   setConfigFile: 'setConfigFile',
   setAutoexecFile: 'setAutoexecFile',
-  setRecommendedConfig: 'setRecommendedConfig'
+  setRecommendedConfig: 'setRecommendedConfig',
+  setAutoexecValue: 'setAutoexecValue'
 }
 
 const getters = {
   allAssetMetas: state => state.assetMetas,
   getConfigFile: state => state.configFile,
   getAutoexecFile: state => state.autoexecFile,
+  getAutoexecValue: state => name =>  {
+    const regex =  new RegExp(configValueRx(name), 'gim')
+    let match, m
+    while ((m = regex.exec(state.autoexecFile)) !== null) {
+      // This is necessary to avoid infinite loops with zero-width matches
+      if (m.index === regex.lastIndex) {
+        regex.lastIndex++;
+      }
+      match = m
+    }
+    
+    return match ? match[2] : null
+  },
   hasRegistered: state => !!state.assetMetas.find(a => a.game === 'id1' && a.fileName.toLowerCase() === 'pak1.pak'),
   hasGame: state => game => !!state.assetMetas.some(a => a.game === game)
 }
@@ -139,6 +155,28 @@ const actions = {
   saveAutoexec ({commit}, autoexecFile) {
     localStorage[autoExecFileName] = autoexecFile
     commit(mutationTypes.setAutoexecFile, autoexecFile)
+  },
+  setAutoexecValue ({dispatch, state}, autoexecNameValue) {
+    const regex =  new RegExp(configValueRx(autoexecNameValue.name), 'gim')
+    let match, m
+    while ((m = regex.exec(state.autoexecFile)) !== null) {
+      // This is necessary to avoid infinite loops with zero-width matches
+      if (m.index === regex.lastIndex) {
+        regex.lastIndex++;
+      }
+      match = m
+    }
+    const newSetting = `${autoexecNameValue.name} "${autoexecNameValue.value}"`
+    if (match) {
+      const newConfig = [
+        state.autoexecFile.substring(0,match.index),
+        newSetting,
+        state.autoexecFile.substring(match.index + match[0].length, state.autoexecFile.length)
+      ]
+      return dispatch('saveAutoexec', newConfig.join(''))
+    } else {
+      return dispatch('saveAutoexec', state.autoexecFile +'\n' + newSetting)
+    }
   },
   loadRecommendedAutoexec ({commit}) {
     localStorage[autoExecFileName] = recommendedAutoexec

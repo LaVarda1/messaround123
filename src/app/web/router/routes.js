@@ -1,4 +1,5 @@
 import Home from '../components/page/Home.vue'
+import Privacy from '../components/page/Privacy/Privacy.vue'
 import Multiplayer from '../components/page/Multiplayer/Multiplayer.vue'
 import Singleplayer from '../components/page/Singleplayer/Singleplayer.vue'
 
@@ -16,6 +17,7 @@ const routes = [
     component: Frontend,
     children: [
       { path: '/', component: Home },
+      { name: 'privacy', path: '/privacy', component: Privacy },
       { name: 'multiplayer', path: '/multiplayer', component: Multiplayer },
       { name: 'singleplayer', path: '/singleplayer', component: Singleplayer },
       { 

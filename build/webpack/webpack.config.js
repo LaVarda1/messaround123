@@ -26,6 +26,13 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /\.(png|jpe?g|gif)$/i,
+        loader: 'file-loader',
+        options: {
+          name: '[path][name].[ext]',
+        },
+      },
+      {
         test: /\.scss$/,
         use: ['style-loader', 'css-loader','sass-loader']
       },
@@ -48,7 +55,7 @@ module.exports = {
       {
         test: /\.pug$/,
         loader: 'pug-plain-loader'
-      }
+      },
     ]
   }
 }

@@ -325,7 +325,7 @@ const status_f = function()
     print = con.print;
   }
   else
-    print = sv.state.ClientPrint;
+    print = clientPrint;
   print('host:    ' + net.cvr.hostname.string + '\n');
   print('version: 1.09\n');
   print('map:     ' + pr.getString(pr.state.globals_int[pr.globalvars.mapname]) + '\n');
@@ -838,7 +838,7 @@ const say = function(teamonly: boolean = false)
     client = sv.state.svs.clients[i];
     if ((client.active !== true) || (client.spawned !== true))
       continue;
-    if ((cvr.teamplay.value !== 0) && (teamonly === true) && (client.v_float[pr.entvars.team] !== save.v_float[pr.entvars.team]))
+    if ((cvr.teamplay.value !== 0) && (teamonly === true) && (client.edict.v_float[pr.entvars.team] !== save.edict.v_float[pr.entvars.team]))
       continue;
     state.client = client;
     clientPrint(text);
@@ -1113,8 +1113,13 @@ const kick_f = async function()
   if (state.client === save)
     return;
   var who;
-  if (cmd.state.client !== true)
-    who = cl.cvr.name.string;
+  if (cmd.state.client !== true){
+    if (cl.cvr.name) {
+      who = cl.cvr.name.string;
+    } else {
+      who = "Server"
+    }
+  }
   else
   {
     if (state.client === save)
@@ -1502,7 +1507,7 @@ export const init = async function(
     input.init();
   }
   cmd.state.text = ""
-  if (process.env.STARTUP_CFG) {
+  if (typeof process !== 'undefined' && process.env && process.env.STARTUP_CFG) {
     sys.print('Applying startup cfg...\n');
     cmd.state.text += process.env.STARTUP_CFG + "\n"
   }

@@ -1,6 +1,7 @@
 <template lang="pug">
   .config
     label.form-label Quake autoexec.cfg File
+    p Store extra variables and commands in here. This will not be modified by the game.
     button.btn(@click="loadRecommendedAutoexec") Load Recommended
     .config-editor
       textarea.form-input(placeholder="Textarea" rows="20" cols="80" :value="getAutoexecFile" @input="saveAutoexec($event.target.value)")
@@ -17,11 +18,11 @@ export default {
   methods: {
     ...mapActions('game', ['saveAutoexec', 'loadRecommendedAutoexec'])
   },
-  beforeRouteEnter (to, from, next) {
-    return next(vm => {
-      vm.loadRecommendedAutoexec()
-    })
-  }
+  // beforeRouteEnter (to, from, next) {
+  //   return next(vm => {
+  //     vm.loadRecommendedAutoexec()
+  //   })
+  // }
 }
 </script>
 

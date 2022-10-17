@@ -699,13 +699,13 @@ export const connect = function(sock)
   cls.signon = 0;
 };
 
-export const establishConnection = async function(host)
+export const establishConnection = async function(host_url)
 {
   if (cls.demoplayback === true)
     return;
   await disconnect();
-  state.host = host;
-  var sock = net.connect(host);
+  state.host = host_url;
+  var sock = net.connect(host_url);
   if (sock == null)
     await host.error('CL.EstablishConnection: connect failed\n');
   connect(sock);
@@ -1238,7 +1238,7 @@ export const parseServerInfo = async function()
     if (clState.model_precache[i] == null)
     {
       con.print('Model ' + model_precache[i] + ' not found\n');
-      return;
+      break;
     }
     await keepaliveMessage();
   }

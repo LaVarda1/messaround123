@@ -1,11 +1,11 @@
 <template lang="pug">
   .pak-upload
     .upload-zone(@drop="handleFileDrop" @dragover.prevent)
-      input.loader-file-input(:id="inputId" type="file" multiple name="files[]" @change="handleFileSelect")
+      input.loader-file-input(:id="inputId" type="file" multiple name="files[]" accept=".pak" @change="handleFileSelect")
       slot
         .columns
           .column.col-12.text Drop pak files here&nbsp;
-            label.browse
+            label.browse(:for="inputId")
               | or browse
               i(:class="'icon icon-upload'")
 </template>

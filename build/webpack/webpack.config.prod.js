@@ -5,14 +5,13 @@ const path = require("path");
 const resolveDir = dir => '../../' + dir
 
 module.exports = merge(base, {
-  devtool: 'none',
   entry: {
     app: [ "./src/app/web/index.js"]
   },
   output: {
     path: path.join(__dirname, resolveDir("dist/app")),
-    filename: "[name].[hash].bundle.js",
-    chunkFilename: "[id].[hash].chunk.js",
+    filename: "[name].[contenthash].bundle.js",
+    chunkFilename: "[id].[contenthash].chunk.js",
     publicPath: '/'
   },
   plugins: [

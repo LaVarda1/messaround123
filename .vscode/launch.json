@@ -2,11 +2,19 @@
     "version": "0.2.0",
     "configurations": [
 
+
         {
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
             "program": "${workspaceFolder}/build/devserver"
+        },
+
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "build Program",
+            "program": "${workspaceFolder}/build"
         },
         {
           "type": "node",
@@ -17,14 +25,61 @@
           "cwd": "${workspaceFolder}",
           "protocol": "inspector",
           "env": {
-            "STARTUP_CFG": "web_connect_url coop.netquake.io\nweb_location Ohio\ncoop 1\ndeathmatch 0\nweb_description test-server"
+            "STARTUP_CFG": "web_connect_url dev.netquake.io\nweb_location Ohio\ncoop 1\ndeathmatch 0\nweb_description test-server"
           },
           "args":
            [
             "-port", "26003",
             "-udpportstart","26004",
-            "-game", "coop",
-            "+map", "undergate"
+            "-game", "crmod",
+            "+map", "e1m2"
+          ],
+          "outFiles": [
+            "${workspaceFolder}/dist/**/*.js"
+          ],
+          "skipFiles": [
+            "<node_internals>/**/*.js"
+          ],
+          "console":"integratedTerminal"
+        },
+        {
+          "type": "node",
+          "request": "launch",
+          "name": "Debug Dedicated crctf",
+          "runtimeExecutable":"${workspaceRoot}/node_modules/.bin/ts-node-dev",
+          "cwd": "${workspaceFolder}",
+          "protocol": "inspector",
+          "env": {
+            "STARTUP_CFG": "web_description CRCTF\n  web_connect_url sv.netquake.io/crctf\n web_location Ohio\n maxplayers 16\n hostname \"WebQuake CRCTF\"\n exec ctfdm.cfg"
+          },
+          "args":
+           [
+            "${workspaceRoot}/src/server/game/index.ts",
+            "-port", "26003",
+            "-udpportstart","26004",
+            "-game", "ctf",
+            "+map", "e1m2"
+          ],
+          "restart":true,
+          "console":"integratedTerminal"
+        },
+        {
+          "type": "node",
+          "request": "launch",
+          "name": "Debug Dedicated fortress",
+          "preLaunchTask": "npm: build:justserver",
+          "program": "${workspaceFolder}/src/server/game/index.ts",
+          "cwd": "${workspaceFolder}",
+          "protocol": "inspector",
+          "env": {
+            "STARTUP_CFG": "web_description Team Fortress\n  web_connect_url sv.netquake.io/fortress\n web_location Ohio\n maxplayers 16\n hostname "WebQuake Team Fortress"\n deathmatch 3\n teamplay 31?TF2.5\n timelimit 3\n fraglimit 100\n samelevel 2"
+          },
+          "args":
+           [
+            "-port", "26003",
+            "-udpportstart","26004",
+            "-game", "fortress",
+            "+map", "2fort5r"
           ],
           "outFiles": [
             "${workspaceFolder}/dist/**/*.js"

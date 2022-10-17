@@ -1,4 +1,4 @@
-import * as com from '../engine/com.ts'
+import * as com from '../engine/com'
 
 const dbName = 'webQuakeAssets',
   metaStoreName = 'meta',

@@ -22,7 +22,7 @@ export const connect = (host: string): any =>
 		return null
 	if (host.charCodeAt(6) === 47)
 		return null
-	if (host.substring(0, 6) !== 'wss://')
+	if (host.substring(0, 6) !== 'wss://' && host.substring(0, 5) !== 'ws://')
 		return null
 	var sock = net.newQSocket();
 	sock.disconnected = true;

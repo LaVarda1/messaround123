@@ -138,7 +138,6 @@ const initFilesystem = async function()
     search = state.argv[i + 1];
     if (search != null)
     {
-      state.modified = true;
       await addGameDirectory(search);
       cvar.set('game', search)
     }

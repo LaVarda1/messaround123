@@ -5,8 +5,7 @@ var express = require('express')
 var webpack = require('webpack')
 var webpackConfig = require('./webpack/webpack.config.dev')
 var connectHistory = require('connect-history-api-fallback')
-var httpProxy = require('http-proxy-middleware')
-
+var {createProxyMiddleware } = require('http-proxy-middleware')
 
 var app = express()
 
@@ -18,12 +17,22 @@ var devMiddleware = require('webpack-dev-middleware')(compiler, {
   quiet: true
 })
 
+const router = express.Router();
+router.get('/id1', (req, res, next) => {
+  res.json([{fileName: 'pak0.pak', filesize: 32424}, {fileName: 'pak1.pak'}])
+} )
+app.use('/api/assets', router)
 
 app.use(
-  '/api',
-  httpProxy({ target: 'http://localhost:3000', changeOrigin: true })
+  '/coop', createProxyMiddleware({ target: 'https://www.netquake.io', changeOrigin: true })
 );
+app.use(
+  '/api', createProxyMiddleware({ target: 'https://www.netquake.io', changeOrigin: true })
+);
+app.use('/hipnotic', express.static(path.join(__dirname, '../hipnotic')))
+app.use('/rogue', express.static(path.join(__dirname, '../rogue')))
 app.use('/id1', express.static(path.join(__dirname, '../id1')))
+app.use('/static', express.static(path.join(__dirname, '../static')))
 app.use('/af219f577d73362ddd220ef2e5178d73', express.static(path.join(__dirname, '../af219f577d73362ddd220ef2e5178d73')))
 app.use(connectHistory())
 compiler.hooks.afterEmit.tap('compilation', compilation => {

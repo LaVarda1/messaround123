@@ -57,7 +57,8 @@ const state = {
   keys_cursor: 0,
 
   // Help menu
-  num_help_pages: 6
+  num_help_pages: 6,
+  scale: 3
 } as any
 
 const bindnames = [
@@ -95,27 +96,27 @@ const quitMessage =
 
 export const drawCharacter = function(cx, line, num)
 {
-  draw.character(cx + (vid.state.width >> 1) - 160, line + (vid.state.height >> 1) - 100, num);
+  draw.character(cx * state.scale + (vid.state.width >> 1) - (320 * state.scale >> 1),  line * state.scale + (vid.state.height >> 1) - (200 * state.scale >> 1), num, state.scale * 8);
 };
 
 export const print = function(cx, cy, str)
 {
-  draw.stringWhite(cx + (vid.state.width >> 1) - 160, cy + (vid.state.height >> 1) - 100, str);
+  draw.stringWhite(cx * state.scale + (vid.state.width >> 1) - (320 * state.scale >> 1),  cy * state.scale + (vid.state.height >> 1) - (200 * state.scale >> 1), str, state.scale * 8);
 };
 
 export const printWhite = function(cx, cy, str)
 {
-  draw.string(cx + (vid.state.width >> 1) - 160, cy + (vid.state.height >> 1) - 100, str);
+  draw.string(cx * state.scale + (vid.state.width >> 1) - (320 * state.scale >> 1), cy * state.scale + (vid.state.height >> 1) - (200 * state.scale >> 1), str, state.scale * 8);
 };
 
 export const drawPic = function(x, y, pic)
 {
-  draw.pic(x + (vid.state.width >> 1) - 160, y + (vid.state.height >> 1) - 100, pic);
+  draw.pic(x * state.scale + (vid.state.width >> 1) - (320 * state.scale >> 1), y * state.scale + (vid.state.height >> 1) - (200 * state.scale >> 1) , pic,  state.scale);
 };
 
 export const drawPicTranslate = function(x, y, pic, top, bottom)
 {
-  draw.picTranslate(x + (vid.state.width >> 1) - 160, y + (vid.state.height >> 1) - 100, pic, top, bottom);
+  draw.picTranslate(x * state.scale + (vid.state.width >> 1) - (320 * state.scale >> 1), y * state.scale + (vid.state.height >> 1) -  (200 * state.scale >> 1), pic, top, bottom, state.scale);
 };
 
 export const drawTextBox = function(x, y, width, lines)
@@ -187,7 +188,7 @@ export const menu_Main_f = function()
 export const main_Draw = function()
 {
   drawPic(16, 4, state.qplaque);
-  drawPic(160 - (state.ttl_main.width >> 1), 4, state.ttl_main);
+  drawPic((160) - (state.ttl_main.width >> 1), 4, state.ttl_main);
   drawPic(72, 32, state.mainmenu);
   drawPic(54, 32 + state.main_cursor * 20, state.menudot[Math.floor(host.state.realtime * 10.0) % 6]);
 };
@@ -360,8 +361,8 @@ export const load_Draw = function()
   drawPic(160 - (state.p_load.width >> 1), 4, state.p_load);
   var i;
   for (i = 0; i < state.max_savegames; ++i)
-    print(16, 32 + (i << 3), state.filenames[i]);
-  drawCharacter(8, 32 + (state.load_cursor << 3), 12 + ((host.state.realtime * 4.0) & 1));
+    print(16, 32 + (i << 4), state.filenames[i]);
+  drawCharacter(8, 32 + (state.load_cursor << 4), 12 + ((host.state.realtime * 4.0) & 1));
 };
 
 export const save_Draw = function()
@@ -369,8 +370,8 @@ export const save_Draw = function()
   drawPic(160 - (state.p_save.width >> 1), 4, state.p_save);
   var i;
   for (i = 0; i < state.max_savegames; ++i)
-    print(16, 32 + (i << 3), state.filenames[i]);
-  drawCharacter(8, 32 + (state.load_cursor << 3), 12 + ((host.state.realtime * 4.0) & 1));
+    print(16, 32 + (i << 4), state.filenames[i]);
+  drawCharacter(8, 32 + (state.load_cursor << 4), 12 + ((host.state.realtime * 4.0) & 1));
 };
 
 export const load_Key = async function(k)
