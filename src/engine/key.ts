@@ -222,7 +222,7 @@ export const message = function(key)
       state.chat_buffer = state.chat_buffer.substring(0, state.chat_buffer.length - 1);
     return;
   }
-  if (state.chat_buffer.length >= 31)
+  if (state.chat_buffer.length >= 54)
     return;
   state.chat_buffer = state.chat_buffer + String.fromCharCode(key);
 };
