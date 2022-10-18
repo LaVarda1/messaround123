@@ -143,8 +143,13 @@ export const move = function()
 
 export const onclick = function()
 {
-  if (document[state.pointerLockElement] !== this)
-    this[state.requestPointerLock]({unadjustedMovement: true});
+  if (document[state.pointerLockElement] !== this){
+    try { 
+      this[state.requestPointerLock]({unadjustedMovement: true}); // this will fail on linux :(
+    } catch(_ex) {
+      this[state.requestPointerLock]();
+    }
+  }
 };
 
 export const onmousemove = function(e)
