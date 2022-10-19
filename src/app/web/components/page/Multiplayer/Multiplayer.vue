@@ -10,17 +10,18 @@
     
     .name-change(v-if="changeName")
       NameMaker(:value="playerName" @done="doneChangingName" @input="setPlayerName($event)")
-  table.table(v-if="!changeName" :class="(refreshing ? 'loading' : '')")
-    thead
-      th Name
-      th Connection
-      th Location
-      th Map
-      th Players
-      th Ping
-      th 
-    tbody
-      ServerRow(v-for="(server, key) in getServerStatuses" :server="server" @join="join")
+  .server-list(v-if="!changeName")
+    table.table(:class="(refreshing ? 'loading' : '')")
+      thead
+        th Name
+        th Location
+        th Map
+        th Players
+        th Ping
+        th 
+      tbody
+        ServerRow(v-for="(server, key) in getServerStatuses" :server="server" @join="join")
+    // Discord
 </template>
 
 <script>
@@ -28,6 +29,7 @@ import {mapGetters, mapMutations, mapActions} from 'vuex'
 import QuakeText from '../../QuakeText.vue'
 import NameMaker from '../../input/NameMaker.vue'
 import ServerRow from './ServerRow.vue'
+import Discord from './Discord.vue'
 
 export default {
   data () {
@@ -37,7 +39,7 @@ export default {
       playersImg: []
     }
   },
-  components: {QuakeText, NameMaker, ServerRow},
+  components: {QuakeText, NameMaker, ServerRow, Discord},
   computed: {
     ...mapGetters('multiplayer', ['getServerStatuses']),
     ...mapGetters('game', ['getAutoexecValue']),

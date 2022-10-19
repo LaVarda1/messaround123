@@ -160,7 +160,7 @@ const _console = function(key)
     return;
   }
 
-  if (key === KEY.pgup)
+  if (key === KEY.pgup || key === KEY.mwheelup)
   {
     con.state.backscroll += 2;
     if (con.state.backscroll > con.state.text.length)
@@ -168,7 +168,7 @@ const _console = function(key)
     return;
   }
 
-  if (key === KEY.pgdn)
+  if (key === KEY.pgdn || key === KEY.mwheeldown)
   {
     con.state.backscroll -= 2;
     if (con.state.backscroll < 0)
@@ -335,6 +335,8 @@ export const init = function()
   consolekeys[KEY.pgup] = true;
   consolekeys[KEY.pgdn] = true;
   consolekeys[KEY.shift] = true;
+  consolekeys[KEY.mwheelup] = true;
+  consolekeys[KEY.mwheeldown] = true;
   consolekeys[96] = false;
   consolekeys[126] = false;
 
@@ -377,8 +379,8 @@ export const event = async function(key, down)
   {
     if ((key !== KEY.backspace) && (key !== KEY.pause) && (state.down[key] === true))
       return;
-    if ((key >= 200) && (state.bindings[key] == null))
-      con.print(keynumToString(key) + ' is unbound, hit F4 to set.\n');
+    // if ((key >= 200) && (state.bindings[key] == null))
+    //   con.print(keynumToString(key) + ' is unbound, hit F4 to set.\n');
   }
   state.down[key] = down;
 

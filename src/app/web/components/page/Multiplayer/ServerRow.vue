@@ -1,7 +1,6 @@
 <template lang="pug">
 tr
   td {{server.name}}
-  td {{server.connecthostport}}
   td {{server.location}}
   td {{server.map}}
   td(v-if="server.players.length"
