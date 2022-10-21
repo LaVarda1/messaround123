@@ -21,7 +21,7 @@
         th 
       tbody
         ServerRow(v-for="(server, key) in getServerStatuses" :server="server" @join="join")
-    // Discord
+  Discord
 </template>
 
 <script>
@@ -100,6 +100,9 @@ export default {
 }
 </style>
 <style lang="scss" scoped>
+.server-list {
+  margin-bottom: 1rem;
+}
 .name-setup {
   margin-top: 1rem;
   .name {

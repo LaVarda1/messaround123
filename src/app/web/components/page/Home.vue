@@ -34,18 +34,7 @@
         .columns.mt-2
           .column.col-xs-12
             .btn.solid.btn-large.full-width(@click="multiplayer()") Multiplayer
-      
 
-    .footer
-      .divider
-      p.text-small Made by Joe 
-        a(href="mailto:efessel@gmail.com") efessel@gmail.com
-        |  | Source: 
-        a(href="https://gitlab.com/joe.lukacovic/netquake.io") https://gitlab.com/joe.lukacovic/netquake.io
-        |  |  
-        a(href="/privacy") Privacy 
-
-    
 </template>
 <script>
 import {mapActions, mapGetters} from 'vuex'

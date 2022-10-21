@@ -337,14 +337,17 @@ export const init = function() {
   state.programs = []
 
   vid.state.mainwindow = document.getElementById('mainwindow');
+  const webGlOptions: WebGLContextAttributes = {
+    powerPreference: 'high-performance'
+  }
   const onError = (err,fnName, args) => {
     debugger
   }
   try
   {
-    const context = vid.state.mainwindow.getContext('webgl2')
-     || vid.state.mainwindow.getContext('webgl')
-     || vid.state.mainwindow.getContext('experimental-webgl')
+    const context = vid.state.mainwindow.getContext('webgl2', webGlOptions)
+     || vid.state.mainwindow.getContext('webgl', webGlOptions)
+     || vid.state.mainwindow.getContext('experimental-webgl', webGlOptions)
     //gl = WebGLDebugUtils.default.makeDebugContext( context, onError, null, null);
     gl = context
   }
