@@ -14,12 +14,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/websocket": "^1.0.5",
     "base-64": "^1.0.0",
     "file-loader": "^6.2.0",
     "jszip": "^3.2.1",
     "middleware": "^1.0.0",
     "vue-tippy": "^4.13.0",
-    "websocket": "^1.0.28"
+    "websocket": "^1.0.28",
+    "wrtc": "github:efess/node-webrtc"
   },
   "devDependencies": {
     "@types/node": "^11.11.1",

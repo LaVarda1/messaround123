@@ -5,6 +5,7 @@ import * as net from '../../../engine/net'
 import * as def from '../../../engine/def'
 import * as websocket from 'websocket'
 import * as httpServer from './http'
+import * as webrtc from './webrtc'
 
 export const name = "websocket"
 export var initialized = false
@@ -84,6 +85,7 @@ export const checkNewConnections = (): ISocket => {
 	connection.data_socket = sock;
 	connection.on('message', connectionOnMessage);
 	connection.on('close', connectionOnClose);
+	
 	return sock;
 };
 
@@ -166,19 +168,19 @@ const serverOnRequest = (request) => {
 		request.reject();
 		return;
 	}
-	if (request.requestedProtocols[0] === 'webrtc')
-	{
-		request.accept('webrtc', request.origin);
-		return;
-	}
-	if (request.requestedProtocols[0] !== 'quake')
-	{
-		request.reject();
-		return;
-	}
 	if ((net.state.activeconnections + state.acceptsockets.length) >= sv.state.svs.maxclients)
 	{
 		request.reject();
+		return;
+	}
+	if (request.requestedProtocols[0] === 'webrtc')
+	{
+		webrtc.acceptNewConnection(request.accept('webrtc', request.origin));
+		return;
+	}
+	if (request.requestedProtocols[0] === 'quake')
+	{
+		state.acceptsockets.push(request.accept('quake', request.origin));
 		return;
 	}
 	var i, s;
@@ -196,5 +198,4 @@ const serverOnRequest = (request) => {
 	// 	net.close(s);
 	// 	break;
 	// }
-	state.acceptsockets.push(request.accept('quake', request.origin));
 };
