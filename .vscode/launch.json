@@ -88,6 +88,58 @@
             "<node_internals>/**/*.js"
           ],
           "console":"integratedTerminal"
+        },
+        {
+          "type": "node",
+          "request": "launch",
+          "name": "Debug Dedicated halloween",
+          "preLaunchTask": "npm: build:justserver",
+          "program": "${workspaceFolder}/src/server/game/index.ts",
+          "cwd": "${workspaceFolder}",
+          "protocol": "inspector",
+          "env": {
+            "STARTUP_CFG": "web_description halloween\n  web_connect_url sv.netquake.io/fortress\n web_location Ohio\n maxplayers 16\n hostname "WebQuake Team Fortress"\n deathmatch 3\n teamplay 31?TF2.5\n timelimit 3\n fraglimit 100\n samelevel 2"
+          },
+          "args":
+           [
+            "-port", "26003",
+            "-udpportstart","26004",
+            "-game", "halloween",
+            "+map", "aerowalk_halloween"
+          ],
+          "outFiles": [
+            "${workspaceFolder}/dist/**/*.js"
+          ],
+          "skipFiles": [
+            "<node_internals>/**/*.js"
+          ],
+          "console":"integratedTerminal"
+        },
+        {
+          "type": "node",
+          "request": "launch",
+          "name": "Debug Dedicated crx",
+          "preLaunchTask": "npm: build:justserver",
+          "program": "${workspaceFolder}/src/server/game/index.ts",
+          "cwd": "${workspaceFolder}",
+          "protocol": "inspector",
+          "env": {
+            "STARTUP_CFG": "web_description halloween\n  web_connect_url sv.netquake.io/fortress\n web_location Ohio\n maxplayers 16\n hostname "WebQuake Team Fortress"\n deathmatch 3\n teamplay 31?TF2.5\n timelimit 3\n fraglimit 100\n samelevel 2"
+          },
+          "args":
+           [
+            "-port", "26003",
+            "-udpportstart","26004",
+            "-game", "crx",
+            "+map", "aerowalk_halloween"
+          ],
+          "outFiles": [
+            "${workspaceFolder}/dist/**/*.js"
+          ],
+          "skipFiles": [
+            "<node_internals>/**/*.js"
+          ],
+          "console":"integratedTerminal"
         }
     ]
 }

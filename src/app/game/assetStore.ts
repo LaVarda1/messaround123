@@ -180,16 +180,16 @@ const _loadFile = async (filename: string) : Promise<ArrayBuffer> => {
 
   // As a workaround to the above, lets only search the server if we can't
   // find it in known packs
-  // for (i = com.state.searchpaths.length - 1; i >= 0; --i) {
-  //   search = com.state.searchpaths[i];
-  //   const netpath = search.dir + '/' + filename;
-  //   const gotFile = await getFile(netpath) as any;
-  //   if ((gotFile.status >= 200) && (gotFile.status <= 299))
-  //   {
-  //     sys.print('FindFile: ' + netpath + '\n');
-  //     return q.strmem(gotFile.responseText);
-  //   }
-  // }
+  for (i = com.state.searchpaths.length - 1; i >= 0; --i) {
+    search = com.state.searchpaths[i];
+    const netpath = search.dir + '/' + filename;
+    const gotFile = await getFile(netpath) as any;
+    if ((gotFile.status >= 200) && (gotFile.status <= 299))
+    {
+      sys.print('FindFile: ' + netpath + '\n');
+      return q.strmem(gotFile.responseText);
+    }
+  }
 
   sys.print('FindFile: can\'t find ' + filename + '\n');
 };

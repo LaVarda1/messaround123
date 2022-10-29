@@ -1,7 +1,7 @@
 import * as indexedDb from '../../../shared/indexeddb'
 const recommendedCfg = 
 `bind "TAB" "+showscores"
-bind "ENTER" "+jump"
+bind "ENTER" "messagemode"
 bind "ESCAPE" "togglemenu"
 bind "SPACE" "+jump"
 bind "+" "sizeup"
@@ -53,8 +53,7 @@ bind "DEL" "+lookdown"
 bind "PGDN" "+lookup"
 bind "END" "centerview"
 bind "MOUSE1" "+attack"
-bind "MOUSE2" "+forward"
-bind "MOUSE3" "+mlook"
+bind "MOUSE2" "+jump"
 bind "PAUSE" "pause"
 crosshair "1"
 gamma "0.7"

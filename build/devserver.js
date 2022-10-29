@@ -21,6 +21,9 @@ const router = express.Router();
 router.get('/id1', (req, res, next) => {
   res.json([{fileName: 'pak0.pak', filesize: 32424}, {fileName: 'pak1.pak'}])
 } )
+router.get('/halloween', (req, res, next) => {
+  res.json([{fileName: 'pak0.pak'}])
+} )
 app.use('/api/assets', router)
 
 app.use(
@@ -29,6 +32,7 @@ app.use(
 app.use(
   '/api', createProxyMiddleware({ target: 'https://www.netquake.io', changeOrigin: true })
 );
+app.use('/crx', express.static(path.join(__dirname, '../crx')))
 app.use('/hipnotic', express.static(path.join(__dirname, '../hipnotic')))
 app.use('/rogue', express.static(path.join(__dirname, '../rogue')))
 app.use('/id1', express.static(path.join(__dirname, '../id1')))
