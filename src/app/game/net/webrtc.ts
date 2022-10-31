@@ -2,6 +2,7 @@ import ISocket from '../../../engine/interfaces/net/ISocket'
 import IDatagram from '../../../engine/interfaces/net/IDatagram'
 import * as net from '../../../engine/net'
 import * as def from '../../../engine/def'
+import { QConnectStatus } from '../../../engine/interfaces/net/INetworkDriver'
 
 export const name: string = "webrtc"
 export var initialized: boolean = false;
@@ -42,51 +43,53 @@ export const init = () => {
 	return true;
 };
 export const listen = () => {}
-export const connect = (host: string): any =>
+export const  connect = async (host: string): Promise<QConnectStatus> =>
 {
 	if (host.length <= 5)
-		return null
+		return 'failed'
 	if (host.charCodeAt(6) === 47)
-		return null
+		return 'failed'
 	if (host.substring(0, 6) !== 'wss://' && host.substring(0, 5) !== 'ws://')
-		return null
+		return 'failed'
+
 	var sock = net.newQSocket();
 	sock.disconnected = true;
 	sock.receiveMessage = []
 	sock.address = host;
+
 	try
 	{
-		sock.driverdata = createDriver(sock, new WebSocket(host, 'webrtc'))
+		sock.driverdata = await createDriver(sock, new WebSocket(host, 'webrtc'))
 	}
 	catch (e)
 	{
-		return null;
+		return 'failed'
 	}
 	net.state.newsocket = sock;
-	return 0;
+	return 'connected';
 };
 
-const createDriver = (socket: ISocket, signaling: WebSocket) => {
+const createDriver = async (socket: ISocket, signaling: WebSocket) => {
   const driver = {
 		rtc: createRtc(signaling, socket),
     signaling,
     sock: socket
   }
-	console.log('readyState ' + signaling.readyState)
   signaling.addEventListener('message', onSignalingReceive(driver))
 	// TODO: FIgure out this hack - what can we wait on to get the ball rolling on rtc?
-  signaling.addEventListener('open', () => { setTimeout(() => driver.rtc.init(), 100)})
+	await new Promise((resolve) => setTimeout(resolve, 100))
+	await driver.rtc.init()
 
   return driver
 }
 const onSignalingReceive = (driver: WebRtcDriver) => (message) => {
   const msg = tryJson(message.data, {type: 'none'})
   if (msg.type === 'answer') {
-    // console.log("Received answer...")
-    // driver.rtc.answer(msg.data);
+    console.log("Received answer...")
+    driver.rtc.answer(msg.data);
   } else if (msg.type === 'candidate') {
-    // console.log("Received ICE candidate...")
-    // driver.rtc.addCandidate(msg.data)
+    console.log("Received ICE candidate...")
+    driver.rtc.addCandidate(msg.data)
   } else {
     console.log('Unrecognized Signaling message type.');
   }
@@ -173,85 +176,93 @@ const createRtc = (signaling: WebSocket, sock: ISocket) => {
 	let rtcPeer: null | RTCPeerConnection = null
 	let rtcDataChannel: null | RTCDataChannel = null
 	
-	const init = () => {
-		rtcPeer = new RTCPeerConnection({
-			iceServers: [
-				{
-					urls: [
-						"stun:stun4.l.google.com:19302",
-						"stun:stun.nextcloud.com:443",
-						"stun:stun.intervoip.com:3478"
-					]
-				}
-			]
-		})
-	
-		rtcPeer.addEventListener('connectionstatechange', () => {
-			if (rtcPeer!.connectionState === 'closed') {
-				net.close(sock)
-				rtcPeer!.removeEventListener('iceconnectionstatechange', onIceConnectionStateChange);
-			}
-		})
-	
-		rtcDataChannel = rtcPeer.createDataChannel('quake', {
-			ordered: false,
-			maxRetransmits: 0
-		})
-		rtcDataChannel.addEventListener('message', (event => {
-			sock.receiveMessage.push(event.data)
-		}));
-	
-		let connectionTimer: number | null = null
-		connectionTimer = setTimeout(() => {
-			if (!rtcPeer || rtcPeer.iceConnectionState !== 'connected'
-				&& rtcPeer.iceConnectionState !== 'completed') {
-				net.close(sock)
-				console.log("Could not connect")
-			}
-		}, TIME_TO_CONNECT);
-		let reconnectionTimer: number | null = null
-		const onIceConnectionStateChange = () => {
-			if (!rtcPeer ||rtcPeer.iceConnectionState === 'connected'
-				|| rtcPeer.iceConnectionState === 'completed') {
-				if (connectionTimer) {
-					clearTimeout(connectionTimer);
-					connectionTimer = null;
-				}
-				if (reconnectionTimer)
-					clearTimeout(reconnectionTimer);
-				reconnectionTimer = null;
-			} else if (rtcPeer.iceConnectionState === 'disconnected'
-				|| rtcPeer.iceConnectionState === 'failed') {
-				net.close(sock)
-				console.log("Closing connection due to disconnection")
-			}
-		};
-	
-	
-		rtcPeer.addEventListener('icecandidate', (event) => {
-			if (event.candidate) {
-				sendSignal({
-					type: "candidate",
-					data: event.candidate
-				});
-			}
-		})
-	
-		rtcPeer.addEventListener('negotiationneeded', (event) => {
-			return rtcPeer!.createOffer({
-				offerToReceiveAudio: false,
-				offerToReceiveVideo: false
+	const init = async () => {
+		return new Promise<void>((resolve, reject) => {
+			rtcPeer = new RTCPeerConnection({
+				iceServers: [
+					{
+						urls: [
+							"stun:stun4.l.google.com:19302",
+							"stun:stun.nextcloud.com:443",
+							"stun:stun.intervoip.com:3478"
+						]
+					}
+				]
 			})
-				.then((offer) => {
-					rtcPeer!.setLocalDescription(offer)
-					sendSignal({
-						type: "offer",
-						data: offer
-					});
-				})
-		})
 		
-		rtcPeer.addEventListener('iceconnectionstatechange', onIceConnectionStateChange);
+			rtcPeer.addEventListener('connectionstatechange', () => {
+				console.log('changeed to  ' + rtcPeer!.connectionState)
+				if (rtcPeer!.connectionState === 'closed') {
+					reject()
+					net.close(sock)
+					rtcPeer!.removeEventListener('iceconnectionstatechange', onIceConnectionStateChange);
+				} else if(rtcPeer!.connectionState === 'connected') {
+					resolve()
+				}
+			})
+		
+			rtcDataChannel = rtcPeer.createDataChannel('quake', {
+				ordered: false,
+				maxRetransmits: 0
+			})
+			rtcDataChannel.addEventListener('message', (event => {
+				sock.receiveMessage.push(event.data)
+			}));
+		
+			let connectionTimer: number | null = null
+			connectionTimer = setTimeout(() => {
+				if (!rtcPeer || rtcPeer.iceConnectionState !== 'connected'
+					&& rtcPeer.iceConnectionState !== 'completed') {
+					reject()
+					net.close(sock)
+					console.log("Could not connect")
+				}
+			}, TIME_TO_CONNECT);
+			let reconnectionTimer: number | null = null
+			const onIceConnectionStateChange = () => {
+				if (!rtcPeer ||rtcPeer.iceConnectionState === 'connected'
+					|| rtcPeer.iceConnectionState === 'completed') {
+					if (connectionTimer) {
+						clearTimeout(connectionTimer);
+						connectionTimer = null;
+					}
+					if (reconnectionTimer)
+						clearTimeout(reconnectionTimer);
+					reconnectionTimer = null;
+				} else if (rtcPeer.iceConnectionState === 'disconnected'
+					|| rtcPeer.iceConnectionState === 'failed') {
+					reject()
+					net.close(sock)
+					console.log("Closing connection due to disconnection")
+				}
+			};
+		
+		
+			rtcPeer.addEventListener('icecandidate', (event) => {
+				if (event.candidate) {
+					sendSignal({
+						type: "candidate",
+						data: event.candidate
+					});
+				}
+			})
+		
+			rtcPeer.addEventListener('negotiationneeded', (event) => {
+				return rtcPeer!.createOffer({
+					offerToReceiveAudio: false,
+					offerToReceiveVideo: false
+				})
+					.then((offer) => {
+						rtcPeer!.setLocalDescription(offer)
+						sendSignal({
+							type: "offer",
+							data: offer
+						});
+					})
+			})
+			
+			rtcPeer.addEventListener('iceconnectionstatechange', onIceConnectionStateChange);
+		})
 	}
 
   return {

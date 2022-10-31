@@ -96,7 +96,7 @@ export const newQSocket = function()
 	return activeSockets[i];
 };
 
-export const connect = function(host)
+export const connect = async function(host)
 {
 	state.time = sys.floatTime();
 
@@ -112,8 +112,8 @@ export const connect = function(host)
 		dfunc = state.drivers[state.driverlevel];
 		if (dfunc.initialized !== true)
 			continue;
-		ret = dfunc.connect(host);
-		if (ret === 0)
+		ret = await dfunc.connect(host);
+		if (ret === 'connected')
 		{
 			cl.cls.state = cl.ACTIVE.connecting;
 			con.print('['+ dfunc.name + '] trying...\n');
@@ -121,7 +121,7 @@ export const connect = function(host)
 			state.reps = 0;
 			throw 'NET.Connect';
 		}
-		if (ret != null)
+		if (ret != 'failed')
 			return ret;
 	}
 };

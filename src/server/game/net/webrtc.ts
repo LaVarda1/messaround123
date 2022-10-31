@@ -6,6 +6,7 @@ import * as net from '../../../engine/net'
 import * as def from '../../../engine/def'
 import * as websocket from 'websocket'
 import * as wrtc from 'wrtc'
+import { QConnectStatus } from '../../../engine/interfaces/net/INetworkDriver'
 
 export const name = "webrtc"
 export var initialized = false
@@ -24,8 +25,8 @@ export const state = {
 }
 
 // not implemented client specific functions
-export const connect = (host: string): ISocket => {
-  return null
+export const connect = async (host: string): Promise<QConnectStatus> => {
+  return 'failed'
 }
 export const checkForResend = (): number => {
   return 0
