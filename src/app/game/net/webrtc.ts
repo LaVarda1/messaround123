@@ -7,8 +7,7 @@ export const name: string = "webrtc"
 export var initialized: boolean = false;
 export var available: boolean = false;
 
-const TIME_TO_CANDIDATE = 3000
-const TIME_TO_CONNECT = 10000
+const TIME_TO_CONNECT = 3
 
 type Rtc = {
 	init: () => void
@@ -75,20 +74,19 @@ const createDriver = (socket: ISocket, signaling: WebSocket) => {
   }
 	console.log('readyState ' + signaling.readyState)
   signaling.addEventListener('message', onSignalingReceive(driver))
-  signaling.addEventListener('open', () => {
-		driver.rtc.init()
-	})
+	// TODO: FIgure out this hack - what can we wait on to get the ball rolling on rtc?
+  signaling.addEventListener('open', () => { setTimeout(() => driver.rtc.init(), 100)})
 
   return driver
 }
 const onSignalingReceive = (driver: WebRtcDriver) => (message) => {
   const msg = tryJson(message.data, {type: 'none'})
   if (msg.type === 'answer') {
-    console.log("Received answer...")
-    driver.rtc.answer(msg.data);
+    // console.log("Received answer...")
+    // driver.rtc.answer(msg.data);
   } else if (msg.type === 'candidate') {
-    console.log("Received ICE candidate...")
-    driver.rtc.addCandidate(msg.data)
+    // console.log("Received ICE candidate...")
+    // driver.rtc.addCandidate(msg.data)
   } else {
     console.log('Unrecognized Signaling message type.');
   }
@@ -166,16 +164,6 @@ export const registerWithMaster = () => {
 	// Cannot connect to browser server, no peer to peer.
 }
 
-// export const onMessage = function(message)
-// {
-// 	var data = message.data;
-// 	if (typeof(data) === 'string')
-// 		return;
-// 	if (data.byteLength > def.max_message)
-// 		return;
-// 	this.data_socket.receiveMessage.push(new Uint8Array(data));
-// };
-
 const createRtc = (signaling: WebSocket, sock: ISocket) => {
 	const sendSignal = (obj: any) => {
 		if (signaling.readyState !== 1) debugger
@@ -198,30 +186,20 @@ const createRtc = (signaling: WebSocket, sock: ISocket) => {
 			]
 		})
 	
-	
-		rtcPeer.addEventListener('datachannel', ({channel}) => {
-			if (channel.label !== 'quake') {
-				return;
-			}
-		
-			rtcDataChannel = channel;
-			rtcDataChannel.addEventListener('message', (event => {
-				console.log('RTC MSG: ' + event.data)
-				sock.receiveMessage.push(event.data)
-			}));
-		})
 		rtcPeer.addEventListener('connectionstatechange', () => {
 			if (rtcPeer!.connectionState === 'closed') {
 				net.close(sock)
-				
 				rtcPeer!.removeEventListener('iceconnectionstatechange', onIceConnectionStateChange);
 			}
 		})
 	
-		 rtcPeer.createDataChannel('quake', {
+		rtcDataChannel = rtcPeer.createDataChannel('quake', {
 			ordered: false,
 			maxRetransmits: 0
 		})
+		rtcDataChannel.addEventListener('message', (event => {
+			sock.receiveMessage.push(event.data)
+		}));
 	
 		let connectionTimer: number | null = null
 		connectionTimer = setTimeout(() => {
@@ -244,12 +222,8 @@ const createRtc = (signaling: WebSocket, sock: ISocket) => {
 				reconnectionTimer = null;
 			} else if (rtcPeer.iceConnectionState === 'disconnected'
 				|| rtcPeer.iceConnectionState === 'failed') {
-				if (!connectionTimer && !reconnectionTimer) {
-					reconnectionTimer = setTimeout(() => {
-						net.close(sock)
-						console.log("Closing connection due to disconnection")
-					}, TIME_TO_CONNECT);
-				}
+				net.close(sock)
+				console.log("Closing connection due to disconnection")
 			}
 		};
 	
@@ -296,12 +270,17 @@ const createRtc = (signaling: WebSocket, sock: ISocket) => {
       return rtcPeer.addIceCandidate(new RTCIceCandidate(candidate))
     },
     sendBytes: (bytes) => {
-			if (!rtcDataChannel) return Promise.reject('Connection isn\'t ready for transfer')
+			if (!rtcDataChannel) {
+				return Promise.reject('Connection isn\'t ready for transfer')
+			}
       return rtcDataChannel.send(bytes)
     },
 		//"closed" | "connected" | "connecting" | "disconnected" | "failed" | "new";
     connectionState: () => {
-      return rtcPeer?.connectionState || 'new'
+			if (!rtcPeer) return 'new'
+			return rtcPeer.connectionState !== 'connected'
+			 ? rtcPeer.connectionState
+			 : rtcDataChannel?.readyState !== 'open' ? 'connecting' : 'connected'
     },
     close: () => {
 			if (rtcPeer) {

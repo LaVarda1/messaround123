@@ -11,8 +11,7 @@ export const name = "webrtc"
 export var initialized = false
 export var available = true
 
-const TIME_TO_CANDIDATE = 3000
-const TIME_TO_CONNECT = 10000
+const TIME_TO_CONNECT = 3000
 
 type WebRtcDriver = {
   rtc: wrtc.RTCPeerConnection,
@@ -38,6 +37,7 @@ export const acceptNewConnection = (connection: connection) => {
 const tryJson = (str, def) => {
   try { 
     return JSON.parse(str) 
+    
   }
   catch (err) {
     return def
@@ -69,9 +69,9 @@ const createDriver = (socket: ISocket, signaling: connection) => {
     rtc: createRtc(signaling, socket),
     signaling,
     sock: socket
-  }
+  }  
   signaling.on('message', onSignalingReceive(driver))
-  
+
   driver.rtc.init()
   
   return driver
@@ -92,7 +92,7 @@ export const checkNewConnections = (): ISocket => {
 };
 
 const onSignalingReceive = (driver: WebRtcDriver) => (message) => {
-  console.log("Received signal " + message)
+  console.log("Received signal " + JSON.stringify(message))
 	if (message.type !== 'utf8')
 		return;
 
@@ -116,12 +116,17 @@ export const getMessage = (sock: ISocket) => {
     return -1;
 	if (sock.receiveMessage.length === 0)
 		return 0;
-	var src = sock.receiveMessage.shift(), dest = new Uint8Array(net.state.message.data);
-	net.state.message.cursize = src.length - 1;
-	var i;
-	for (i = 1; i < src.length; ++i)
-		dest[i - 1] = src[i];
-	return src[0];
+	// var src = sock.receiveMessage.shift(), dest = new Uint8Array(net.state.message.data);
+	// net.state.message.cursize = src.length - 1;
+	// var i;
+	// for (i = 1; i < src.length; ++i)
+	// 	dest[i - 1] = src[i];
+	// return src[0];
+	var buffer = sock.receiveMessage.shift()
+	var message = new Uint8Array(buffer, 1, buffer.byteLength - 1)
+	net.state.message.cursize = message.length;
+	(new Uint8Array(net.state.message.data)).set(message);
+	return message[0];
 }
 
 export const sendMessage = (sock: ISocket, data: IDatagram) => {
@@ -207,7 +212,7 @@ const createRtc = (signaling: connection, sock: ISocket) => {
     
       rtcDataChannel = channel;
       rtcDataChannel.addEventListener('message', (event => {
-        console.log('RTC MSG: ' + event.data)
+        // console.log('RTC MSG: ' + event.data.byteLength)
         sock.receiveMessage.push(event.data)
       }));
     })
@@ -221,16 +226,16 @@ const createRtc = (signaling: connection, sock: ISocket) => {
     // })
   
     let connectionTimer = setTimeout(() => {
-      if (wrtc.iceConnectionState !== 'connected'
-        && wrtc.iceConnectionState !== 'completed') {
+      if (rtcPeer.iceConnectionState !== 'connected'
+        && rtcPeer.iceConnectionState !== 'completed') {
         net.close(sock)
         console.log("Could not connect")
       }
     }, TIME_TO_CONNECT);
     let reconnectionTimer = null
     const onIceConnectionStateChange = () => {
-      if (wrtc.iceConnectionState === 'connected'
-        || wrtc.iceConnectionState === 'completed') {
+      if (rtcPeer.iceConnectionState === 'connected'
+        || rtcPeer.iceConnectionState === 'completed') {
         if (connectionTimer) {
           clearTimeout(connectionTimer);
           connectionTimer = null;
@@ -240,10 +245,8 @@ const createRtc = (signaling: connection, sock: ISocket) => {
       } else if (rtcPeer.iceConnectionState === 'disconnected'
         || rtcPeer.iceConnectionState === 'failed') {
         if (!connectionTimer && !reconnectionTimer) {
-          reconnectionTimer = setTimeout(() => {
-            net.close(sock)
-            console.log("Closing connection due to disconnection")
-          }, TIME_TO_CONNECT);
+          net.close(sock)
+          console.log("Closing peer connection due to disconnection")
         }
       }
     };
@@ -278,13 +281,17 @@ const createRtc = (signaling: connection, sock: ISocket) => {
         })
     },
     sendBytes: (bytes) => {
-			if (!rtcDataChannel) return Promise.reject('Connection isn\'t ready for transfer')
+			if (!rtcDataChannel) {
+        return Promise.reject('Connection isn\'t ready for transfer')
+      }
       return rtcDataChannel.send(bytes)
     },
     connectionState: () => {
+      if (!rtcDataChannel)  return 'connecting' 
+      if (rtcDataChannel.readyState === 'closed')  return 'closed' 
        return rtcPeer.connectionState !== 'connected'
         ? rtcPeer.connectionState
-        : rtcDataChannel ? 'connecting' : 'connected'
+        : rtcDataChannel.readyState !== 'open' ? 'connecting' : 'connected'
     },
     close: closePeer
   }

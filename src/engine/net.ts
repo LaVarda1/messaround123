@@ -116,7 +116,7 @@ export const connect = function(host)
 		if (ret === 0)
 		{
 			cl.cls.state = cl.ACTIVE.connecting;
-			con.print('trying...\n');
+			con.print('['+ dfunc.name + '] trying...\n');
 			state.start_time = state.time;
 			state.reps = 0;
 			throw 'NET.Connect';
@@ -134,7 +134,7 @@ export const checkForResend = async function()
 	{
 		if ((state.time - state.start_time) >= (2.5 * (state.reps + 1)))
 		{
-			con.print('still trying...\n');
+			con.print('['+ dfunc.name + '] still trying...\n');
 			++state.reps;
 		}
 	}
