@@ -7,7 +7,7 @@ export const name: string = "webrtc"
 export var initialized: boolean = false;
 export var available: boolean = false;
 
-const TIME_TO_CONNECT = 3
+const TIME_TO_CONNECT = 3000
 
 type Rtc = {
 	init: () => void
