@@ -6,6 +6,7 @@ import * as con from '../../engine/console'
 import * as q from '../../engine/q'
 import * as _assetStore from './assetStore'
 import * as loop from './net/loop'
+import * as webrtc from './net/webrtc'
 import * as webs from './net/webs'
 import * as input from '../../engine/input'
 
@@ -214,10 +215,12 @@ export const init = async (argv: string) =>
 	state.scantokey[221] = 93; // ]
 	state.scantokey[222] = 39; // '
 
+
 	state.oldtime = Date.now() * 0.001;
 
 	print('Host.Init\n');
-	await host.init(false, assetStore, [loop, webs]);
+	await host.init(false, assetStore, [loop, webrtc, webs]);
+
 
   const eventNames = Object.keys(events)
 	for (i = 0; i < eventNames.length; ++i){

@@ -705,7 +705,7 @@ export const establishConnection = async function(host_url)
     return;
   await disconnect();
   state.host = host_url;
-  var sock = net.connect(host_url);
+  var sock = await net.connect(host_url);
   if (sock == null)
     await host.error('CL.EstablishConnection: connect failed\n');
   connect(sock);
