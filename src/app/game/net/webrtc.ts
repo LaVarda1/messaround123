@@ -8,7 +8,7 @@ export const name: string = "webrtc"
 export var initialized: boolean = false;
 export var available: boolean = false;
 
-const TIME_TO_CONNECT = 3000
+const TIME_TO_CONNECT = 6000
 
 type Rtc = {
 	init: () => void
@@ -77,7 +77,9 @@ const createDriver = async (socket: ISocket, signaling: WebSocket) => {
   }
   signaling.addEventListener('message', onSignalingReceive(driver))
 	// TODO: FIgure out this hack - what can we wait on to get the ball rolling on rtc?
-	await new Promise((resolve) => setTimeout(resolve, 100))
+	await new Promise((resolve) => {
+		signaling.addEventListener('open', () => setTimeout(resolve, 100))
+	})
 	await driver.rtc.init()
 
   return driver
