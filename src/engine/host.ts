@@ -1458,6 +1458,7 @@ const initLocal = () => {
   cvr.web_location = cvar.registerVariable('web_location', '');
   cvr.web_description = cvar.registerVariable('web_description', '');
   cvr.web_masterserver = cvar.registerVariable('web_masterserver', 'https://www.netquake.io');
+  
   findMaxClients();
 }
 

@@ -3,6 +3,7 @@ import * as def from '../../../engine/def'
 import * as net from '../../../engine/net'
 import ISocket from '../../../engine/interfaces/net/ISocket'
 import IDatagram from '../../../engine/interfaces/net/IDatagram'
+import { QConnectStatus } from '../../../engine/interfaces/net/INetworkDriver'
 
 export const name: string = "loop"
 export var initialized: boolean = false;
@@ -25,10 +26,9 @@ export const listen = () => {
 export const registerWithMaster = () => {
 }
 
-export const connect = function(host: string)
-{
+export const connect = async (host: string): Promise<QConnectStatus | ISocket> => {
 	if (host !== 'local')
-		return;
+		return 'failed';
 
 	state.localconnectpending = true;
 

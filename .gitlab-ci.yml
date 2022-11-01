@@ -9,7 +9,7 @@ variables:
   CONTAINER_SERVER_RELEASE_IMAGE: public.ecr.aws/v9s4j9b0/webquake-server:latest
 
 build:
-  image: node:fermium
+  image: node:gallium
   stage: build
   script:
     - npm --unsafe-perm install

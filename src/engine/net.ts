@@ -96,7 +96,7 @@ export const newQSocket = function()
 	return activeSockets[i];
 };
 
-export const connect = function(host)
+export const connect = async function(host)
 {
 	state.time = sys.floatTime();
 
@@ -108,20 +108,24 @@ export const connect = function(host)
 
 	var dfunc, ret;
 	for (state.driverlevel = 1; state.driverlevel < state.drivers.length; ++state.driverlevel)
-	{
+	{ 
 		dfunc = state.drivers[state.driverlevel];
-		if (dfunc.initialized !== true)
+		if (dfunc.name === 'webrtc' && cvr.enable_webrtc.value === 0) {
+			continue
+		}
+		if (dfunc.initialized !== true) {
 			continue;
-		ret = dfunc.connect(host);
-		if (ret === 0)
+		}
+		ret = await dfunc.connect(host);
+		if (ret === 'connected')
 		{
 			cl.cls.state = cl.ACTIVE.connecting;
-			con.print('trying...\n');
+			con.print('['+ dfunc.name + '] trying...\n');
 			state.start_time = state.time;
 			state.reps = 0;
 			throw 'NET.Connect';
 		}
-		if (ret != null)
+		if (ret != 'failed')
 			return ret;
 	}
 };
@@ -134,7 +138,7 @@ export const checkForResend = async function()
 	{
 		if ((state.time - state.start_time) >= (2.5 * (state.reps + 1)))
 		{
-			con.print('still trying...\n');
+			con.print('['+ dfunc.name + '] still trying...\n');
 			++state.reps;
 		}
 	}
@@ -384,6 +388,7 @@ export const init = (drivers: INetworkDriver[]) => {
 	cvr.messagetimeout = cvar.registerVariable('net_messagetimeout', '300');
 	cvr.hostname = cvar.registerVariable('hostname', 'UNNAMED');
 	cvr.web_connect_url = cvar.registerVariable('web_connect_url', '');
+	cvr.enable_webrtc = cvar.registerVariable('enable_webrtc', com.checkParm('-webrtc') ? '1' : '0');
 	cmd.addCommand('listen', listen_f);
 	cmd.addCommand('maxplayers', maxPlayers_f);
 	cmd.addCommand('port', port_f);

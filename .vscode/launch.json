@@ -32,7 +32,7 @@
             "-port", "26003",
             "-udpportstart","26004",
             "-game", "crmod",
-            "+map", "e1m2"
+            "+map", "dm2"
           ],
           "outFiles": [
             "${workspaceFolder}/dist/**/*.js"

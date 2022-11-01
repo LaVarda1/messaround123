@@ -14,6 +14,7 @@ import * as http from 'http'
 import * as url from 'url'
 import * as dgram from 'dgram'
 import * as os from 'os'
+import { QConnectStatus } from '../../../engine/interfaces/net/INetworkDriver'
 
 const HEADER_SIZE = 8
 
@@ -29,8 +30,8 @@ export const state = {
 }
 
 // not implemented client specific functions
-export const connect = (host: string): ISocket => {
-  return null
+export const connect = async (host: string): Promise<QConnectStatus> => {
+  return 'failed'
 }
 export const checkForResend = (): number => {
   return 0
