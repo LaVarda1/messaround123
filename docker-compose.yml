@@ -1,0 +1,19 @@
+services:
+  quake-server:
+    image: public.ecr.aws/v9s4j9b0/webquake-server:test
+    restart: always
+    ports:
+      - "26010:26010/tcp"
+      - "26010:26010/udp"
+      - "26011-26027:26011-26027/udp"
+    volumes:
+      - "C:/source/netquake.io/id1:/usr/app/id1"
+    environment:
+      STARTUP_CFG: |
+        web_connect_url sv.netquake.io/hw
+        web_location Ohio
+        deathmatch 3
+        maxplayers 16
+        hostname "Test"
+    
+    command: ["-udpportstart", "26011", "-port", "26010", "+map", "dm2", "-maxplayers", "16"]

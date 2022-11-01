@@ -2,6 +2,7 @@ import ISocket from '../../../engine/interfaces/net/ISocket'
 import IDatagram from '../../../engine/interfaces/net/IDatagram'
 import * as net from '../../../engine/net'
 import * as def from '../../../engine/def'
+import { QConnectStatus } from '../../../engine/interfaces/net/INetworkDriver'
 
 export const name: string = "websocket"
 export var initialized: boolean = false;
@@ -16,14 +17,14 @@ export const init = () => {
 	return true;
 };
 export const listen = () => {}
-export const connect = (host: string): any =>
+export const connect = async (host: string): Promise<QConnectStatus> =>
 {
 	if (host.length <= 5)
-		return null
+		return 'failed'
 	if (host.charCodeAt(6) === 47)
-		return null
+		return 'failed'
 	if (host.substring(0, 6) !== 'wss://' && host.substring(0, 5) !== 'ws://')
-		return null
+		return 'failed'
 	var sock = net.newQSocket();
 	sock.disconnected = true;
 	sock.receiveMessage = []
@@ -34,14 +35,15 @@ export const connect = (host: string): any =>
 	}
 	catch (e)
 	{
-		return null;
+		return 'failed';
 	}
 	sock.driverdata.data_socket = sock;
 	sock.driverdata.binaryType = 'arraybuffer';
 	sock.driverdata.onerror = onError;
 	sock.driverdata.onmessage = onMessage;
 	net.state.newsocket = sock;
-	return 0;
+	
+	return 'connected';
 };
 
 export const checkNewConnections = (): ISocket => {

@@ -1,12 +1,13 @@
 import ISocket from './ISocket'
 import IDatagram from './IDatagram'
 
+export type QConnectStatus = 'connected' | 'failed'
 export default interface INetworkDriver {
   initialized: boolean,
   available: boolean,
   name: string,
   init: () => boolean,
-  connect: (host: string) => any,
+  connect: (host: string) => Promise<QConnectStatus | ISocket>,
   checkNewConnections: () => ISocket,
   checkForResend: () => number,
   close: (sock: ISocket) => void,
