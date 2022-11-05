@@ -13,6 +13,7 @@ const TIME_TO_CONNECT = 6000
 type Rtc = {
 	init: () => void
 	answer: (sdp: any) => void
+	acceptOffer: (sdp) => void
 	addCandidate: (candidate: any) => void
 	sendBytes: (bytes: any) => void
 	connectionState: () => RTCPeerConnectionState
@@ -77,16 +78,19 @@ const createDriver = async (socket: ISocket, signaling: WebSocket) => {
   }
   signaling.addEventListener('message', onSignalingReceive(driver))
 	// TODO: FIgure out this hack - what can we wait on to get the ball rolling on rtc?
-	await new Promise((resolve) => {
-		signaling.addEventListener('open', () => setTimeout(resolve, 100))
-	})
+	// await new Promise((resolve) => {
+	// 	signaling.addEventListener('open', () => setTimeout(resolve, 100))
+	// })
 	await driver.rtc.init()
 
   return driver
 }
 const onSignalingReceive = (driver: WebRtcDriver) => (message) => {
   const msg = tryJson(message.data, {type: 'none'})
-  if (msg.type === 'answer') {
+  if (msg.type === 'offer') {
+    console.log("Received offer...")
+    driver.rtc.acceptOffer(msg.data)
+  } else if (msg.type === 'answer') {
     console.log("Received answer...")
     driver.rtc.answer(msg.data);
   } else if (msg.type === 'candidate') {
@@ -180,7 +184,7 @@ const createRtc = (signaling: WebSocket, sock: ISocket) => {
 	
 	const init = async () => {
 		return new Promise<void>((resolve, reject) => {
-			rtcPeer = new RTCPeerConnection({
+			rtcPeer = new RTCPeerConnection({ 
 				iceServers: [
 					{
 						urls: [
@@ -188,8 +192,11 @@ const createRtc = (signaling: WebSocket, sock: ISocket) => {
 							"stun:stun.nextcloud.com:443",
 							"stun:stun.intervoip.com:3478"
 						]
-					}
-				]
+					}], 
+				iceTransportPolicy: 'all', 
+				bundlePolicy: 'balanced', 
+				rtcpMuxPolicy: 'require', 
+				iceCandidatePoolSize: 0
 			})
 		
 			rtcPeer.addEventListener('connectionstatechange', () => {
@@ -203,13 +210,17 @@ const createRtc = (signaling: WebSocket, sock: ISocket) => {
 				}
 			})
 		
-			rtcDataChannel = rtcPeer.createDataChannel('quake', {
-				ordered: false,
-				maxRetransmits: 0
+			rtcPeer.addEventListener('datachannel', ({channel}) => {
+				if (channel.label !== 'quake') {
+					return;
+				}
+			
+				rtcDataChannel = channel;
+				rtcDataChannel.addEventListener('message', (event => {
+					// console.log('RTC MSG: ' + event.data.byteLength)
+					sock.receiveMessage.push(event.data)
+				}));
 			})
-			rtcDataChannel.addEventListener('message', (event => {
-				sock.receiveMessage.push(event.data)
-			}));
 		
 			let connectionTimer: number | null = null
 			connectionTimer = setTimeout(() => {
@@ -220,6 +231,7 @@ const createRtc = (signaling: WebSocket, sock: ISocket) => {
 					console.log("Could not connect")
 				}
 			}, TIME_TO_CONNECT);
+
 			let reconnectionTimer: number | null = null
 			const onIceConnectionStateChange = () => {
 				if (!rtcPeer ||rtcPeer.iceConnectionState === 'connected'
@@ -248,22 +260,45 @@ const createRtc = (signaling: WebSocket, sock: ISocket) => {
 					});
 				}
 			})
-		
-			rtcPeer.addEventListener('negotiationneeded', (event) => {
-				return rtcPeer!.createOffer({
-					offerToReceiveAudio: false,
-					offerToReceiveVideo: false
-				})
-					.then((offer) => {
-						rtcPeer!.setLocalDescription(offer)
-						sendSignal({
-							type: "offer",
-							data: offer
-						});
-					})
-			})
-			
+					
 			rtcPeer.addEventListener('iceconnectionstatechange', onIceConnectionStateChange);
+
+			// return rtcPeer!.createOffer({
+			// 	offerToReceiveAudio: false,
+			// 	offerToReceiveVideo: false
+			// })
+			// 	.then((offer) => {
+			// 		rtcPeer!.setLocalDescription(offer)
+			// 		sendSignal({
+			// 			type: "offer",
+			// 			data: offer
+			// 		});
+			// 	})
+			const waitUntilIceGatheringStateComplete = async (peerConnection, options) => {
+				if (peerConnection.iceGatheringState === 'complete') {
+					return;
+				}
+			
+				const { timeToHostCandidates } = options;
+			
+				return new Promise<void>((resolve, reject) => {
+					function onIceCandidate({ candidate }) {
+						if (!candidate) {
+							options.clearTimeout(timeout);
+							peerConnection.removeEventListener('icecandidate', onIceCandidate);
+							resolve();
+						}
+					}
+			
+					const timeout = options.setTimeout(() => {
+						peerConnection.removeEventListener('icecandidate', onIceCandidate);
+						reject(new Error('Timed out waiting for host candidates'));
+					}, timeToHostCandidates);
+				
+					peerConnection.addEventListener('icecandidate', onIceCandidate);
+				
+				})
+			}
 		})
 	}
 
@@ -272,14 +307,29 @@ const createRtc = (signaling: WebSocket, sock: ISocket) => {
     answer: (sdp) => {
 			if (!rtcPeer) return Promise.reject('Connection hasn\'t started')
       rtcPeer.setRemoteDescription(new RTCSessionDescription(sdp))
+    },
+    acceptOffer: (sdp) => {
+			if (!rtcPeer) return Promise.reject('Connection hasn\'t started')
+      rtcPeer.setRemoteDescription(new RTCSessionDescription(sdp))
       return rtcPeer.createAnswer(sdp)
         .then((answerSdp) => {
           rtcPeer!.setLocalDescription(answerSdp)
+          sendSignal({
+            type: "answer",
+            data: answerSdp
+          });
           return answerSdp
+        })
+        .catch(err => {
+          console.log("Error creating answer: " + err)
+					if (rtcPeer) {
+						rtcPeer.close();
+					}
         })
     },
     addCandidate: (candidate) => {
 			if (!rtcPeer) return Promise.reject('Connection hasn\'t started')
+			console.log(candidate)
       return rtcPeer.addIceCandidate(new RTCIceCandidate(candidate))
     },
     sendBytes: (bytes) => {

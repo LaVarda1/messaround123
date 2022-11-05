@@ -101,6 +101,9 @@ const onSignalingReceive = (driver: WebRtcDriver) => (message) => {
   if (msg.type === 'offer') {
     console.log("Received offer...")
     driver.rtc.acceptOffer(msg.data)
+  } else if (msg.type === 'answer') {
+    console.log("Received answer...")
+    driver.rtc.answer(msg.data);
   } else if (msg.type === 'candidate') {
     console.log("Received ICE candidate... with connection status " + driver.rtc.connectionState())
     console.log("dcanduidate: " +JSON.stringify( msg.data))
@@ -179,15 +182,7 @@ const createRtc = (signaling: connection, sock: ISocket) => {
 
   const init = () => {
     rtcPeer = new wrtc.RTCPeerConnection({
-      iceServers: [
-        {
-          urls: [
-            "stun:stun4.l.google.com:19302",
-            "stun:stun.nextcloud.com:443",
-            "stun:stun.intervoip.com:3478"
-          ]
-        }
-      ]
+      iceServers: []
     })
   
     rtcPeer.addEventListener('connectionstatechange', () => {
@@ -206,17 +201,14 @@ const createRtc = (signaling: connection, sock: ISocket) => {
 			}
 		})
   
-    rtcPeer.addEventListener('datachannel', ({channel}) => {
-      if (channel.label !== 'quake') {
-        return;
-      }
-    
-      rtcDataChannel = channel;
-      rtcDataChannel.addEventListener('message', (event => {
-        // console.log('RTC MSG: ' + event.data.byteLength)
-        sock.receiveMessage.push(event.data)
-      }));
+    rtcDataChannel = rtcPeer.createDataChannel('quake', {
+      ordered: false,
+      maxRetransmits: 0
     })
+
+    rtcDataChannel.addEventListener('message', (event => {
+      sock.receiveMessage.push(event.data)
+    }));
     // const dataChannel = rtcPeer.createDataChannel('quake', {
     //   ordered: false,
     //   maxRetransmits: 0
@@ -251,12 +243,26 @@ const createRtc = (signaling: connection, sock: ISocket) => {
         }
       }
     };
-  
-    rtcPeer.addEventListener('iceconnectionstatechange', onIceConnectionStateChange);
+    
+    return rtcPeer!.createOffer({
+      offerToReceiveAudio: false,
+      offerToReceiveVideo: false
+    })
+      .then((offer) => {
+        rtcPeer!.setLocalDescription(offer)
+        sendSignal({
+          type: "offer",
+          data: offer
+        });
+      })
   }
 
   return {
     init,
+    answer: (sdp) => {
+			if (!rtcPeer) return Promise.reject('Connection hasn\'t started')
+      rtcPeer.setRemoteDescription(new wrtc.RTCSessionDescription(sdp))
+    },
     acceptOffer: (sdp) => {
       rtcPeer.setRemoteDescription(new wrtc.RTCSessionDescription(sdp))
       return rtcPeer.createAnswer(sdp)
