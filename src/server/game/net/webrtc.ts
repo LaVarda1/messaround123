@@ -181,8 +181,17 @@ const createRtc = (signaling: connection, sock: ISocket) => {
   };
 
   const init = () => {
-    rtcPeer = new wrtc.RTCPeerConnection({
-      iceServers: []
+    rtcPeer = new wrtc.RTCPeerConnection({ 
+      iceServers: [
+        {
+          urls: [
+            "stun:stun4.l.google.com:19302"
+          ]
+        }], 
+      iceTransportPolicy: 'all', 
+      bundlePolicy: 'balanced', 
+      rtcpMuxPolicy: 'require', 
+      iceCandidatePoolSize: 0
     })
   
     rtcPeer.addEventListener('connectionstatechange', () => {
