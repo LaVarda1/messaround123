@@ -110,9 +110,6 @@ export const connect = async function(host)
 	for (state.driverlevel = 1; state.driverlevel < state.drivers.length; ++state.driverlevel)
 	{ 
 		dfunc = state.drivers[state.driverlevel];
-		if (dfunc.name === 'webrtc' && cvr.enable_webrtc.value === 0) {
-			continue
-		}
 		if (dfunc.initialized !== true) {
 			continue;
 		}
@@ -388,7 +385,6 @@ export const init = (drivers: INetworkDriver[]) => {
 	cvr.messagetimeout = cvar.registerVariable('net_messagetimeout', '300');
 	cvr.hostname = cvar.registerVariable('hostname', 'UNNAMED');
 	cvr.web_connect_url = cvar.registerVariable('web_connect_url', '');
-	cvr.enable_webrtc = cvar.registerVariable('enable_webrtc', com.checkParm('-webrtc') ? '1' : '0');
 	cmd.addCommand('listen', listen_f);
 	cmd.addCommand('maxplayers', maxPlayers_f);
 	cmd.addCommand('port', port_f);

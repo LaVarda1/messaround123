@@ -5,7 +5,6 @@ import * as net from '../../../engine/net'
 import * as def from '../../../engine/def'
 import * as websocket from 'websocket'
 import * as httpServer from './http'
-import * as webrtc from './webrtc'
 import { QConnectStatus } from '../../../engine/interfaces/net/INetworkDriver'
 
 export const name = "websocket"
