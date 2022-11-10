@@ -1,4 +1,7 @@
 import * as indexedDb from '../../../shared/indexeddb'
+import { defineStore } from 'pinia'
+import { AssetMeta } from '../../../shared/types/Store'
+
 const recommendedCfg = 
 `bind "TAB" "+showscores"
 bind "ENTER" "messagemode"
@@ -86,20 +89,13 @@ const configValueRx = (name) => `^([ \t]*${name}[ \t]+"?(.*?)"?)$`
 const configFileName = 'Quake.id1/config.cfg'
 const autoExecFileName = 'Quake.id1/autoexec.cfg'
 
-const state = {
-  assetMetas: [],
-  configFile: '',
-  autoexecFile: '',
-  newGameType: ''
+interface State {
+  assetMetas: AssetMeta[],
+  configFile: string
+  autoexecFile: string
+  newGameType: string
 }
 
-const mutationTypes = {
-  setAssetMetas: 'setAssetMetas',
-  setConfigFile: 'setConfigFile',
-  setAutoexecFile: 'setAutoexecFile',
-  setRecommendedConfig: 'setRecommendedConfig',
-  setAutoexecValue: 'setAutoexecValue'
-}
 
 const getters = {
   allAssetMetas: state => state.assetMetas,
@@ -122,43 +118,40 @@ const getters = {
   hasGame: state => game => !!state.assetMetas.some(a => a.game === game)
 }
 
-const mutations = {
-  [mutationTypes.setAssetMetas] (state, assetMetas) {
+const actions = {
+  setAssetMetas: (state: State, assetMetas: AssetMeta[]) => {
     state.assetMetas = assetMetas
   },
-  [mutationTypes.setConfigFile] (state, configFile) {
+  setConfigFile: (state: State, configFile: string) => {
     state.configFile = configFile || ''
   },
-  [mutationTypes.setAutoexecFile] (state, autoexecFile) {
+  setAutoexecFile: (state: State, autoexecFile: string) => {
     state.autoexecFile = autoexecFile || ''
-  }
-}
-
-const actions = {
-  loadConfig ({commit}) {
+  },
+  loadConfig () {
     const configFile = localStorage[configFileName]
-    commit(mutationTypes.setConfigFile, configFile)
+    this.setConfigFile(configFile)
   },
-  saveConfig ({commit}, configFile) {
+  saveConfig (configFile) {
     localStorage[configFileName] = configFile
-    commit(mutationTypes.setConfigFile, configFile)
+    this.setConfigFile(configFile)
   },
-  loadRecommendedConfig ({commit}) {
+  loadRecommendedConfig () {
     localStorage[configFileName] = recommendedCfg
-    commit(mutationTypes.setConfigFile, recommendedCfg)
+    this.setConfigFile(recommendedCfg)
   },
-  loadAutoexec ({commit}) {
+  loadAutoexec () {
     const autoexecFile = localStorage[autoExecFileName]
-    commit(mutationTypes.setAutoexecFile, autoexecFile)
+    this.setAutoexecFile(autoexecFile)
   },
-  saveAutoexec ({commit}, autoexecFile) {
+  saveAutoexec (autoexecFile) {
     localStorage[autoExecFileName] = autoexecFile
-    commit(mutationTypes.setAutoexecFile, autoexecFile)
+    this.setAutoexecFile(autoexecFile)
   },
-  setAutoexecValue ({dispatch, state}, autoexecNameValue) {
+  setAutoexecValue (autoexecNameValue) {
     const regex =  new RegExp(configValueRx(autoexecNameValue.name), 'gim')
     let match, m
-    while ((m = regex.exec(state.autoexecFile)) !== null) {
+    while ((m = regex.exec(this.autoexecFile)) !== null) {
       // This is necessary to avoid infinite loops with zero-width matches
       if (m.index === regex.lastIndex) {
         regex.lastIndex++;
@@ -168,39 +161,43 @@ const actions = {
     const newSetting = `${autoexecNameValue.name} "${autoexecNameValue.value}"`
     if (match) {
       const newConfig = [
-        state.autoexecFile.substring(0,match.index),
+        this.autoexecFile.substring(0,match.index),
         newSetting,
-        state.autoexecFile.substring(match.index + match[0].length, state.autoexecFile.length)
+        this.autoexecFile.substring(match.index + match[0].length, this.autoexecFile.length)
       ]
-      return dispatch('saveAutoexec', newConfig.join(''))
+      return this.saveAutoexec(newConfig.join(''))
     } else {
-      return dispatch('saveAutoexec', state.autoexecFile +'\n' + newSetting)
+      return this.saveAutoexec(this.autoexecFile +'\n' + newSetting)
     }
   },
-  loadRecommendedAutoexec ({commit}) {
+  loadRecommendedAutoexec () {
     localStorage[autoExecFileName] = recommendedAutoexec
-    commit(mutationTypes.setAutoexecFile, recommendedAutoexec)
+    this.setAutoexecFile(recommendedAutoexec)
   },
-  loadAssets ({commit}) {
+  loadAssets () {
     return indexedDb.getAllMeta()
       .then(allAssets => {
-        commit(mutationTypes.setAssetMetas, allAssets)
+        this.setAssetMetas(allAssets)
       })
   },
-  saveAsset ({ dispatch }, {game, fileName, fileCount, data}) {
+  saveAsset ({game, fileName, fileCount, data}) {
     return indexedDb.saveAsset(game, fileName, fileCount, data)
-      .then(() => dispatch('loadAssets'))
+      .then(() => this.loadAssets())
   },
-  removeAsset ({ dispatch }, assetId) {
+  removeAsset (assetId) {
     return indexedDb.removeAsset(assetId)
-      .then(() => dispatch('loadAssets'))
+      .then(() => this.loadAssets())
   }
 }
 
-export default {
-  namespaced: true,
-  state,
+
+export const useGameStore = defineStore('game', {
+  state: (): State => ({
+    assetMetas: [],
+    configFile: '',
+    autoexecFile: '',
+    newGameType: ''
+  }),
   getters,
-  mutations,
   actions
-}
+})

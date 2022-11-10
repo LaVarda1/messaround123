@@ -1,87 +1,69 @@
 
 <template lang="pug">
-  .game-container
-    .loading.loading-lg(v-if="loading")
-    template(v-else-if="needsMapDownload")
-      MapLoader(:game="game" @done="mapLoaded = true")
-    template(v-else)
-      Game(@quit="gameQuit" :quitRequest="isQuitting")
+.game-container
+  .loading.loading-lg(v-if="loading")
+  template(v-else-if="needsMapDownload")
+    MapLoader(:game="game" @done="mapLoaded = true")
+  template(v-else)
+    Game(@quit="gameQuit" :quitRequest="isQuitting")
 </template>
 
-<script>
-import Vue from 'vue'
-import Game from './Game.vue'
-import MapLoader from './MapLoader.vue'
-import {mapGetters, mapActions} from 'vuex'
-
-
-export default Vue.extend({
-  components: {
-    Game,
-    MapLoader
-  },
-  data () {
-    return {
-      map: null,
-      loading: true,
-      mapLoaded: false,
-      isQuitting: false,
-      onQuit: null,
-      quitToPath: ''
-    }
-  },
-  mounted () {
-    this.loadMapListing()
-      .then(() => {
-        this.map = this.getMapFromId(this.game)
-        this.loading = false
-      })
-      .catch(() => {
-        this.loading = false
-      })
-  },
-  computed: {
-    ...mapGetters('maps', ['getMapFromId']),
-    ...mapGetters('game', ['hasGame']),
-    needsMapDownload () {
-      return !this.mapLoaded && this.game && this.map && !this.hasGame(this.game)
-    },
-    game () {
-      return this.$route.query && this.$route.query['-game']
-    }
-  },
-  methods: {
-    ...mapActions('maps', ['loadMapListing']),
-    gameQuit () {
-      // Navigating to force clear memory.
-      
-      window.location.href = this.quitToPath
-      // Joe - Originally this is navigate back. 
-      // if (this.onQuit) {
-      //   this.onQuit()
-      // } else {
-      //   
-      //   // this.$router.go(-1)
-      //   window.location.href = this.quitToPath
-      // }
-    }
-  },
-  beforeRouteEnter (to, from, next) {
-    next(vm => {
+<script lang="ts">
+import {defineComponent} from 'vue'
+export default defineComponent({
+  beforeRouteEnter(to, from, next) {
+    next((vm: any) => {
       vm.quitToPath = from.path
     })
-  },
-  beforeRouteLeave (to, from, next) {
-    if (this.isQuitting) {
-      return next()
-    }
-    const answer = window.confirm('Do you really want to leave?')
-    if (answer) {
-      this.onQuit = next
-      this.isQuitting = true
-    } else {
-      next(false)
-    }
+  }
+})
+</script>
+<script lang="ts" setup>
+import Game from './Game.vue'
+import MapLoader from './MapLoader.vue'
+import {reactive, onMounted, computed, watch, defineProps} from 'vue'
+import GameInit from '../../../../game'
+import { useGameStore } from '../../../stores/game';
+import { useMapsStore } from '../../../stores/maps';
+import { routeLocationKey, useRoute, onBeforeRouteLeave } from 'vue-router';
+import { mapState } from 'pinia';
+
+const route = 
+const gameStore = useGameStore()
+const mapsStore = useMapsStore()
+
+const model = reactive({
+  map: null,
+  loading: true,
+  mapLoaded: false,
+  isQuitting: false,
+  onQuit: null,
+  quitToPath: ''
+})
+
+const needsMapDownload = computed(() => !model.mapLoaded && model.game && model.map && !gameStore.hasGame(game))
+const game = computed(() => routeLocationKey.query && routeLocationKey.query['-game'])
+const gameQuit = () => window.location.href = model.quitToPath
+onMounted(() => {
+  mapsStore.loadMapListing()
+    .then(() => {
+      model.map = mapsStore.getMapFromId(game.value)
+      model.loading = false
+    })
+    .catch(() => {
+      model.loading = false
+    })
+})
+onBeforeRouteLeave((to, from, next) => {
+  if (model.isQuitting) {
+    return next()
+  }
+  const answer = window.confirm('Do you really want to leave?')
+  if (answer) {
+    model.onQuit = next
+    model.isQuitting = true
+  } else {
+    next(false)
   }
 })
 </script>
