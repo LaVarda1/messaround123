@@ -5,7 +5,6 @@ import * as net from '../../../engine/net'
 import * as def from '../../../engine/def'
 import * as websocket from 'websocket'
 import * as httpServer from './http'
-import * as webrtc from './webrtc'
 import { QConnectStatus } from '../../../engine/interfaces/net/INetworkDriver'
 
 export const name = "websocket"
@@ -172,11 +171,6 @@ const serverOnRequest = (request) => {
 	if ((net.state.activeconnections + state.acceptsockets.length) >= sv.state.svs.maxclients)
 	{
 		request.reject();
-		return;
-	}
-	if (request.requestedProtocols[0] === 'webrtc')
-	{
-		webrtc.acceptNewConnection(request.accept('webrtc', request.origin));
 		return;
 	}
 	if (request.requestedProtocols[0] === 'quake')

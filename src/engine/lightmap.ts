@@ -248,7 +248,7 @@ const buildLightMap = (model, surf, buffofs: number, stride: number) => {
 	var blockidx = 0
 	var buffidx = surf.lightofs
 
-	if (model && model.lightdata) //if (cl.worldmodel->lightdata)
+	if (model && model.lightdata)
 	{
 		state.blocklights.fill(0, 0, size * 3)
 		// add all the lightmaps
@@ -265,11 +265,9 @@ const buildLightMap = (model, surf, buffofs: number, stride: number) => {
 
 				for (var i = 0; i < size; i++)
 				{
-					const rgbVal = model.lightdata[buffidx++] * scale;
-
-					state.blocklights[blockidx++] += rgbVal
-					state.blocklights[blockidx++] += rgbVal
-					state.blocklights[blockidx++] += rgbVal
+					state.blocklights[blockidx++] += model.lightdata[buffidx++] * scale
+					state.blocklights[blockidx++] += model.lightdata[buffidx++] * scale
+					state.blocklights[blockidx++] += model.lightdata[buffidx++] * scale
 				}
 
 				//johnfitz

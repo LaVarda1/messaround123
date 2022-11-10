@@ -9,6 +9,7 @@ import * as def from './def'
 import * as cmd from './cmd'
 import * as vec from './vec'
 import * as protocol from './protocol'
+import { V3 } from './vec'
 
 export const state = {
   getEvCache: {}
@@ -352,7 +353,7 @@ export const loadFromFile = async function (data) {
   con.dPrint(inhibit + ' entities inhibited\n');
 };
 
-export const vector = function (e, o) {
+export const vector = function (e, o): V3 {
   return [e.v_float[o], e.v_float[o + 1], e.v_float[o + 2]];
 };
 
