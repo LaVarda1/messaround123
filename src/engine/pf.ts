@@ -947,6 +947,24 @@ const findchainfloat = function ()
 // 		pr_global_struct->trace_ent = EDICT_TO_PROG(sv.edicts);
 // }
 
+const strlen = () => {
+	const str = pr.getString(pr.state.globals_int[4])
+	pr.state.globals_float[1] = str.length
+}
+
+const strcat = () => {
+	let out = ''
+	for (var i = 0; i < pr.state.argc; ++i){
+		out += pr.getString(pr.state.globals_int[4 + i * 3]);
+		if (out.length >= 1024)
+		{
+			con.dPrint("PF strcat: overflow (string truncated)\n");
+			break;
+		}
+	}
+	pr.state.globals_float[1] = pr.newString(out, out + 1)
+}
+
 export const builtin = [
 	fixme,
 	makevectors,
@@ -1146,8 +1164,8 @@ export const ebfs_builtins = [
 	// 2001-09-20 QuakeC file access by FrikaC/Maddes  end
 
 	// 2001-09-20 QuakeC string manipulation by FrikaC/Maddes  start
-	{ defaultFnNbr: 114, name: "strlen", fn: fixme, fnNbr: 0 },
-	{ defaultFnNbr: 115, name: "strcat", fn: fixme, fnNbr: 0 },
+	{ defaultFnNbr: 114, name: "strlen", fn: strlen, fnNbr: 0 },
+	{ defaultFnNbr: 115, name: "strcat", fn: strcat, fnNbr: 0 },
 	{ defaultFnNbr: 116, name: "substring", fn: fixme, fnNbr: 0 },
 	{ defaultFnNbr: 117, name: "stov", fn: fixme, fnNbr: 0 },
 	{ defaultFnNbr: 118, name: "strzone", fn: fixme, fnNbr: 0 },
