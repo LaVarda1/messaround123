@@ -24,6 +24,7 @@ import * as tx from './texture'
 import * as mapAlpha from './mapAlpha'
 import * as fog from './fog'
 
+export const MAX_DLIGHTS = 32
 export const LERP = {
 	movestep: 1,
 	resetanim: 1 << 1,
@@ -41,6 +42,8 @@ export const state = {
 export const cvr = {
 } as any
 
+const	MAXLIGHTMAPS = 16
+export type Color = [number, number, number]
 // set on init
 // let gl: any = null
 
@@ -215,7 +218,7 @@ export const pushDlights = () => {
 	}
 };
 
-export const recursiveLightPoint = function (node, start, end) {
+export const recursiveLightPoint = function (node, start, end): 0 | -1 | Color {
 	if (node.contents < 0)
 		return -1;
 
@@ -235,7 +238,7 @@ export const recursiveLightPoint = function (node, start, end) {
 	];
 
 	var r = recursiveLightPoint(node.children[side === true ? 1 : 0], start, mid);
-	if (r >= 0)
+	if (r !== 0 && r !== -1)
 		return r;
 
 	if ((back < 0) === side)
@@ -269,25 +272,44 @@ export const recursiveLightPoint = function (node, start, end) {
 		if (lightmap === 0)
 			return 0;
 
-		lightmap += dt * ((surf.extents[0] >> 4) + 1) + ds;
-		r = 0;
-		size = ((surf.extents[0] >> 4) + 1) * ((surf.extents[1] >> 4) + 1);
-		for (maps = 0; maps < surf.styles.length; ++maps) {
-			r += cl.clState.worldmodel.lightdata[lightmap] * lm.state.lightstylevalue[surf.styles[maps]];
+		lightmap = surf.lightofs;
+		if (lightmap === 0)
+			return 0;
+
+		lightmap += (dt * ((surf.extents[0] >> 4) + 1) + ds) * 3;
+		r = [0, 0, 0];
+		size = ((surf.extents[0] >> 4) + 1) * ((surf.extents[1] >> 4) + 1) * 3;
+		for (maps = 0; maps < surf.styles.length; ++maps)
+		{
+				r = [
+					r[0] + cl.clState.worldmodel.lightdata[lightmap] * lm.state.lightstylevalue[surf.styles[maps]],
+					r[1] + cl.clState.worldmodel.lightdata[lightmap + 1] * lm.state.lightstylevalue[surf.styles[maps]],
+					r[2] + cl.clState.worldmodel.lightdata[lightmap + 2] * lm.state.lightstylevalue[surf.styles[maps]],
+				] 
 			lightmap += size;
 		}
-		return r >> 8;
+		
+		return [
+			r[0] >> 8,
+			r[1] >> 8,
+			r[2] >> 8,
+		]
 	}
 	return recursiveLightPoint(node.children[side !== true ? 1 : 0], mid, end);
 };
 
-export const lightPoint = function (p) {
-	if (cl.clState.worldmodel.lightdata == null)
-		return 255;
-	var r = recursiveLightPoint(cl.clState.worldmodel.nodes[0], p, [p[0], p[1], p[2] - 2048.0]);
-	if (r === -1)
-		return 0;
-	return r;
+export const lightPoint = function (p): Color {
+	if (cl.clState.worldmodel.lightdata == null){
+		return [255, 255, 255];
+	}
+	
+	const r = recursiveLightPoint(cl.clState.worldmodel.nodes[0], p, [p[0], p[1], p[2] - 2048.0]);
+	
+	if (r === -1 || r === 0) {
+		return [0, 0, 0];
+	}
+
+	return r
 };
 
 // main
@@ -625,9 +647,15 @@ export const drawAliasModel = function (e) {
 	gl.uniformMatrix3fv(program.uAngles, false, GL.rotationMatrix(e.angles[0], e.angles[1], e.angles[2]));
 
 	var ambientlight = lightPoint(e.origin);
-	var shadelight = ambientlight;
-	if ((e === cl.clState.viewent) && (ambientlight < 24.0))
-		ambientlight = shadelight = 24.0;
+	
+	if (e === cl.clState.viewent)  {
+		add = 72 - (ambientlight[0] + ambientlight[1] + ambientlight[2])
+		if (add > 0) {
+			ambientlight[0] += add / 3
+			ambientlight[1] += add / 3
+			ambientlight[2] += add / 3
+		}
+	}
 	var i, dl, add;
 	for (i = 0; i <= 31; ++i) {
 		dl = cl.state.dlights[i];
@@ -635,18 +663,34 @@ export const drawAliasModel = function (e) {
 			continue;
 		add = dl.radius - vec.length([e.origin[0] - dl.origin[0], e.origin[1] - dl.origin[1], e.origin[1] - dl.origin[1]]);
 		if (add > 0.0) {
-			ambientlight += add;
-			shadelight += add;
+			ambientlight = vec.vectorMA(ambientlight, add, dl.color)
 		}
 	}
-	if (ambientlight > 128.0)
-		ambientlight = 128.0;
-	if ((ambientlight + shadelight) > 192.0)
-		shadelight = 192.0 - ambientlight;
-	if ((e.num >= 1) && (e.num <= cl.clState.maxclients) && (ambientlight < 8.0))
-		ambientlight = shadelight = 8.0;
-	gl.uniform1f(program.uAmbientLight, ambientlight * 0.0078125);
-	gl.uniform1f(program.uShadeLight, shadelight * 0.0078125);
+
+	var shadelight = [...ambientlight]
+
+	// // todo - full bright & overbright
+
+	ambientlight[0] = ambientlight[0] > 128.0 ? 128.0 : ambientlight[0]
+	ambientlight[1] = ambientlight[1] > 128.0 ? 128.0 : ambientlight[1]
+	ambientlight[2] = ambientlight[2] > 128.0 ? 128.0 : ambientlight[2]
+
+	shadelight[0] = ambientlight[0] + shadelight[0] > 192.0 ? 192.0 - ambientlight[0] : shadelight[0]
+	shadelight[1] = ambientlight[1] + shadelight[1] > 192.0 ? 192.0 - ambientlight[1] : shadelight[1]
+	shadelight[2] = ambientlight[2] + shadelight[2] > 192.0 ? 192.0 - ambientlight[2] : shadelight[2]
+
+		// minimum light value on players (8)
+	if ((e.num >= 1) && (e.num <= cl.clState.maxclients)) {
+		add = 24.0 - (ambientlight[0] + ambientlight[1] + ambientlight[2]);
+		if (add > 0.0) {
+			ambientlight[0] += add / 3.0
+			ambientlight[1] += add / 3.0
+			ambientlight[2] += add / 3.0
+			shadelight = [...ambientlight]
+		}
+	}
+	gl.uniform3fv(program.uAmbientLight, vec.multiplyScaler(ambientlight, 0.0078125));
+	gl.uniform3fv(program.uShadeLight, vec.multiplyScaler(shadelight, 0.0078125));
 
 	var forward = [], right = [], up = [];
 	vec.angleVectors(e.angles, forward, right, up);

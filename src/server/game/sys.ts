@@ -3,7 +3,6 @@ import * as host from '../../engine/host'
 import * as com from '../../engine/com'
 import * as _assetStore from './assetStore'
 import * as webs from './net/webs'
-import * as webrtc from './net/webrtc'
 import * as datagram from './net/datagram'
 
 export const assetStore = _assetStore
@@ -70,7 +69,7 @@ export const init = async (argv: string) => {
 	oldTime = process.hrtime();
   print('Host.Init\n');
   
-  await host.init(true, assetStore, [webs, webrtc, datagram])
+  await host.init(true, assetStore, [webs, datagram])
   
   process.stdin.resume();
   process.stdin.on('data', onConsoleInput);

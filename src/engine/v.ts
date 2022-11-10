@@ -13,6 +13,7 @@ import * as s from './s'
 import * as vec from './vec'
 import * as msg from './msg'
 import * as lm from './lightmap'
+import { V3 } from './vec'
 
 export const cvr = {
 
@@ -28,9 +29,10 @@ const cshift_water = [130.0, 80.0, 50.0, 128.0]
 const cshift_slime = [0.0, 25.0, 5.0, 150.0]
 const cshift_lava = [255.0, 80.0, 0.0, 150.0]
 
+
 export const blend = [0.0, 0.0, 0.0, 0.0]
 
-export const calcRoll = function(angles, velocity)
+export const calcRoll = function(angles: V3, velocity: V3)
 {
 	var right = [];
 	vec.angleVectors(angles, null, right, null);

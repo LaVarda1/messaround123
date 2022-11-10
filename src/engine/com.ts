@@ -170,7 +170,15 @@ export const defaultExtension = function(path, extension)
   return path + extension;
 };
 
-export const loadFile = (fileName: string) => {
+export const removeExtension = (fileName: string) => {
+  const splits = fileName.split('.')
+  if (splits.length === 1) {
+    return fileName
+  }
+  return splits.slice(0, splits.length - 1).join('')
+}
+
+export const loadFile = (fileName: string): Promise<ArrayBuffer> => {
   return state.assetStore.loadFile(fileName)
 }
 

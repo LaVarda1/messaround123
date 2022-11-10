@@ -806,6 +806,7 @@ export const allocDlight = function(key)
       dl = state.dlights[0];
   }
   dl.origin = [0.0, 0.0, 0.0];
+  dl.color = [1.0, 1.0, 1.0];
   dl.radius = 0.0;
   dl.die = 0.0;
   dl.decay = 0.0;

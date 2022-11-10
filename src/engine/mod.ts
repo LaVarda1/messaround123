@@ -240,7 +240,7 @@ export const loadModel = async function(mod, crash)
     loadSpriteModel(buf);
     break;
   default:
-    loadBrushModel(buf);
+    await loadBrushModel(buf);
   }
   return mod;
 };
@@ -394,15 +394,44 @@ export const loadTextures = function(buf)
   loadmodel.textures[loadmodel.textures.length] = r.state.notexture_mip;
 };
 
-export const loadLighting = function(buf)
+
+export const loadLighting = async function(buf)
 {
+  let i = 0, j = 0
+  const litFileName = com.removeExtension(loadmodel.name) + '.lit'
   var view = new DataView(buf);
   var fileofs = view.getUint32((LUMP.lighting << 3) + 4, true);
   var filelen = view.getUint32((LUMP.lighting << 3) + 8, true);
-  if (filelen === 0)
-    return;
-  loadmodel.lightdata = new Uint8Array(new ArrayBuffer(filelen));
-  loadmodel.lightdata.set(new Uint8Array(buf, fileofs, filelen));
+  var litFile = await com.loadFile(litFileName);
+  if (litFile) {
+			i = com.state.littleLong((new DataView(litFile).getUint8(4)))
+			if (i == 1)
+			{
+				if (8+filelen*3 == litFile.byteLength)
+				{
+					con.dPrint(`${litFileName} loaded\n`);
+          loadmodel.lightdata = new Uint8Array(new ArrayBuffer(filelen*3));
+          loadmodel.lightdata.set(new Uint8Array(litFile, 8, filelen*3));
+					return;
+				}
+				con.print(`Outdated .lit file (${litFileName} should be ${8+filelen*3} bytes, not ${litFile.byteLength})\n`)
+			}
+			else
+			{
+				con.print(`Unknown .lit file version (${i})\n`);
+			}
+  } else {
+    if (filelen === 0)
+      return;
+    loadmodel.lightdata = new Uint8Array(new ArrayBuffer(filelen * 3));
+    const lightData = new Uint8Array(buf, fileofs, filelen)
+    for (i = 0,  j = 0; i < filelen; i++) {
+  
+      loadmodel.lightdata[j++] = lightData[i]
+      loadmodel.lightdata[j++] = lightData[i]
+      loadmodel.lightdata[j++] = lightData[i]
+    }
+  }
 };
 
 export const loadVisibility = function(buf)
@@ -694,7 +723,8 @@ export const loadFaces = function(buf, bspVersion)
 
     out.texturemins = [Math.floor(mins[0] / 16) * 16, Math.floor(mins[1] / 16) * 16];
     out.extents = [Math.ceil(maxs[0] / 16) * 16 - out.texturemins[0], Math.ceil(maxs[1] / 16) * 16 - out.texturemins[1]];
-
+    out.lightofs = out.lightofs > 0 ? out.lightofs * 3 : out.lightofs
+    
     if (!(tex.flags & def.TEX.special) && 
       (out.extents[0] > 2000 || out.extents[1] > 2000))
       throw new Error("Bad surface extents")
@@ -1065,7 +1095,7 @@ export const loadPlanes = function(buf)
   }
 };
 
-export const loadBrushModel = function(buffer)
+export const loadBrushModel = async function(buffer)
 {
   loadmodel.type = TYPE.brush;
   var version = (new DataView(buffer)).getUint32(0, true);
@@ -1084,7 +1114,7 @@ export const loadBrushModel = function(buffer)
     loadEdges(buffer, version);
     loadSurfedges(buffer);
     loadTextures(buffer);
-    loadLighting(buffer);
+    await loadLighting(buffer);
   }
   loadPlanes(buffer);
   if (!host.state.dedicated) {

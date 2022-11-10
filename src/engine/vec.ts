@@ -1,8 +1,9 @@
 import * as sys from './sys'
 import * as msg from './msg'
 
+export type V3 = [number, number, number]
 export const origin = [0.0, 0.0, 0.0];
-export const perpendicular = function(v)
+export const perpendicular = function(v: V3)
 {
 	var pos = 0;
 	var minelem = 1;
@@ -34,7 +35,7 @@ export const perpendicular = function(v)
 	return dst;
 };
 
-export const rotatePointAroundVector = function(dir, point, degrees)
+export const rotatePointAroundVector = function(dir: V3, point: V3, degrees)
 {
 	var r = perpendicular(dir);
 	var up = crossProduct(r, dir);
@@ -173,6 +174,21 @@ export const subtract = (v1, v2) => {
 		v1[2]-v2[2],
 	]
 }
+export const multiply = (v1, v2) => {
+	return [
+		v1[0]*v2[0],
+		v1[1]*v2[1],
+		v1[2]*v2[2],
+	]
+}
+export const multiplyScaler = (v1, scaler) => {
+	return [
+		v1[0]*scaler,
+		v1[1]*scaler,
+		v1[2]*scaler,
+	]
+}
+
 
 export const crossProduct = function(v1, v2)
 {
@@ -182,6 +198,15 @@ export const crossProduct = function(v1, v2)
 		v1[0] * v2[1] - v1[1] * v2[0]
 	];
 };
+
+
+export const vectorMA = (veca: V3, scale: number, vecb: V3): V3 => {
+	return [
+		veca[0] + scale*vecb[0],
+		veca[1] + scale*vecb[1],
+		veca[2] + scale*vecb[2]
+	]
+}
 
 export const length = function(v)
 {

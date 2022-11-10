@@ -174,11 +174,6 @@ const serverOnRequest = (request) => {
 		request.reject();
 		return;
 	}
-	if (request.requestedProtocols[0] === 'webrtc')
-	{
-		webrtc.acceptNewConnection(request.accept('webrtc', request.origin));
-		return;
-	}
 	if (request.requestedProtocols[0] === 'quake')
 	{
 		state.acceptsockets.push(request.accept('quake', request.origin));

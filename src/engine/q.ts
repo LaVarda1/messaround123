@@ -2,7 +2,7 @@ import { fadeScreen } from "./draw";
 
 export const state = {
 } as any
-export const memstr = function(src)
+export const memstr = function(src: Uint8Array)
 {
 	var dest = [], i;
 	for (i = 0; i < src.length; ++i)
