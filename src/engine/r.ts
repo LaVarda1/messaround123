@@ -1709,7 +1709,7 @@ export const drawBrushModel = function (e) {
 	}
 
 	drawTextureChains(gl, e.model, e, def.TEX_CHAIN.model)
-
+	drawTextureChains_water(gl, e.model, e, def.TEX_CHAIN.model)
 };
 
 export const recursiveWorldNode = function (node) {

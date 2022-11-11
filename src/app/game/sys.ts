@@ -220,7 +220,6 @@ export const init = async (argv: string) =>
 	print('Host.Init\n');
 	await host.init(false, assetStore, [loop, webs]);
 
-
   const eventNames = Object.keys(events)
 	for (i = 0; i < eventNames.length; ++i){
 		window[eventNames[i]] = events[eventNames[i]];
