@@ -570,7 +570,7 @@ const savegameComment = function()
   return text + '____';
 };
 
-const savegame_f = function()
+const savegame_f = async function()
 {
   if (cmd.state.client === true)
     return;
@@ -668,7 +668,7 @@ const savegame_f = function()
   }
   name = com.defaultExtension(cmd.state.argv[1], '.sav');
   con.print('Saving game to ' + name + '...\n');
-  if (com.writeTextFile(name, f.join('')) === true)
+  if (await com.writeTextFile(name, f.join('')) === true)
     con.print('done.\n');
   else
     con.print('ERROR: couldn\'t open.\n');
