@@ -14,8 +14,8 @@ const quaddictedMapsUrl = '/api/maps'
 
 type MapLoadState = 'loading' | 'idle' | 'error'
 type LoadProgress = {
-  loaded: Number
-  total: Number
+  loaded: number
+  total: number
   message: string
 }
 interface State {
@@ -35,10 +35,10 @@ export const useMapsStore = defineStore('maps', {
     }
   }),
   getters: {
-    getMapListing: state => state.mapListing,
-    getMapLoadProgress: state => state.mapLoadProgress,
-    mapLoadState: state => state.mapLoadState,
-    getMapFromId: state => id => find(map => map.id === id, state.mapListing)
+    getMapListing: (state: State) => state.mapListing,
+    getMapLoadProgress: (state: State) => state.mapLoadProgress,
+    mapLoadState: (state: State) => state.mapLoadState,
+    getMapFromId: (state: State) => (id: string): QuaddictedMap => find<QuaddictedMap>(map => map.id === id, state.mapListing)
   },
   actions: {
     setMapLoadState (mapLoadState: MapLoadState) {

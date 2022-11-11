@@ -9,7 +9,7 @@ export type QuaddictedMap = {
   rating: number
   mapList: string[]
   id: string
-  requirements:[]
+  requirements: string[]
   title: string
   userRating:string
 }

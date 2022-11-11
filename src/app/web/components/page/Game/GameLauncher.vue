@@ -9,11 +9,17 @@
 </template>
 
 <script lang="ts">
-import {defineComponent} from 'vue'
+import { defineComponent, ComponentPublicInstance } from 'vue'
+import { QuaddictedMap } from '../../../types/QuaddictedMap';
+
+interface IInstance extends ComponentPublicInstance {
+  quitToPath: string
+}
 export default defineComponent({
   beforeRouteEnter(to, from, next) {
-    next((vm: any) => {
-      vm.quitToPath = from.path
+    next((vm) => {
+      const instance = vm as IInstance
+      instance.quitToPath = from.path
     })
   }
 })
@@ -25,14 +31,21 @@ import {reactive, onMounted, computed, watch, defineProps} from 'vue'
 import GameInit from '../../../../game'
 import { useGameStore } from '../../../stores/game';
 import { useMapsStore } from '../../../stores/maps';
-import { routeLocationKey, useRoute, onBeforeRouteLeave } from 'vue-router';
+import {  useRoute, onBeforeRouteLeave } from 'vue-router';
 import { mapState } from 'pinia';
 
-const route = 
+const route = useRoute()
 const gameStore = useGameStore()
 const mapsStore = useMapsStore()
 
-const model = reactive({
+const model = reactive<{
+  map: QuaddictedMap | null,
+  loading: boolean,
+  mapLoaded: boolean,
+  isQuitting: boolean,
+  onQuit: (() => void) | null,
+  quitToPath: string
+}>({
   map: null,
   loading: true,
   mapLoaded: false,
@@ -41,13 +54,15 @@ const model = reactive({
   quitToPath: ''
 })
 
-const needsMapDownload = computed(() => !model.mapLoaded && model.game && model.map && !gameStore.hasGame(game))
-const game = computed(() => routeLocationKey.query && routeLocationKey.query['-game'])
+const game = computed(() => route.query && route.query['-game'] as string)
+const needsMapDownload = computed(() => !model.mapLoaded && game.value && model.map && !gameStore.hasGame(game.value))
 const gameQuit = () => window.location.href = model.quitToPath
 onMounted(() => {
   mapsStore.loadMapListing()
     .then(() => {
-      model.map = mapsStore.getMapFromId(game.value)
+      if (game.value) {
+        model.map = mapsStore.getMapFromId(game.value)
+      }
       model.loading = false
     })
     .catch(() => {

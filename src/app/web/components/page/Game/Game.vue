@@ -24,7 +24,7 @@ const gameStore = useGameStore()
 const emit = defineEmits<{
   (e: 'quit'): void}
 >()
-const props = defineProps<{quitRequest: boolean}>({quitRequest: false})
+const props = withDefaults(defineProps<{quitRequest: boolean}>(), {quitRequest: false})
 const model = reactive<{
   gameSys: any, 
   showRequiresPak: boolean,
@@ -32,7 +32,7 @@ const model = reactive<{
 }>({
   gameSys: null,
   showRequiresPak: false,
-  uploadResolve: () => void
+  uploadResolve: () => null
 })
 
 const allAssetMetas = computed<AssetMeta[]>(() => gameStore.allAssetMetas)
@@ -46,12 +46,12 @@ const args = computed(() => {
 const pak1 = computed(() => allAssetMetas.value.filter(assetMeta => 
   assetMeta.game === 'id1' && assetMeta.fileName.toLowerCase() === 'pak1.pak') )
 
-
 const pakUploaded = () => {
   model.showRequiresPak = false
   model.uploadResolve()
 }
-onMounted(() => {
+
+onMounted(async () => {
   model.gameSys = await GameInit(args, {
     // hooks
     quit: () => {
@@ -63,7 +63,7 @@ onMounted(() => {
     }
   })
 })
-watch(props.quitRequest, () => {
+watch(props, () => {
   if (props.quitRequest) {
     model.gameSys.quit()
   }

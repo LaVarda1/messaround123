@@ -98,10 +98,10 @@ interface State {
 
 
 const getters = {
-  allAssetMetas: state => state.assetMetas,
-  getConfigFile: state => state.configFile,
-  getAutoexecFile: state => state.autoexecFile,
-  getAutoexecValue: state => name =>  {
+  allAssetMetas: (state: State) => state.assetMetas,
+  getConfigFile: (state: State) => state.configFile,
+  getAutoexecFile: (state: State) => state.autoexecFile,
+  getAutoexecValue: (state: State) => name =>  {
     const regex =  new RegExp(configValueRx(name), 'gim')
     let match, m
     while ((m = regex.exec(state.autoexecFile)) !== null) {
@@ -114,8 +114,8 @@ const getters = {
     
     return match ? match[2] : null
   },
-  hasRegistered: state => !!state.assetMetas.find(a => a.game === 'id1' && a.fileName.toLowerCase() === 'pak1.pak'),
-  hasGame: state => game => !!state.assetMetas.some(a => a.game === game)
+  hasRegistered: (state: State) => !!state.assetMetas.find(a => a.game === 'id1' && a.fileName.toLowerCase() === 'pak1.pak'),
+  hasGame: (state: State) => game => !!state.assetMetas.some(a => a.game === game)
 }
 
 const actions = {

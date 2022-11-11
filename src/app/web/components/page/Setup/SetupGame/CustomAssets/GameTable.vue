@@ -1,61 +1,49 @@
 <template lang="pug">
-  tbody
-    tr.fixed
-      td
-        div.basic-button(@click="toggleExpand")
-          i.icon(style="margin: .3rem;" :class="expanded ? 'icon-minus' : 'icon-plus'")
-      td.title {{gameDisplay}}
-      td.size {{metaList.length}} Files
-      td.removal
-        div.basic-button(@click="remove")
-          i.icon.icon-cross(style="margin: .3rem; color: red")
-    
-    tr.scroll(v-if="expanded")
-      table.file-table
-        tr(v-for="customAsset in metaList")
-          td.filename {{customAsset.fileName}}
+tbody
+  tr.fixed
+    td
+      div.basic-button(@click="toggleExpand")
+        i.icon(style="margin: .3rem;" :class="model.expanded ? 'icon-minus' : 'icon-plus'")
+    td.title {{gameDisplay}}
+    td.size {{props.metaList.length}} Files
+    td.removal
+      div.basic-button(@click="remove")
+        i.icon.icon-cross(style="margin: .3rem; color: red")
+  
+  tr.scroll(v-if="model.expanded")
+    table.file-table
+      tr(v-for="customAsset in props.metaList")
+        td.filename {{customAsset.fileName}}
 </template>
 
 
-<script>
-// import {getAllMeta} from '../../../../../shared/indexeddb'
+<script lang="ts" setup>
+import {reactive, computed} from 'vue'
 import {groupBy, keys, find} from 'ramda'
-import {mapGetters} from 'vuex'
+import { useMapsStore } from '../../../../../stores/maps';
+import { AssetMeta } from '../../../../../../../shared/types/Store';
 
-export default {
-  props: {
-    metaList: {
-      type: Array,
-      default: () => []
-    },
-    game: {
-      type: String,
-      default: ''
-    }
-  },
-  components: {
-  },
-  data () {
-    return {
-      expanded: false
-    }
-  },
-  computed: {
-    ...mapGetters('maps', ['getMapListing']),
-    gameDisplay () {
-      const mapsItem = find(m => m.id === this.game, this.getMapListing)
-      return mapsItem ? mapsItem.title : this.game
-    }
-  },
-  methods: {
-    toggleExpand () {
-      this.expanded = !this.expanded
-    },
-    remove () {
-      this.$emit('remove', this.game)
-    }
-  }
+interface Props {
+  metaList: AssetMeta[],
+  game: string
 }
+
+const props = withDefaults(
+  defineProps<Props>(), { 
+    game: ''
+  })
+
+const emit = defineEmits<{
+  (e: 'remove', game: string): void
+}>()
+const mapsStore = useMapsStore()
+const model = reactive<{expanded: boolean}>({expanded: false})
+const gameDisplay = computed(() => {
+  const mapsItem = find(m => m.id === props.game, mapsStore.getMapListing)
+  return mapsItem ? mapsItem.title : props.game
+})
+const toggleExpand = () => model.expanded = !model.expanded
+const remove = emit('remove', props.game)
 </script>
 
 <style scoped lang="scss">

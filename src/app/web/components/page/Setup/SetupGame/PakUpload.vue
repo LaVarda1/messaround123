@@ -1,54 +1,52 @@
 <template lang="pug">
-  .pak-upload
-    .upload-zone(@drop="handleFileDrop" @dragover.prevent)
-      input.loader-file-input(:id="inputId" type="file" multiple name="files[]" accept=".pak" @change="handleFileSelect")
-      slot
-        .columns
-          .column.col-12.text Drop pak files here&nbsp;
-            label.browse(:for="inputId")
-              | or browse
-              i(:class="'icon icon-upload'")
+.pak-upload
+  .upload-zone(@drop="handleFileDrop" @dragover.prevent)
+    input.loader-file-input(:id="props.inputId" type="file" multiple name="files[]" accept=".pak" @change="handleFileSelect")
+    slot
+      .columns
+        .column.col-12.text Drop pak files here&nbsp;
+          label.browse(:for="props.inputId")
+            | or browse
+            i(:class="'icon icon-upload'")
 </template>
 
-<script>
-export default {
-  props: {
-    inputId: {
-      type: String,
-      default: 'pak-file-browse'
-    }
-  },
-  data () {
-    return { loading: false }
-  },
-  methods: {
-    handleFileDrop (e) {
-      e.preventDefault();
-      e.stopPropagation();
+<script lang="ts" setup>
+import {reactive, defineProps} from 'vue'
 
-      if (e.dataTransfer.items) {
-        var files = [...e.dataTransfer.items]
-          .filter(item => item.kind === 'file')
-          .map(item => item.getAsFile())
-          
-        if (!files.length) {
-          return
-        }
-        this.$emit('uploadFiles', files)
-      } else {
-        if (!e.dataTransfer.files.length) {
-          return
-        }
-        this.$emit('uploadFiles', [...e.dataTransfer.files])
-      }
-    },
-    handleFileSelect (e) {
-      if (!e.target.files.length) {
-        return
-      }
-      this.$emit('uploadFiles', [...e.target.files])
+const emit = defineEmits<{
+  (e: 'uploadFiles', files: File[]): void}
+>()
+const props = withDefaults(defineProps<{inputId: string}>(), {inputId: 'pak-file-browse'})
+const model = reactive<{loading: boolean}>({loading: false})
+
+const handleFileDrop = (e: DragEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (e.dataTransfer && e.dataTransfer.items) {
+    var files = [...e.dataTransfer.items]
+      .filter(item => item.kind === 'file')
+      .map(item => item.getAsFile())
+      .filter(file => !!file)
+      
+    if (!files.length) {
+      return
     }
+    emit('uploadFiles', files as File[])
+  } else {
+    if (!e.dataTransfer || e.dataTransfer.files.length) {
+      return
+    }
+    emit('uploadFiles', [...e.dataTransfer.files])
   }
+}
+
+const handleFileSelect = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  if (!target?.files?.length) {
+    return
+  }
+  emit('uploadFiles', [...target.files])
 }
 </script>
 

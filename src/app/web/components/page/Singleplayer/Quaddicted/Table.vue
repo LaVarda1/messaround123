@@ -1,48 +1,50 @@
 <template lang="pug">
-  table.table.table-hover.table-fixed-header(:class="loading ? 'loading-lg loading' : ''")
-    thead
-      tr
-        th.title
-          a(@click="changeSort('title')") Title
-          i.sorting.icon(v-if="sortBy==='title'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
-        th.author
-          a(@click="changeSort('author')") Author(s)
-          i.sorting.icon(v-if="sortBy==='author'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
-        th.date
-          a(@click="changeSort('date')") Released
-          i.sorting.icon(v-if="sortBy==='date'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
-        th.rating
-          a(@click="changeSort('userrating')") Rating
-          i.sorting.icon(v-if="sortBy==='userrating'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
-        th.size.ta-right
-          a(@click="changeSort('size')") Size
-          i.sorting.icon(v-if="sortBy==='size'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
-    tbody
-      tr(v-for="map in sortedMaps" @click="selectMap(map)" :class="map.id === value ? 'active' : ''" )
-        td.title {{map.title}}
-        td.author {{map.author}}
-        td.date {{released(map.date)}}
-        td.rating
-          .rating-container
-            .star-ratings-css-top(:style="'width: ' + rating(map.userrating) + '%;'")
-              span ★
-              span ★
-              span ★
-              span ★
-              span ★
-            .star-ratings-css-bottom
-              span ★
-              span ★
-              span ★
-              span ★
-              span ★
-        td.size.ta-right {{map.size}}
+table.table.table-hover.table-fixed-header(:class="loading ? 'loading-lg loading' : ''")
+  thead
+    tr
+      th.title
+        a(@click="changeSort('title')") Title
+        i.sorting.icon(v-if="sortBy==='title'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
+      th.author
+        a(@click="changeSort('author')") Author(s)
+        i.sorting.icon(v-if="sortBy==='author'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
+      th.date
+        a(@click="changeSort('date')") Released
+        i.sorting.icon(v-if="sortBy==='date'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
+      th.rating
+        a(@click="changeSort('userrating')") Rating
+        i.sorting.icon(v-if="sortBy==='userrating'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
+      th.size.ta-right
+        a(@click="changeSort('size')") Size
+        i.sorting.icon(v-if="sortBy==='size'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
+  tbody
+    tr(v-for="map in sortedMaps" @click="selectMap(map)" :class="map.id === value ? 'active' : ''" )
+      td.title {{map.title}}
+      td.author {{map.author}}
+      td.date {{released(map.date)}}
+      td.rating
+        .rating-container
+          .star-ratings-css-top(:style="'width: ' + rating(map.userrating) + '%;'")
+            span ★
+            span ★
+            span ★
+            span ★
+            span ★
+          .star-ratings-css-bottom
+            span ★
+            span ★
+            span ★
+            span ★
+            span ★
+      td.size.ta-right {{map.size}}
   
 </template>
 
-<script>
-import {mapGetters, mapActions} from 'vuex'
+<script lang="ts" setup>
+import {reactive, onMounted, computed, watch, defineProps} from 'vue'
 
+const props = withDefaults(defineProps<{
+  mapList: }>()
 const valueForSort = value => {
   return typeof value === 'string' ? value.toLowerCase() : value
 }

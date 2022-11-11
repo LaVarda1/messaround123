@@ -1,52 +1,37 @@
 <template lang="pug">
-  .asset {{label}}
-    template(v-if="assetMeta !== null")
-      .asset-loaded.columns
-        .column.col-5.asset-loaded {{assetMeta.fileName}} 
-        .column.col-5.asset-fileCount {{assetMeta.fileCount}} Files
-        .column.col-2.asset-remove 
-          i(class="icon icon-cross" @click="remove")
+.asset {{props.label}}
+  template(v-if="props.assetMeta !== null")
+    .asset-loaded.columns
+      .column.col-5.asset-loaded {{props.assetMeta.fileName}} 
+      .column.col-5.asset-fileCount {{props.assetMeta.fileCount}} Files
+      .column.col-2.asset-remove 
+        i(class="icon icon-cross" @click="remove")
 </template>
 
-<script>
-import { readPackFile } from '../../../../helpers/assetChecker'
-import {mapActions} from 'vuex'
+<script lang="ts" setup>
+import {reactive,  defineProps} from 'vue'
+import { AssetMeta } from '../../../../../../shared/types/Store';
+import { useGameStore } from '../../../../stores/game';
 
-export default {
-  props: {
-    label: {
-      type: String,
-      default: ''
-    },
-    game: {
-      type: String,
-      required: true
-    },
-    assetMeta: {
-      type: Object,
-      default: null
-    },
-    assetVerifier: { 
-      default: null
-    },
-    assetVerifierFailMessage: { 
-      type: String,
-      default: null
-    }
-  },
-  data () {
-    return {
-      loadError: '',
-      loading: false
-    }
-  },
-  methods: {
-    ...mapActions('game', ['removeAsset']),
-    remove() {
-      this.removeAsset(this.assetMeta.assetId)
-    }
-  }
-}
+const props = withDefaults(
+  defineProps<{
+    label: string,
+    game: string,
+    assetMeta: AssetMeta,
+  }>()
+  ,{
+    label: ''
+  })
+const model = reactive<{
+  loadError: string,
+  loading: boolean
+}>({
+  loadError: '',
+  loading: false
+})
+
+const gameStore = useGameStore()
+const remove = () => gameStore.removeAsset(props.assetMeta.assetId)
 </script>
 <style>
 .asset {

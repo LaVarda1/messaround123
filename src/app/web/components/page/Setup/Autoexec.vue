@@ -1,29 +1,16 @@
 <template lang="pug">
-  .config
-    label.form-label Quake autoexec.cfg File
-    p Store extra variables and commands in here. This will not be modified by the game.
-    button.btn(@click="loadRecommendedAutoexec") Load Recommended
-    .config-editor
-      textarea.form-input(placeholder="Textarea" rows="20" cols="80" :value="getAutoexecFile" @input="saveAutoexec($event.target.value)")
+.config
+  label.form-label Quake autoexec.cfg File
+  p Store extra variables and commands in here. This will not be modified by the game.
+  button.btn(@click="gameStore.loadRecommendedAutoexec") Load Recommended
+  .config-editor
+    textarea.form-input(placeholder="Textarea" rows="20" cols="80" :value="gameStore.getAutoexecFile" @input="gameStore.saveAutoexec($event.target.value)")
 </template>
 
-<script>
-import {mapActions, mapGetters} from 'vuex'
+<script lang="ts" setup>
+import { useGameStore } from '../../../stores/game';
 
-
-export default {
-  computed: {
-    ...mapGetters('game', ['getAutoexecFile'])
-  },
-  methods: {
-    ...mapActions('game', ['saveAutoexec', 'loadRecommendedAutoexec'])
-  },
-  // beforeRouteEnter (to, from, next) {
-  //   return next(vm => {
-  //     vm.loadRecommendedAutoexec()
-  //   })
-  // }
-}
+const gameStore = useGameStore()
 </script>
 
 <style>

@@ -25,7 +25,7 @@ interface State {
   autoRefresh: boolean
 }
 
-export const useMapsStore = defineStore('maps', {
+export const useMultiplayerStore = defineStore('maps', {
   state: (): State => ({
     serverStatuses: {},
     autoRefresh: false

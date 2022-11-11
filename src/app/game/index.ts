@@ -4,6 +4,6 @@ import * as AppSys from './sys'
 
 export default async (args, hooks) => {
   AppSys.registerHooks(hooks)
-  init(args, AppSys)
+  await init(args, AppSys)
   return AppSys
 }
