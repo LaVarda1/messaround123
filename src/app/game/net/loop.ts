@@ -16,6 +16,8 @@ export const state: {client: ISocket, server: ISocket, localconnectpending: bool
 } as any
 
 export const init = () => {
+	
+	initialized = true
 	return true;
 };
 

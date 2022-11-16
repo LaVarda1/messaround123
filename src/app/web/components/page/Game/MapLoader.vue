@@ -21,9 +21,9 @@
 </template>
 
 <script lang="ts" setup>
-import {reactive, onMounted, computed, watch, defineProps, ref} from 'vue'
+import {reactive, onMounted, computed, watch, ref} from 'vue'
 import { useMapsStore } from '../../../stores/maps';
-import { QuaddictedMap } from '../../../types/QuaddictedMap';
+import type { QuaddictedMap } from '../../../types/QuaddictedMap';
 
 const mapsStore = useMapsStore()
 

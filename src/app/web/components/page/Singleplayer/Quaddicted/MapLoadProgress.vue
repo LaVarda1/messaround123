@@ -3,7 +3,7 @@
   .container
     .columns
       .column.col-3
-        div {{getMapLoadProgress.message}} {{props.map.fileName}}
+        div {{mapsStore.getMapLoadProgress.message}} {{props.map.fileName}}
         .bar.light-dark(ref="bar")
           .bar-text-dark {{loadedKb}}
           .bar-item(role="progressbar" :style="'width:' + progressPercent+ '%;'" :aria-valuenow="progressPercent" aria-valuemin="0" aria-valuemax="100")
@@ -11,9 +11,9 @@
 </template>
 
 <script lang="ts" setup>
-import {reactive, onMounted, computed, watch, defineProps, ref} from 'vue'
+import {reactive, onMounted, computed, watch, ref} from 'vue'
 import { useMapsStore } from '../../../../stores/maps';
-import { QuaddictedMap } from '../../../../types/QuaddictedMap';
+import type { QuaddictedMap } from '../../../../types/QuaddictedMap';
 
 const mapsStore = useMapsStore()
 

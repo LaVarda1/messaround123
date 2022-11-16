@@ -1,24 +1,24 @@
 <template lang="pug">
-table.table.table-hover.table-fixed-header(:class="loading ? 'loading-lg loading' : ''")
+table.table.table-hover.table-fixed-header(:class="props.loading ? 'loading-lg loading' : ''")
   thead
     tr
       th.title
         a(@click="changeSort('title')") Title
-        i.sorting.icon(v-if="sortBy==='title'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
+        i.sorting.icon(v-if="model.sortBy==='title'" :class="model.sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
       th.author
         a(@click="changeSort('author')") Author(s)
-        i.sorting.icon(v-if="sortBy==='author'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
+        i.sorting.icon(v-if="model.sortBy==='author'" :class="model.sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
       th.date
         a(@click="changeSort('date')") Released
-        i.sorting.icon(v-if="sortBy==='date'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
+        i.sorting.icon(v-if="model.sortBy==='date'" :class="model.sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
       th.rating
         a(@click="changeSort('userrating')") Rating
-        i.sorting.icon(v-if="sortBy==='userrating'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
+        i.sorting.icon(v-if="model.sortBy==='userrating'" :class="model.sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
       th.size.ta-right
         a(@click="changeSort('size')") Size
-        i.sorting.icon(v-if="sortBy==='size'" :class="sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
+        i.sorting.icon(v-if="model.sortBy==='size'" :class="model.sortOrder==='desc' ? 'icon-arrow-down' : 'icon-arrow-up'")
   tbody
-    tr(v-for="map in sortedMaps" @click="selectMap(map)" :class="map.id === value ? 'active' : ''" )
+    tr(v-for="map in sortedMaps" @click="selectMap(map)" :class="map.id === props.modelValue ? 'active' : ''" )
       td.title {{map.title}}
       td.author {{map.author}}
       td.date {{released(map.date)}}
@@ -41,71 +41,60 @@ table.table.table-hover.table-fixed-header(:class="loading ? 'loading-lg loading
 </template>
 
 <script lang="ts" setup>
-import {reactive, onMounted, computed, watch, defineProps} from 'vue'
+import {reactive, onMounted, computed, watch} from 'vue'
+import type {QuaddictedMap} from '../../../../types/QuaddictedMap'
 
+const emit = defineEmits<{
+  (e: 'update:modelValue', string: string): void}
+>()
 const props = withDefaults(defineProps<{
-  mapList: }>()
+  mapList: QuaddictedMap[],
+  modelValue: string,
+  loading: boolean
+}>(), {
+  mapList: [],
+  modelValue: '',
+  loading: false
+})
+const model = reactive<{sortBy: string, sortOrder: 'asc' | 'desc'}>({
+  sortBy: 'date',
+  sortOrder: 'asc'
+})
+
 const valueForSort = value => {
   return typeof value === 'string' ? value.toLowerCase() : value
 }
 
-export default {
-  props: {
-    mapList: {
-      type: Array,
-      default: () => []
-    },
-    value: {
-      type: String,
-      default: ''
-    },
-    loading: {
-      type: Boolean,
-      default: false
-    }
-  },
-  computed: {
-    sortedMaps () {
-      return this.mapList.slice().sort((a, b) => {
-        const first = valueForSort((this.sortOrder === 'desc' ? a : b)[this.sortBy])
-        const second = valueForSort((this.sortOrder === 'desc' ? b : a)[this.sortBy])
+const sortedMaps = computed(() => {
+  return props.mapList.slice().sort((a, b) => {
+    const first = valueForSort((model.sortOrder === 'desc' ? a : b)[model.sortBy])
+    const second = valueForSort((model.sortOrder === 'desc' ? b : a)[model.sortBy])
 
-        return first > second ? 1 :
-          first < second ? -1 : 0
-      })
-    }
-  },
-  data () {
-    return {
-      sortBy: 'date',
-      sortOrder: 'asc'
-    }
-  },
-  methods: {
-    selectMap (map) {
-      this.$emit('input', map.id)
-    },
-    released (date) {
-      const _date = new Date(date)
-      var mm = _date.getMonth() + 1; // getMonth() is zero-based
-      var dd = _date.getDate();
+    return first > second ? 1 :
+      first < second ? -1 : 0
+  })
+})
 
-      return [_date.getFullYear(),
-              (mm>9 ? '' : '0') + mm,
-              (dd>9 ? '' : '0') + dd
-            ].join('-');
-    },
-    rating (userRating) {
-      return (userRating / 5) * 100
-    },
-    changeSort (sortCol) {
-      if (this.sortBy === sortCol) {
-        this.sortOrder = this.sortOrder === 'desc' ? 'asc' : 'desc'
-      } else {
-        this.sortBy = sortCol
-        this.sortOrder = 'desc'
-      }
-    }
+const selectMap = (map:QuaddictedMap) => emit('update:modelValue', map.id)
+const released = (date: string) => {
+  const _date = new Date(date)
+  const mm = _date.getMonth() + 1; // getMonth() is zero-based
+  const dd = _date.getDate();
+
+  return [_date.getFullYear(),
+          (mm>9 ? '' : '0') + mm,
+          (dd>9 ? '' : '0') + dd
+        ].join('-');
+}
+const rating =  (userRating) => {
+  return (userRating / 5) * 100
+}
+const changeSort = (sortCol: string) => {
+  if (model.sortBy === sortCol) {
+    model.sortOrder = model.sortOrder === 'desc' ? 'asc' : 'desc'
+  } else {
+    model.sortBy = sortCol
+    model.sortOrder = 'desc'
   }
 }
 </script>

@@ -3,7 +3,7 @@
   .panel-header
     h6 Selected: {{map.title}}
   .panel-body
-    MapLoadProgress(:map="props.map" v-if="mapsStore.getMapIsLoading")
+    MapLoadProgress(:map="props.map" v-if="isMapLoading")
     .container(v-else)
       .columns
         .column.col-6
@@ -40,11 +40,11 @@
 </template>
 
 <script lang="ts" setup>
-import {reactive, onMounted, computed, watch, defineProps} from 'vue'
+import {reactive, onMounted, computed, watch} from 'vue'
 import {contains} from 'ramda'
 import MapLoadProgress from './MapLoadProgress.vue'
 import { useMapsStore } from '../../../../stores/maps';
-import { QuaddictedMap } from '../../../../types/QuaddictedMap';
+import type { QuaddictedMap } from '../../../../types/QuaddictedMap';
 
 const emit = defineEmits<{
   (e: 'play', startMap: string): void}
@@ -61,6 +61,7 @@ const model = reactive<{
   startMap: string,
   mapLaunching: boolean
 }>({startMap: guessStartMap(props.map?.mapList), mapLaunching: false})
+const isMapLoading = computed(() => mapsStore.getMapLoadState === 'loading')
 const startMap = computed(() => guessStartMap(props.map?.mapList))
 const link = computed(() => 'https://www.quaddicted.com/reviews/' + props.map?.detailLink)
 const tooltipText = computed(() => props.map && props.map.requirements.length > 0 

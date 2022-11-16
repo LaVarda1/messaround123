@@ -25,7 +25,7 @@ interface State {
   autoRefresh: boolean
 }
 
-export const useMultiplayerStore = defineStore('maps', {
+export const useMultiplayerStore = defineStore('mutiplayer', {
   state: (): State => ({
     serverStatuses: {},
     autoRefresh: false
@@ -72,15 +72,14 @@ export const useMultiplayerStore = defineStore('maps', {
           .catch(err => this.setServerPing({serverKey: key, ping: '??'}))
       })
     },
-    refresh ({dispatch}) { 
-      return dispatch('loadServerStatuses')
-        .then(() => dispatch('pingAllServers'))
+    refresh () { 
+      return this.loadServerStatuses().then(() => this.pingAllServers())
     },
-    refreshLoop ({dispatch, getters}) {
-      const work = getters.getAutoRefersh  ? dispatch('refresh') : Promise.resolve()
+    refreshLoop () {
+      const work = this.getAutoRefersh  ? this.refresh() : Promise.resolve()
       return work.then(() => {
           setTimeout(() => {
-            dispatch('refreshLoop')
+            this.refreshLoop()
           }, refreshTime)
         })
     }

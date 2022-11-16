@@ -33,15 +33,16 @@
 </template>
 
 <script lang="ts" setup>
-import {reactive, onMounted, computed, watch, defineProps, ref} from 'vue'
+import {reactive, onMounted, computed, watch, ref} from 'vue'
 import { useMapsStore } from '../../../stores/maps';
-import { QuaddictedMap } from '../../../types/QuaddictedMap';
+import type { QuaddictedMap } from '../../../types/QuaddictedMap';
 
 import gameType from '../../../helpers/gameType'
 import GameSelect from './GameSelect.vue'
 import MapSelect from './MapSelect.vue'
 import Quaddicted from './Quaddicted/Quaddicted.vue'
-import { GameDefinition, gameDefinitions } from '../../../helpers/games'
+import { gameDefinitions } from '../../../helpers/games'
+import type { GameDefinition} from '../../../helpers/games'
 import { useGameStore } from '../../../stores/game';
 import { useRouter } from 'vue-router';
 
@@ -58,7 +59,7 @@ const model = reactive<{
 const gameObj = computed(() => gameDefinitions.find(g => g.game === model.gameSelection))
 const mapList = computed(() => (gameObj.value?.mapList|| [])
   .filter(map => gameStore.hasRegistered || map.gameType === gameType.ShareWare))
-const start = router.push({name: 'quake'})
+const start = () => router.push({name: 'quake'})
 const startCustom = () => {
   const query = {'+map': model.mapSelection}
   if (gameObj.value?.game !== 'original') {

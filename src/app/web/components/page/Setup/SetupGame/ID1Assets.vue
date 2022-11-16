@@ -1,12 +1,12 @@
 <template lang="pug">
 .base-assets.container
   .pack-upload(v-if="!packOne || !packZero")
-    PakUpload.test2( @uploadFiles="uploadFilesRequest" :loading="loading")
+    PakUpload.test2( @uploadFiles="uploadFilesRequest" :loading="model.loading")
   .columns
     .column.col-12.mb-2
-      H5(v-if="assetMetas.length") Loaded Id1 packs:
+      h5(v-if="assetMetas.length") Loaded Id1 packs:
         
-      H5(v-else) No packs loaded
+      h5(v-else) No packs loaded
       Asset(v-for="meta in assetMetas"
         :assetMeta="meta"
         :key="meta.filename"
@@ -15,7 +15,7 @@
 </template>
 
 <script lang="ts" setup>
-import {reactive, onMounted, computed, watch, defineProps} from 'vue'
+import {reactive, onMounted, computed, watch} from 'vue'
 import Asset from './Asset.vue'
 import PakUpload from './PakUpload.vue'
 import { useGameStore } from '../../../../stores/game';

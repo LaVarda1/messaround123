@@ -11,12 +11,12 @@
 </template>
 
 <script lang="ts" setup>
-import {reactive, defineProps} from 'vue'
+import {reactive} from 'vue'
 
 const emit = defineEmits<{
   (e: 'uploadFiles', files: File[]): void}
 >()
-const props = withDefaults(defineProps<{inputId: string}>(), {inputId: 'pak-file-browse'})
+const props = withDefaults(defineProps<{inputId?: string}>(), {inputId: 'pak-file-browse'})
 const model = reactive<{loading: boolean}>({loading: false})
 
 const handleFileDrop = (e: DragEvent) => {

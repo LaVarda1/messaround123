@@ -9,7 +9,10 @@ tr
   td(v-else)  {{formatPlayerCount}}
   td {{props.server.ping}}
   td
-    button.btn.tooltip.tooltip-left(@click="emit('join', props.server)" :disabled="isDisabled(server)" :data-tooltip="joinToolTipText(server)") Join
+    button.btn.tooltip.tooltip-left(
+      @click="emit('join', props.server)" 
+      :disabled="isDisabled" 
+      :data-tooltip="joinTooltipText") Join
 
 </template>
 
@@ -17,7 +20,7 @@ tr
 import {reactive, onMounted, computed, watch, defineProps} from 'vue'
 import { createWriter } from "../../../helpers/charmap"
 import { useGameStore } from '../../../stores/game';
-import { ServerStatus } from '../../../stores/multiplayer';
+import type { ServerStatus } from '../../../stores/multiplayer';
 
 const emit = defineEmits<{
   (e: 'join', server: ServerStatus): void}
@@ -31,6 +34,7 @@ const model = reactive<{playerTooltipHtml}>({playerTooltipHtml: ''})
 const formatPlayerCount = computed(() => `${props.server.players.length}/${props.server.maxPlayers}`)
 const isDisabled = computed(() => !gameStore.hasRegistered && !sharewareMaps.find(m => m === props.server.map))
 const joinTooltipText = computed(() => isDisabled.value ? "Must add registered assets in setup\n before joining this server" : "Join this game server")
+
 watch(props, () => {
   createWriter()
     .then(writer => {

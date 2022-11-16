@@ -1,7 +1,7 @@
 <template lang="pug">
 #lateregistered
   .uploader
-    H3 You must load the original Pak1.pak to play registered games
+    h3 You must load the original Pak1.pak to play registered games
     a(href="/") Nevermind, take me back.
     Id1Assets(@uploaded="pakUploaded")
 </template>

@@ -4,9 +4,10 @@
   "description": "Node version of WebQuake",
   "main": "index.js",
   "scripts": {
-    "build": "rimraf ./dist && node ./build && tsc",
+    "build": "rimraf ./dist && vite build && tsc",
     "build:justserver": "rimraf ./dist && tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "serve": "vite serve",
     "start:dev": "vite",
     "start:gameserver": "node ./dist/server/game",
     "debug:gameserver": "nodemon ./dist/server/game"

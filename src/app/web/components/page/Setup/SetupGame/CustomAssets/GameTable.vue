@@ -21,7 +21,7 @@ tbody
 import {reactive, computed} from 'vue'
 import {groupBy, keys, find} from 'ramda'
 import { useMapsStore } from '../../../../../stores/maps';
-import { AssetMeta } from '../../../../../../../shared/types/Store';
+import type { AssetMeta } from '../../../../../../../shared/types/Store';
 
 interface Props {
   metaList: AssetMeta[],

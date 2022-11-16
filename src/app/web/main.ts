@@ -1,16 +1,16 @@
 import {createApp} from 'vue'
+import { createPinia } from 'pinia'
 import App from './components/App.vue'
-import store from './stores'
 import router from './router'
-import VueTippy, { TippyComponent, useTippyComponent } from "vue-tippy";
+import tippy from "vue-tippy";
 import './scss/style.scss'
+import 'tippy.js/dist/tippy.css'
 
-/* eslint-disable no-new */
+const pinia = createPinia()
 const app = createApp(App)
 
+
+app.use(pinia)
 app.use(router)
-app.use(VueTippy)
-
-app.component('tippy', useTippyComponent())
-
+app.use(tippy)
 app.mount('#app')

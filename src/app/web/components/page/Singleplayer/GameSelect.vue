@@ -1,25 +1,21 @@
 <template lang="pug">
-.map-select
-  select.form-select(@change="$emit('input', $event.target.value)")
+.game-select
+  select.form-select(@change="emit('update:modelValue', $event.target.value)")
     option(v-for="game in gameList" :value="game.game") {{game.name}}
 </template>
 
-<script>
-export default {
-  props: {
-    value: {
-      type: String,
-      default: ''
-    },
-    gameList: {
-      type: Array,
-      default: []
-    }
-  },
-  data () {
-    return {
-      initialValue: this.value
-    }
-  }
-}
+<script lang="ts" setup>
+import type { GameDefinition } from '../../../helpers/games';
+
+const emits = defineEmits<{
+  (e: 'update:modelValue', modelValue: string): void
+}>()
+const props = withDefaults(
+  defineProps<{
+    gameList: GameDefinition[],
+    modelValue: string
+  }>(), 
+  {
+    modelValue: ''
+  })
 </script>

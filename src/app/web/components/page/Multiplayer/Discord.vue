@@ -4,10 +4,3 @@
     a(href="https://discord.gg/5c28SZNtff" target="about:blank") discord 
 
 </template>
-<script>
-export default {
-  data: {
-    discordWidget: 'close'
-  }
-}
-</script>

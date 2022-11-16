@@ -11,15 +11,14 @@
 </template>
 
 <script lang="ts" setup>
-import {reactive, computed, defineProps} from 'vue'
+import {reactive, computed} from 'vue'
 import {groupBy, keys, find} from 'ramda'
 import GameTable from './GameTable.vue'
 import * as assetStore from '../../../../../../../shared/indexeddb'
-import { AssetMeta } from '../../../../../../../shared/types/Store';
+import type { AssetMeta } from '../../../../../../../shared/types/Store';
 import { useGameStore } from '../../../../../stores/game';
 import { useMapsStore } from '../../../../../stores/maps';
 
-const props = defineProps<{assetMetas: AssetMeta[]}>()
 const model = reactive<{
   selectedStore: string, 
   loading: boolean}>({

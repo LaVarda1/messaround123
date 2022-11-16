@@ -9,13 +9,12 @@
     .col-3
       label.form-label(for="maps-search") Search
     .col-9
-      input.form-input(type="search" placeholder="Search" v-model="model.search" :disabled="loading")
-  Table.maps-table(v-if="model.loading || available" :mapList="filteredMaps" v-model="selectedMapId" :loading="model.loading")
-  
+      input.form-input(type="search" placeholder="Search" v-model="model.search" :disabled="model.loading")
+  Table.maps-table(v-if="model.loading || available" :mapList="filteredMaps" v-model="model.selectedMapId" :loading="model.loading")
 </template>
 
 <script lang="ts" setup>
-import {reactive, onMounted, computed, watch, defineProps, ref} from 'vue'
+import {reactive, onMounted, computed, watch, ref} from 'vue'
 import Table from './Table.vue'
 import Breakout from './Breakout.vue'
 import {find} from 'ramda'
@@ -38,7 +37,7 @@ const model = reactive<{
 })
 const available = computed(() => mapStore.getMapListing.length > 0)
 const selectedMap = computed(() => find(map => map.id === model.selectedMapId, mapStore.getMapListing))
-const filterdMaps = computed(() => {
+const filteredMaps = computed(() => {
   const searchTerm = (model.search || '').trim().toLowerCase()
   return !searchTerm
     ? mapStore.getMapListing

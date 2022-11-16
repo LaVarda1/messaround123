@@ -17,17 +17,17 @@
 
   h2
     .containers
-      v-template(v-if="!packOne")
+      template(v-if="!packOne")
         .columns
           .column.mt-2.col-md-6.col-xs-12
             .btn.solid.btn-large.full-width(@click="start()") Start Shareware
           .column.mt-2.col-md-6.col-xs-12
-            PakUpload(@uploadFiles="uploadFilesRequest" inputId="home-upload" :loading="loading")
+            PakUpload(@uploadFiles="uploadFilesRequest" inputId="home-upload" :loading="model.loading")
               .btn.solid.btn-large.full-width
                 label(for="home-upload")
                   i.icon.icon-upload
                   | &nbsp;Upload Pak1
-      v-template(v-else)
+      template(v-else)
         .columns
           .column.col-xs-6x
             .btn.solid.btn-large.full-width(@click="start()") Start
@@ -36,7 +36,7 @@
           .btn.solid.btn-large.full-width(@click="multiplayer()") Multiplayer
 </template>
 <script lang="ts" setup>
-import {reactive, onMounted, computed, watch, defineProps} from 'vue'
+import {reactive, onMounted, computed, watch} from 'vue'
 import { useGameStore } from '../../stores/game';
 import { useRoute, useRouter } from 'vue-router';
 import {isId1Pak1, readPackFile} from '../../helpers/assetChecker'

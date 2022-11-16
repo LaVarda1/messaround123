@@ -21,7 +21,7 @@ export const Game = {
   Rogue: 'rogue',
 }
 
-export const gameDefinitions:GameDefinition[] = [{
+export const gameDefinitions: GameDefinition[] = [{
   game: Game.Original,
   name: 'Quake',
   mapList: originalMaps

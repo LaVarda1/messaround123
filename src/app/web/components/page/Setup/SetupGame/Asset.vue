@@ -9,8 +9,8 @@
 </template>
 
 <script lang="ts" setup>
-import {reactive,  defineProps} from 'vue'
-import { AssetMeta } from '../../../../../../shared/types/Store';
+import {reactive} from 'vue'
+import type { AssetMeta } from '../../../../../../shared/types/Store';
 import { useGameStore } from '../../../../stores/game';
 
 const props = withDefaults(

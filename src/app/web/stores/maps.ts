@@ -37,7 +37,7 @@ export const useMapsStore = defineStore('maps', {
   getters: {
     getMapListing: (state: State) => state.mapListing,
     getMapLoadProgress: (state: State) => state.mapLoadProgress,
-    mapLoadState: (state: State) => state.mapLoadState,
+    getMapLoadState: (state: State) => state.mapLoadState,
     getMapFromId: (state: State) => (id: string): QuaddictedMap => find<QuaddictedMap>(map => map.id === id, state.mapListing)
   },
   actions: {

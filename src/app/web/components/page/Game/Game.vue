@@ -1,6 +1,6 @@
 <template lang="pug">
 .game-container
-  template(v-if="showRequiresPak")
+  template(v-if="model.showRequiresPak")
     PakLoader(@done="pakUploaded")
   template(v-else)
     h4#progress Starting Quake...
@@ -12,12 +12,12 @@
 </template>
 
 <script lang="ts" setup>
-import {reactive, onMounted, computed, watch, defineProps} from 'vue'
+import {reactive, onMounted, computed, watch} from 'vue'
 import GameInit from '../../../../game'
 import PakLoader from './PakLoader.vue'
 import { useGameStore } from '../../../stores/game';
 import { useRoute } from 'vue-router';
-import { AssetMeta } from '../../../../../shared/types/Store';
+import type { AssetMeta } from '../../../../../shared/types/Store';
 
 const route = useRoute()
 const gameStore = useGameStore()
@@ -52,7 +52,7 @@ const pakUploaded = () => {
 }
 
 onMounted(async () => {
-  model.gameSys = await GameInit(args, {
+  model.gameSys = await GameInit(args.value, {
     // hooks
     quit: () => {
       emit('quit')
@@ -63,12 +63,12 @@ onMounted(async () => {
     }
   })
 })
+
 watch(props, () => {
   if (props.quitRequest) {
     model.gameSys.quit()
   }
 })
-
 </script>
 
 <style lang="scss">

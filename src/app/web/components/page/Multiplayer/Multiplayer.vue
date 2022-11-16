@@ -25,21 +25,21 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ComponentPublicInstance } from 'vue'
+import { defineComponent } from 'vue'
+import type { ComponentPublicInstance } from 'vue'
 import { useMultiplayerStore } from '../../../stores/multiplayer'
 
-const multiplayerStore = useMultiplayerStore()
 interface IInstance extends ComponentPublicInstance {
   refreshing: boolean,
-  refresh: () => Promise<void>,
   setAutoRefreshOn: () => void
 }
 export default defineComponent({
   beforeRouteEnter(to, from, next) {
     return next(vm => {
+      const multiplayerStore = useMultiplayerStore()
       const instance = vm as IInstance
       instance.refreshing = true
-      instance.refresh().then(() => {
+      multiplayerStore.refresh().then(() => {
         instance.refreshing = false
         multiplayerStore.setAutoRefreshOn()
       })
@@ -48,13 +48,13 @@ export default defineComponent({
 })
 </script>
 <script lang="ts" setup>
-import {reactive, onMounted, computed, watch, defineProps, ref} from 'vue'
+import {reactive, onMounted, computed, watch, ref} from 'vue'
 import QuakeText from '../../QuakeText.vue'
 import NameMaker from '../../input/NameMaker.vue'
 import ServerRow from './ServerRow.vue'
 import Discord from './Discord.vue'
 import { useGameStore } from '../../../stores/game'
-import { ServerStatus } from '../../../stores/multiplayer'
+import type { ServerStatus } from '../../../stores/multiplayer'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 
 const router = useRouter()

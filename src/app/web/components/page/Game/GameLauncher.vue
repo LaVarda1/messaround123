@@ -1,16 +1,17 @@
 
 <template lang="pug">
 .game-container
-  .loading.loading-lg(v-if="loading")
+  .loading.loading-lg(v-if="model.loading")
   template(v-else-if="needsMapDownload")
-    MapLoader(:game="game" @done="mapLoaded = true")
+    MapLoader(:game="game" @done="model.mapLoaded = true")
   template(v-else)
-    Game(@quit="gameQuit" :quitRequest="isQuitting")
+    Game(@quit="gameQuit" :quitRequest="model.isQuitting")
 </template>
 
 <script lang="ts">
-import { defineComponent, ComponentPublicInstance } from 'vue'
-import { QuaddictedMap } from '../../../types/QuaddictedMap';
+import { defineComponent } from 'vue'
+import type { ComponentPublicInstance } from 'vue'
+import type { QuaddictedMap } from '../../../types/QuaddictedMap';
 
 interface IInstance extends ComponentPublicInstance {
   quitToPath: string
@@ -27,7 +28,7 @@ export default defineComponent({
 <script lang="ts" setup>
 import Game from './Game.vue'
 import MapLoader from './MapLoader.vue'
-import {reactive, onMounted, computed, watch, defineProps} from 'vue'
+import {reactive, onMounted, computed, watch, ref} from 'vue'
 import GameInit from '../../../../game'
 import { useGameStore } from '../../../stores/game';
 import { useMapsStore } from '../../../stores/maps';
@@ -37,26 +38,26 @@ import { mapState } from 'pinia';
 const route = useRoute()
 const gameStore = useGameStore()
 const mapsStore = useMapsStore()
-
+const quitToPath = ref('/')
 const model = reactive<{
   map: QuaddictedMap | null,
   loading: boolean,
   mapLoaded: boolean,
   isQuitting: boolean,
   onQuit: (() => void) | null,
-  quitToPath: string
 }>({
   map: null,
   loading: true,
   mapLoaded: false,
   isQuitting: false,
   onQuit: null,
-  quitToPath: ''
 })
 
 const game = computed(() => route.query && route.query['-game'] as string)
 const needsMapDownload = computed(() => !model.mapLoaded && game.value && model.map && !gameStore.hasGame(game.value))
-const gameQuit = () => window.location.href = model.quitToPath
+const gameQuit = () => {
+  window.location.href = quitToPath.value
+}
 onMounted(() => {
   mapsStore.loadMapListing()
     .then(() => {
@@ -80,5 +81,8 @@ onBeforeRouteLeave((to, from, next) => {
   } else {
     next(false)
   }
+})
+defineExpose({
+  quitToPath
 })
 </script>

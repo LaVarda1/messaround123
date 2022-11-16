@@ -43,6 +43,8 @@ export const init = function()
 
 	state.server = new websocket.server;
 	state.server.on('request', serverOnRequest);
+	
+	initialized = true
 
 	return true;
 };

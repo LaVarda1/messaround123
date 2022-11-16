@@ -1,4 +1,4 @@
-import * as indexedDb from '../../../shared/indexeddb'
+  import * as indexedDb from '../../../shared/indexeddb'
 import { defineStore } from 'pinia'
 import { AssetMeta } from '../../../shared/types/Store'
 
@@ -119,14 +119,14 @@ const getters = {
 }
 
 const actions = {
-  setAssetMetas: (state: State, assetMetas: AssetMeta[]) => {
-    state.assetMetas = assetMetas
+  setAssetMetas (assetMetas: AssetMeta[]) {
+    this.assetMetas = assetMetas
   },
-  setConfigFile: (state: State, configFile: string) => {
-    state.configFile = configFile || ''
+  setConfigFile (configFile: string) {
+    this.configFile = configFile || ''
   },
-  setAutoexecFile: (state: State, autoexecFile: string) => {
-    state.autoexecFile = autoexecFile || ''
+  setAutoexecFile (autoexecFile: string) {
+    this.autoexecFile = autoexecFile || ''
   },
   loadConfig () {
     const configFile = localStorage[configFileName]

@@ -83,6 +83,7 @@ export const init = function()
 	if (state.myAddr == null)
 		state.myAddr = '127.0.0.1';
 
+	initialized = true
 	return true;
 };
 
