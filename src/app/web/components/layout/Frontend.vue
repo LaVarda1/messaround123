@@ -14,11 +14,6 @@
         router-view
     Footer 
 </template>
-<script>
+<script lang="ts" setup>
 import Footer from './Footer.vue'
-export default {
-  components: {
-    Footer
-  }
-}
 </script>

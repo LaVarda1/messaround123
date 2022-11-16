@@ -8,10 +8,10 @@
             h5 Quake 1
         .panel-body
           .container
-            .column.col-6(v-if="hasRegistered")
-              GameSelect(v-model="gameSelection" :gameList="games")
+            .column.col-6(v-if="gameStore.hasRegistered")
+              GameSelect(v-model="model.gameSelection" :gameList="gameDefinitions")
             .column.col-6
-              MapSelect(v-model="mapSelection" :mapList="mapList")
+              MapSelect(v-model="model.mapSelection" :mapList="mapList")
         .panel-footer
           button.btn(@click="startCustom()") Start Game
       .panel
@@ -32,49 +32,40 @@
         .panel-footer
 </template>
 
-<script>
-import {mapGetters} from 'vuex'
+<script lang="ts" setup>
+import {reactive, onMounted, computed, watch, ref} from 'vue'
+import { useMapsStore } from '../../../stores/maps';
+import type { QuaddictedMap } from '../../../types/QuaddictedMap';
+
 import gameType from '../../../helpers/gameType'
 import GameSelect from './GameSelect.vue'
 import MapSelect from './MapSelect.vue'
 import Quaddicted from './Quaddicted/Quaddicted.vue'
-import games from '../../../helpers/games'
+import { gameDefinitions } from '../../../helpers/games'
+import type { GameDefinition} from '../../../helpers/games'
+import { useGameStore } from '../../../stores/game';
+import { useRouter } from 'vue-router';
 
-export default {
-  components: {
-    MapSelect,
-    Quaddicted,
-    GameSelect
-  },
-  data () {
-    return {
-      games,
-      mapSelection: 'start',
-      gameSelection: 'original'
-    }
-  },
-  computed: {
-    ...mapGetters('game', ['hasRegistered']),
-    gameObj () {
-      return games.find(g => g.game === this.gameSelection)
-    },
-    mapList () {
-      return this.gameObj.mapList
-        .filter(map => this.hasRegistered || map.gameType === gameType.ShareWare)
-    }
-  },
-  methods: {
-    start() {
-      this.$router.push({name: 'quake'})
-    },
-    startCustom () {
-      const query = {'+map': this.mapSelection}
-      if (this.gameObj.game !== 'original') {
-        query['-' + this.gameObj.game] = true
-      }
-      this.$router.push({name: 'quake', query})
-    }
+const router = useRouter()
+const gameStore = useGameStore()
+const model = reactive<{
+  mapSelection: 'start',
+  gameSelection: 'original'
+}>({
+  mapSelection: 'start',
+  gameSelection: 'original'
+})
+
+const gameObj = computed(() => gameDefinitions.find(g => g.game === model.gameSelection))
+const mapList = computed(() => (gameObj.value?.mapList|| [])
+  .filter(map => gameStore.hasRegistered || map.gameType === gameType.ShareWare))
+const start = () => router.push({name: 'quake'})
+const startCustom = () => {
+  const query = {'+map': model.mapSelection}
+  if (gameObj.value?.game !== 'original') {
+    query['-' + gameObj.value!.game] = true
   }
+  router.push({name: 'quake', query})
 }
 </script>
 <style lang="scss">

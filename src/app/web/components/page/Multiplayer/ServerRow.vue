@@ -1,76 +1,58 @@
 <template lang="pug">
 tr
-  td {{server.name}}
-  td {{server.location}}
-  td {{server.map}}
-  td(v-if="server.players.length"
+  td {{props.server.name}}
+  td {{props.server.location}}
+  td {{props.server.map}}
+  td(v-if="props.server.players.length"
     v-tippy="{allowHTML: true}"
-    :content="playerTooltipHtml")  {{formatPlayerCount}}
+    :content="model.playerTooltipHtml")  {{formatPlayerCount}}
   td(v-else)  {{formatPlayerCount}}
-  td {{server.ping}}
+  td {{props.server.ping}}
   td
-    button.btn.tooltip.tooltip-left(@click="$emit('join', server)" :disabled="isDisabled(server)" :data-tooltip="joinToolTipText(server)") Join
+    button.btn.tooltip.tooltip-left(
+      @click="emit('join', props.server)" 
+      :disabled="isDisabled" 
+      :data-tooltip="joinTooltipText") Join
 
 </template>
 
-<script>
+<script lang="ts" setup>
+import {reactive, onMounted, computed, watch, defineProps} from 'vue'
 import { createWriter } from "../../../helpers/charmap"
-import {mapGetters} from 'vuex'
+import { useGameStore } from '../../../stores/game';
+import type { ServerStatus } from '../../../stores/multiplayer';
 
+const emit = defineEmits<{
+  (e: 'join', server: ServerStatus): void}
+>()
+
+const gameStore = useGameStore()
 const sharewareMaps = ['start', 'e1m1', 'e1m2', 'e1m3', 'e1m4', 'e1m5', 'e1m6', 'e1m7', 'e1m8']
 
-export default {
-  props: {
-    server: {
-      type: Object,
-      requried: true
-    }
-  },
-  data() {
-    return {
-      playerTooltipHtml: ''
-    }
-  },
-  computed: {
-    ...mapGetters('game', ['hasRegistered','getAutoexecValue']),
-    formatPlayerCount () {
-      return `${this.server.players.length}/${this.server.maxPlayers}`
-    },
-  },
+const props = defineProps<{server: ServerStatus}>()
+const model = reactive<{playerTooltipHtml}>({playerTooltipHtml: ''})
+const formatPlayerCount = computed(() => `${props.server.players.length}/${props.server.maxPlayers}`)
+const isDisabled = computed(() => !gameStore.hasRegistered && !sharewareMaps.find(m => m === props.server.map))
+const joinTooltipText = computed(() => isDisabled.value ? "Must add registered assets in setup\n before joining this server" : "Join this game server")
 
-  watch:{
-    server: {
-      handler() {
-        createWriter()
-          .then(writer => {
-            const body = [...this.server.players]
-              .sort((a, b) => b.frags - a.frags)
-              .map((player) => {
-                return `<tr style="line-height: 1;">
-                <td style="text-align:right;">
-                  <img src="${writer.writeScore(14, player.frags, (player.colors & 0xf0) >> 4, player.colors & 0xf)}" style="display:inline;">
-                </td>
-                <td style="padding-left: 1rem; text-align: left">
-                  <img src="${writer.write(12, btoa(player.name))}" style="display:inline;">
-                </td>
-                </tr>`;
-              })
-              .join('');
+watch(props, () => {
+  createWriter()
+    .then(writer => {
+      const body = [...props.server.players]
+        .sort((a, b) => parseInt(b.frags) - parseInt(a.frags))
+        .map((player) => {
+          return `<tr style="line-height: 1;">
+          <td style="text-align:right;">
+            <img src="${writer.writeScore(14, parseInt(player.frags), (player.colors & 0xf0) >> 4, player.colors & 0xf)}" style="display:inline;">
+          </td>
+          <td style="padding-left: 1rem; text-align: left">
+            <img src="${writer.write(12, btoa(player.name))}" style="display:inline;">
+          </td>
+          </tr>`;
+        })
+        .join('');
 
-            this.playerTooltipHtml = `<table><tbody>${body}</tbody></table>`;
-          })
-      },
-      immediate: true
-    }
-  },
-  methods: {
-    isDisabled (server) {
-      return !this.hasRegistered && !sharewareMaps.find(m => m === server.map)
-    },
-    joinToolTipText (server) {
-      return this.isDisabled(server) ? "Must add registered assets in setup\n before joining this server" : "Join this game server"
-    },
-
-  }
-}
+      model.playerTooltipHtml = `<table><tbody>${body}</tbody></table>`;
+    })
+}, {immediate: true})
 </script>

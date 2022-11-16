@@ -324,7 +324,7 @@ const listen_f = () => {
 	for (state.driverlevel = 0; state.driverlevel < state.drivers.length; ++state.driverlevel)
 	{
 		const driver = state.drivers[state.driverlevel]
-		driver.initialized = driver.init();
+		driver.init();
 		if (driver.initialized === true)
 			driver.listen();
 	}
@@ -392,7 +392,7 @@ export const init = (drivers: INetworkDriver[]) => {
 	state.drivers = drivers;
 	for (state.driverlevel = 0; state.driverlevel < state.drivers.length; ++state.driverlevel)
 	{
-		state.drivers[state.driverlevel].initialized = state.drivers[state.driverlevel].init();
+		state.drivers[state.driverlevel].init();
 	}
 
 	if (host.state.dedicated) {

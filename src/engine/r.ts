@@ -917,8 +917,6 @@ export const setupGL = function () {
 
 export const renderScene = function () {
 	const gl = GL.getContext()
-	if (cl.clState.maxclients >= 2)
-		cvar.set('r_fullbright', '0');
 	animateLight();
 	vec.angleVectors(state.refdef.viewangles, state.vpn, state.vright, state.vup);
 	state.viewleaf = mod.pointInLeaf(state.refdef.vieworg, cl.clState.worldmodel);

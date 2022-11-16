@@ -1,6 +1,6 @@
 <template lang="pug">
 .game-container
-  template(v-if="showRequiresPak")
+  template(v-if="model.showRequiresPak")
     PakLoader(@done="pakUploaded")
   template(v-else)
     h4#progress Starting Quake...
@@ -11,65 +11,62 @@
 
 </template>
 
-<script>
-import Vue from 'vue'
+<script lang="ts" setup>
+import {reactive, onMounted, computed, watch} from 'vue'
 import GameInit from '../../../../game'
 import PakLoader from './PakLoader.vue'
-import {mapGetters} from 'vuex'
+import { useGameStore } from '../../../stores/game';
+import { useRoute } from 'vue-router';
+import type { AssetMeta } from '../../../../../shared/types/Store';
 
-export default Vue.extend({
-  props: {
-    quitRequest: {
-      type: Boolean,
-      default: false
-    }
-  },
-  data() {
-    return {
-      gameSys: null,
-      showRequiresPak: false
-    }
-  },
-  watch:{
-    quitRequest () {
-      if (this.quitRequest) {
-        this.gameSys.quit()
-      }
-    }
-  },
-  components: {
-    PakLoader
-  },
-  async mounted () {
-    this.gameSys = await GameInit(this.args, {
-      // hooks
-      quit: () => {
-        this.$emit('quit')
-      },
-      startRequestPak: resolve => {
-        this.showRequiresPak = true;
-        this.uploadResolve = resolve
-      }
-    })
-  },
-  computed: {
-    args () {
-      const params = this.$route.query
-      return Object.keys(params)
-        .map(param => (!!params[param] ? param + ' ' + params[param] : param))
-        .join(' ')
+const route = useRoute()
+const gameStore = useGameStore()
+const emit = defineEmits<{
+  (e: 'quit'): void}
+>()
+const props = withDefaults(defineProps<{quitRequest: boolean}>(), {quitRequest: false})
+const model = reactive<{
+  gameSys: any, 
+  showRequiresPak: boolean,
+  uploadResolve: () => void
+}>({
+  gameSys: null,
+  showRequiresPak: false,
+  uploadResolve: () => null
+})
+
+const allAssetMetas = computed<AssetMeta[]>(() => gameStore.allAssetMetas)
+const args = computed(() => {
+  const params = route.query
+  return Object.keys(params)
+    .map(param => (!!params[param] ? param + ' ' + params[param] : param))
+    .join(' ')
+})
+
+const pak1 = computed(() => allAssetMetas.value.filter(assetMeta => 
+  assetMeta.game === 'id1' && assetMeta.fileName.toLowerCase() === 'pak1.pak') )
+
+const pakUploaded = () => {
+  model.showRequiresPak = false
+  model.uploadResolve()
+}
+
+onMounted(async () => {
+  model.gameSys = await GameInit(args.value, {
+    // hooks
+    quit: () => {
+      emit('quit')
     },
-    ...mapGetters('game', ['allAssetMetas']),
-    pak1 () { 
-      return this.allAssetMetas.filter(assetMeta => 
-        assetMeta.game === 'id1' && assetMeta.fileName.toLowerCase() === 'pak1.pak') 
+    startRequestPak: resolve => {
+      model.showRequiresPak = true;
+      model.uploadResolve = resolve
     }
-  },
-  methods: {
-    pakUploaded () {
-      this.showRequiresPak = false
-      this.uploadResolve()
-    }
+  })
+})
+
+watch(props, () => {
+  if (props.quitRequest) {
+    model.gameSys.quit()
   }
 })
 </script>

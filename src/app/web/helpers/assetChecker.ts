@@ -1,4 +1,8 @@
-
+export type FileInPak = {
+  name: string
+  filepos: number
+  filelen: number
+}
 const memstr = function(src)
 {
 	var dest = [], i;
@@ -11,7 +15,7 @@ const memstr = function(src)
 	return dest.join('');
 }
 
-export const readPackFile = data => {
+export const readPackFile = (data): FileInPak[] => {
   var header = new DataView(data);
   if (header.byteLength < 4 || header.getUint32(0, true) !== 0x4b434150) {
     return []
@@ -19,7 +23,7 @@ export const readPackFile = data => {
   var dirofs = header.getUint32(4, true);
   var dirlen = header.getUint32(8, true);
   var numpackfiles = dirlen >> 6;
-  var files = [];
+  var files: FileInPak[] = [];
   if (numpackfiles !== 0)
   {
     var info = new DataView(data, dirofs, dirlen);
@@ -32,9 +36,8 @@ export const readPackFile = data => {
         filelen: info.getUint32((i << 6) + 60, true)
       });
     }
-    
-    return files;
   }
+  return files;
 }
 
 const findFileInPack = (packFiles, packData, fileName) => {

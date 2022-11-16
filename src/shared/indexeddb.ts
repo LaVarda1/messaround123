@@ -1,4 +1,5 @@
 import * as com from '../engine/com'
+import { Asset, AssetMeta } from './types/Store';
 
 const dbName = 'webQuakeAssets',
   metaStoreName = 'meta',
@@ -92,7 +93,7 @@ export const getAllMeta = async (): Promise<Array<any>> => {
 }
 
 
-export const getAllMetaPerGame = async (game): Promise<Array<any>> => {
+export const getAllMetaPerGame = async (game): Promise<AssetMeta[]> => {
   const assetMetas = await getAllMeta()
   return assetMetas.filter(meta => meta.game === game.toLowerCase())
 }
@@ -101,11 +102,11 @@ export const getAllAssets = async () => {
   return dbOperation(assetStoreName, store => store.getAll())
 }
 
-export const getAllAssetsPerGame = async (game) => {
+export const getAllAssetsPerGame = async (game: string) => {
   const assetMetas = await getAllMetaPerGame(game)
   
   return Promise.all(assetMetas.map(async assetMeta => {
-    const asset = await dbOperation(assetStoreName, store => store.get(assetMeta.assetId))
+    const asset = await dbOperation(assetStoreName, store => store.get(assetMeta.assetId)) as Asset
     return {
       ...assetMeta,
       ...asset
@@ -127,7 +128,7 @@ export const getAsset = async (game, fileName) => {
     const assetId = await promiseMe(index.getKey(IDBKeyRange.only([game.toLowerCase(), fileName.toLowerCase()]))) as any
     return {
       ...assetMeta,
-      ...(await promiseMe(assets.get(assetId)) as any)
+      ...(await promiseMe(assets.get(assetId)) as Asset)
     }
   }
   return null

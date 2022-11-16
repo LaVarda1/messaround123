@@ -13,7 +13,8 @@ export const init = () => {
 		return
 	if (window['WebSocket'] == null)
 		return;
-	available = true;
+	available = true
+	initialized = true
 	return true;
 };
 export const listen = () => {}

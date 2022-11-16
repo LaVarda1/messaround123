@@ -1,57 +1,55 @@
 <template lang="pug">
-  .map-load-progress
-    .container
-      .columns
-        .column.col-3
-          div {{getMapLoadProgress.message}} {{map.fileName}}
-          .bar.light-dark(ref="bar")
-            .bar-text-dark {{loadedKb}}
-            .bar-item(role="progressbar" :style="'width:' + progressPercent+ '%;'" :aria-valuenow="progressPercent" aria-valuemin="0" aria-valuemax="100")
-              .bar-text-light(ref="barHack") {{loadedKb}}
+.map-load-progress
+  .container
+    .columns
+      .column.col-3
+        div {{mapsStore.getMapLoadProgress.message}} {{props.map.fileName}}
+        .bar.light-dark(ref="bar")
+          .bar-text-dark {{loadedKb}}
+          .bar-item(role="progressbar" :style="'width:' + progressPercent+ '%;'" :aria-valuenow="progressPercent" aria-valuemin="0" aria-valuemax="100")
+            .bar-text-light(ref="barHack") {{loadedKb}}
 </template>
 
-<script>
-import {mapGetters} from 'vuex'
+<script lang="ts" setup>
+import {reactive, onMounted, computed, watch, ref} from 'vue'
+import { useMapsStore } from '../../../../stores/maps';
+import type { QuaddictedMap } from '../../../../types/QuaddictedMap';
 
+const mapsStore = useMapsStore()
+
+const props = defineProps<{map: QuaddictedMap}>()
 const addCommas = x => x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-export default {
-  props: {
-    map: {
-      type: Object,
-      default: () => {}
-    }
-  },
-  mounted () {
-    // hack to make progress bar effect work.
-    window.addEventListener('resize', this.onResize)
-    this.onResize()
-  },
-  computed: {
-    ...mapGetters('maps', ['getMapLoadProgress']),
-    loadedKb () {
-      if (!this.getMapLoadProgress.total) {
-        return ''
-      }
-      const total = addCommas(Math.floor(this.getMapLoadProgress.total / 1024))
-      const loaded = addCommas(Math.floor(this.getMapLoadProgress.loaded / 1024))
+const bar = ref<HTMLElement | null>(null)
+const barHack = ref<HTMLElement | null>(null)
 
-      return `${loaded} / ${total} KB`
-    },
-    progressPercent () {
-      if (!this.getMapLoadProgress.total) {
-        return 0
-      }
-      const total = Math.floor(this.getMapLoadProgress.total)
-      const loaded = Math.floor(this.getMapLoadProgress.loaded)
-      return Math.ceil((loaded / total) * 100)
-    }
-  },
-  methods: {
-    onResize ()  {
-      this.$refs.barHack.style.width = this.$refs.bar.clientWidth + "px"
-    }
+const onResize = () => {
+  if (barHack.value && bar.value) {
+    barHack.value.style.width = bar.value.clientWidth + "px"
   }
 }
+const loadedKb = computed(() => {
+  if (!mapsStore.getMapLoadProgress.total) {
+    return ''
+  }
+  const total = addCommas(Math.floor(mapsStore.getMapLoadProgress.total / 1024))
+  const loaded = addCommas(Math.floor(mapsStore.getMapLoadProgress.loaded / 1024))
+
+  return `${loaded} / ${total} KB`
+})
+
+const progressPercent = computed(() => {
+  if (!mapsStore.getMapLoadProgress.total) {
+    return 0
+  }
+  const total = Math.floor(mapsStore.getMapLoadProgress.total)
+  const loaded = Math.floor(mapsStore.getMapLoadProgress.loaded)
+  return Math.ceil((loaded / total) * 100)
+})
+
+onMounted(() => {
+  window.addEventListener('resize', onResize)
+  onResize()
+})
 </script>
 <style scoped lang="scss">
 // I spent more time on this than I'd like to admit.

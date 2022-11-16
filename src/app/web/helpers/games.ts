@@ -2,13 +2,26 @@ import originalMaps from './original'
 import hipnotic from './hipnotic'
 import rogue from './rogue'
 
+export type GameMap = {
+  name: string,
+  title: string,
+  collection: string,
+  gameType: string
+}
+
+export type GameDefinition = {
+  game: string,
+  name: string,
+  mapList: GameMap[]
+}
+
 export const Game = {
   Original: 'original',
   Hipnotic: 'hipnotic',
   Rogue: 'rogue',
 }
 
-export default [{
+export const gameDefinitions: GameDefinition[] = [{
   game: Game.Original,
   name: 'Quake',
   mapList: originalMaps

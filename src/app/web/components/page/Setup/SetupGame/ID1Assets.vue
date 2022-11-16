@@ -1,33 +1,40 @@
 <template lang="pug">
-  .base-assets.container
-    .pack-upload(v-if="!packOne || !packZero")
-      PakUpload.test2( @uploadFiles="uploadFilesRequest" :loading="loading")
-    .columns
-      .column.col-12.mb-2
-        H5(v-if="assetMetas.length") Loaded Id1 packs:
-          
-        H5(v-else) No packs loaded
-        Asset(v-for="meta in assetMetas"
-          :assetMeta="meta"
-          :key="meta.filename"
-          :label="meta.filename"
-          game="id1")
+.base-assets.container
+  .pack-upload(v-if="!packOne || !packZero")
+    PakUpload.test2( @uploadFiles="uploadFilesRequest" :loading="model.loading")
+  .columns
+    .column.col-12.mb-2
+      h5(v-if="assetMetas.length") Loaded Id1 packs:
+        
+      h5(v-else) No packs loaded
+      Asset(v-for="meta in assetMetas"
+        :assetMeta="meta"
+        :key="meta.filename"
+        :label="meta.filename"
+        game="id1")
 </template>
 
-<script>
+<script lang="ts" setup>
+import {reactive, onMounted, computed, watch} from 'vue'
 import Asset from './Asset.vue'
 import PakUpload from './PakUpload.vue'
+import { useGameStore } from '../../../../stores/game';
 import {isId1Pak1, readPackFile} from '../../../../helpers/assetChecker'
-import {mapActions, mapGetters} from 'vuex'
 
-const readFile = async file => {
+type FileWithData = {fileName: string, data: ArrayBuffer}
+const emit = defineEmits<{
+  (e: 'uploaded', uploadedFiles: any): void}
+>()
+const gameStore = useGameStore()
+
+const readFile = async (file): Promise<FileWithData> => {
   return new Promise((resolve, reject) => {
     const fileName = file.name
     const reader = new FileReader()
     reader.onloadend = loadEvt => {
       resolve({
         fileName,
-        data: loadEvt.target.result
+        data: loadEvt.target!.result as ArrayBuffer
       })
     }
     reader.onerror = (e) => reject(e)
@@ -35,59 +42,40 @@ const readFile = async file => {
   })
 }
 
-export default {
-  data() {
-    return {
-      isId1Pak1,
-      loading: false
-    }
-  },
-  components: {
-    Asset,
-    PakUpload
-  },
-  computed: {
-    ...mapGetters('game', ['allAssetMetas']),
-    assetMetas () { return this.allAssetMetas.filter(assetMeta => assetMeta.game === 'id1') },
-    packOne() {
-      return this.assetMetas.find(assetMeta => assetMeta.fileName.toLowerCase() === 'pak1.pak')
-    },
-    packZero() { 
-      return this.assetMetas.find(assetMeta => assetMeta.fileName.toLowerCase() === 'pak0.pak')
-    }
-  },
-  methods: {
-    ...mapActions('game', ['saveAsset']),
-    async processReadFile ({fileName, data}) {
-      const packFiles = readPackFile(data)
-      if (packFiles.length === 0) {
-        throw new Error("Not a valid quake pack file")
-      }
-      if (fileName.toLowerCase() === 'pak1.pak' && !isId1Pak1(packFiles, data)) {
-        throw new Error("Pak1.pak is not the original registered quake pak")
-      }
-      
-      return this.saveAsset({game: 'id1', fileName, fileCount: packFiles.length, data})
-    },  
-    async uploadFilesRequest (files) {
-      this.loading = true
-      
-      const promises = files.map(async file => {
-        try {
-          const fileObj = await readFile(file)
-          await this.processReadFile(fileObj)
-          return file.name
-        } catch (e) {
-          console.log(e)
-          // meh.
-        }
-      });
+const model = reactive<{loading: boolean}>({loading: false})
 
-      const uploadedFiles = (await Promise.all(promises)).filter(f => !!f)
-
-      this.$emit('uploaded', uploadedFiles)
-      this.loading = false
-    },
+const assetMetas = computed(() => gameStore.allAssetMetas.filter(am => am.game === 'id1'))
+const packOne = computed(() => assetMetas.value.find(am => am.fileName.toLowerCase() === 'pak1.pak'))
+const packZero = computed(() => assetMetas.value.find(am => am.fileName.toLowerCase() === 'pak0.pak'))
+const processReadFile = async ({fileName, data}) => {
+  const packFiles = readPackFile(data)
+  if (packFiles.length === 0) {
+    throw new Error("Not a valid quake pack file")
   }
+  if (fileName.toLowerCase() === 'pak1.pak' && !isId1Pak1(packFiles, data)) {
+    throw new Error("Pak1.pak is not the original registered quake pak")
+  }
+  
+  return gameStore.saveAsset({game: 'id1', fileName, fileCount: packFiles.length, data})
+}
+
+const uploadFilesRequest = async (files: File[]) => {
+  model.loading = true
+  
+  const promises = files.map(async file => {
+    try {
+      const fileObj = await readFile(file)
+      await processReadFile(fileObj)
+      return file.name
+    } catch (e) {
+      console.log(e)
+      // meh.
+    }
+  });
+
+  const uploadedFiles = (await Promise.all(promises)).filter(f => !!f)
+
+  emit('uploaded', uploadedFiles)
+  model.loading = false
 }
 </script>

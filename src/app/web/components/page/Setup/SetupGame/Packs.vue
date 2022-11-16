@@ -1,4 +1,4 @@
 <template lang="pug">
-  .pack-list
+.pack-list
     
 </template>
