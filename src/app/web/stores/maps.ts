@@ -1,6 +1,6 @@
 import axios from 'axios'
 import {AxiosResponse}  from 'axios'
-import * as JSZip from 'jszip'
+import {unzip} from 'fflate'
 import * as indexedDb from '../../../shared/indexeddb'
 import {any, tail, find, prop} from 'ramda'
 import {QuaddictedMap} from '../types/QuaddictedMap'
@@ -84,19 +84,19 @@ export const useMapsStore = defineStore('maps', {
     
         this.setMapLoadProgress({ message: 'Unzipping...'})
       
-        const zip = new JSZip()
-        await zip.loadAsync(arrayBuf)
+        const data = await new Promise((resolve, reject) => 
+          unzip(new Uint8Array(arrayBuf), (err, result) => err ? reject(err) : resolve(result)))
+        // const zip = new JSZip()
+        // await zip.loadAsync(arrayBuf)
     
         // Ignore entries marked as directories
-        const files = Object.keys(zip.files).filter(f => !zip.files[f].dir)
+        const files = Object.keys(data).filter(f => data[f].byteLength > 0)
       
         const fixedFilePaths = fixBaseDir(files)
       
         // Unzip all files, and send them to the file handler
         await Promise.all(files.map((fileName, idx) => {
-          return zip.file(fileName)
-            .async("arraybuffer")
-            .then(buffer => fileHandler(mapId, fixedFilePaths[idx], buffer))
+          return fileHandler(mapId, fixedFilePaths[idx], data[fileName].buffer)
         }))
     
         this.setMapLoadProgress({loaded: 0, total: 0, message: ''})
@@ -137,7 +137,7 @@ const strmem = function(src)
 //   })
 // }
 
-const getBinaryData = (url, total, progress) => {
+const getBinaryData = (url, total, progress): Promise<ArrayBuffer> => {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
     xhr.overrideMimeType('text\/plain; charset=x-user-defined')
