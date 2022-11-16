@@ -10,6 +10,8 @@
     "module": "commonjs",
     "target": "ESNext",
     "allowJs": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true
   },
   "include": [
