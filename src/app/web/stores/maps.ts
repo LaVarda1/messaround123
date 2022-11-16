@@ -86,8 +86,6 @@ export const useMapsStore = defineStore('maps', {
       
         const data = await new Promise((resolve, reject) => 
           unzip(new Uint8Array(arrayBuf), (err, result) => err ? reject(err) : resolve(result)))
-        // const zip = new JSZip()
-        // await zip.loadAsync(arrayBuf)
     
         // Ignore entries marked as directories
         const files = Object.keys(data).filter(f => data[f].byteLength > 0)
