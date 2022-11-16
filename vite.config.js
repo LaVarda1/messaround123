@@ -10,7 +10,9 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  
+  build: {
+    outDir: 'dist/app'
+  },
   server: {
     port: 8081,
     proxy: {
