@@ -8,6 +8,7 @@
     "build:justserver": "rimraf ./dist && tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
     "serve": "vite serve",
+    "serve:prod": "vite preview",
     "start:dev": "vite",
     "start:gameserver": "node ./dist/server/game",
     "debug:gameserver": "nodemon ./dist/server/game"
