@@ -43,7 +43,7 @@ const gameDisplay = computed(() => {
   return mapsItem ? mapsItem.title : props.game
 })
 const toggleExpand = () => model.expanded = !model.expanded
-const remove = emit('remove', props.game)
+const remove = () => emit('remove', props.game)
 </script>
 
 <style scoped lang="scss">

@@ -8,6 +8,7 @@
     "build:justserver": "rimraf ./dist && tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
     "serve": "vite serve",
+    "serve:prod": "vite preview",
     "start:dev": "vite",
     "start:gameserver": "node ./dist/server/game",
     "debug:gameserver": "nodemon ./dist/server/game"
@@ -18,7 +19,7 @@
     "@types/websocket": "^1.0.5",
     "@vitejs/plugin-vue": "^3.2.0",
     "base-64": "^1.0.0",
-    "fflate": "^0.7.4",
+    "jszip": "^3.10.1",
     "sass": "^1.56.1",
     "vite": "^3.2.3",
     "vue": "^3.2.44",

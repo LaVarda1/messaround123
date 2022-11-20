@@ -11,7 +11,25 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: 'dist/app'
+    outDir: 'dist/app',
+    commonjsOptions: { include: [] },
+    
+  },
+  optimizeDeps: {
+    disabled: false,
+  },
+  preview: {
+    port: 8081,
+    proxy: {
+      // string shorthand
+      '/api': 'https://www.netquake.io',
+      // with RegEx
+      '^/fallback/.*': {
+        target: 'http://jsonplaceholder.typicode.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/fallback/, '')
+      },
+    }
   },
   server: {
     port: 8081,

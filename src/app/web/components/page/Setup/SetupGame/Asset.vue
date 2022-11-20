@@ -31,10 +31,7 @@ const model = reactive<{
 })
 
 const gameStore = useGameStore()
-const remove = () => {
-  debugger
-  gameStore.removeAsset(props.assetMeta.assetId)
-  }
+const remove = () => gameStore.removeAsset(props.assetMeta.assetId)
 </script>
 <style>
 .asset {
