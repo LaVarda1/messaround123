@@ -20,6 +20,7 @@ import * as pf from './pf'
 
 const MAX_ENT_LEAFS = 32
 
+
 export let state = {
 	fatpvs: [],
 	fatbytes: 0,
@@ -40,7 +41,9 @@ export let state = {
 		data: new ArrayBuffer(128),
 		cursize: 0
 	},
-	svs: {}
+	svs: {
+		serverinfo: {}
+	}
 } as any;
 
 export const cvr = {
@@ -116,6 +119,22 @@ const initState = () => {
 }
 // main
 
+export const updateInfo = function(ed: number, key: string, value: string) {
+	let pre = ''
+	let info = null
+	let infoPlayer = null
+	if (!ed) {
+		let v = cvar.findVar(key)
+		if (v && v.server) {
+			cvar.set(key, value)
+			return
+		}
+		info = state.svs.serverinfo
+	} else if(ed < state.svs.maxclients) {
+		ed-=1
+		infoPlayer = state.svs.clients[ed].edict
+	}
+}
 export const startParticle = function (org, dir, color, count) {
 	var datagram = state.server.datagram;
 	if (datagram.cursize >= 1009)

@@ -817,11 +817,22 @@ export const makestatic = function()
 	ed.free(ent);
 };
 
+export const setcolors = function() {
+	var i = pr.state.globals_int[4]
+	if ((i <= 0) || (i > sv.state.svs.maxclients)) {
+		con.print(('setcolor: Entity is not a client')
+		return
+	}
+	var ed = sv.state.server.edicts[i];
+	var newcol = pr.state.globals_float[7];
+	
+}
+
 export const setspawnparms = async function()
 {
 	var i = pr.state.globals_int[4];
 	if ((i <= 0) || (i > sv.state.svs.maxclients))
-		await pr.runError('Entity is not a client');
+		await pr.runError('pf:setspawnparams: Entity is not a client');
 	var spawn_parms = sv.state.svs.clients[i - 1].spawn_parms;
 	for (i = 0; i <= 15; ++i)
 		pr.state.globals_float[pr.globalvars.parms + i] = spawn_parms[i];
