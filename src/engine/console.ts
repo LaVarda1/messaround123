@@ -148,10 +148,6 @@ export const dPrint = function(_msg: string)
 
 export const print = async function(_msg: string)
 {
-  if (host.state.dedicated) {
-    sys.print(_msg)
-    return
-  }
   if (state.debuglog === true)
   {
     var data = await com.loadTextFile('qconsole.log');
@@ -164,6 +160,11 @@ export const print = async function(_msg: string)
     }
   }
 
+  if (host.state.dedicated) {
+    sys.print(_msg)
+    return
+  }
+  
   state.backscroll = 0;
 
   var mask = 0;

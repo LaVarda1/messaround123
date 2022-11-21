@@ -131,6 +131,7 @@
             "-port", "26003",
             "-udpportstart","26004",
             "-game", "crx",
+            "-condebug",
             "+map", "aerowalk_halloween"
           ],
           "outFiles": [

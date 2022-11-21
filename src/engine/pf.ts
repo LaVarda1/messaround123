@@ -9,6 +9,7 @@ import * as cmd from './cmd'
 import * as msg from './msg'
 import * as cvar from './cvar'
 import * as protocol from './protocol'
+import * as com from './com'
 
 
 let checkpvs = null
@@ -819,13 +820,23 @@ export const makestatic = function()
 
 export const setcolors = function() {
 	var i = pr.state.globals_int[4]
+
 	if ((i <= 0) || (i > sv.state.svs.maxclients)) {
-		con.print(('setcolor: Entity is not a client')
+		con.print('setcolor: Entity is not a client')
 		return
 	}
 	var ed = sv.state.server.edicts[i];
 	var newcol = pr.state.globals_float[7];
 	
+	const client = sv.state.svs.clients[ed.num - 1]
+	
+  client.colors = newcol;
+  client.edict.v_float[pr.entvars.team] =  (newcol & 15) + 1;
+  var _msg = sv.state.server.reliable_datagram;
+
+  msg.writeByte(_msg, protocol.SVC.updatecolors);
+  msg.writeByte(_msg, client.num);
+  msg.writeByte(_msg, newcol);
 }
 
 export const setspawnparms = async function()
@@ -934,6 +945,17 @@ const findchainfloat = function ()
 
 	pr.state.globals_int[1] = chain;
 }
+
+const checkextension = function () {
+	const extensions = [
+		'DP_SV_SETCOLOR'
+	]
+
+	const extFind = pr.getString(pr.state.globals_int[4])
+
+	console.log(extFind)
+	pr.state.globals_int[1] = extensions.some(ext => ext === extFind)
+}
 // void PF_TraceToss (void)
 // {
 // 	trace_t	trace;
@@ -976,6 +998,65 @@ const strcat = () => {
 	pr.state.globals_float[1] = pr.newString(out, out + 1)
 }
 
+const fopen = async () => {
+	const str = pr.getString(pr.state.globals_int[4])
+	const files = Object.keys(pr.state.openfiles)
+	let fileHandle = 0
+	for(var i = 0; i <= files.length; i ++)
+		if (!pr.state.openfiles[i]) {
+			fileHandle = i
+			pr.state.openfiles[i] = {
+				buffer: await com.loadFile('')
+			}
+			break
+		}
+
+	pr.state.globals_float[1] = fileHandle
+}
+
+const fclose = () => {
+	const fileHandle = pr.state.globals_int[4]
+	if (fileHandle < 0 )
+	{
+		con.dPrint(`fclose: invalid file handle ${fileHandle}\n`);
+		return;
+	}
+	if (pr.state.openfiles[fileHandle] === null)
+	{
+		con.dPrint(`fclose: no such file handle ${fileHandle} (or file has been closed) \n`);
+		return;
+	}
+	pr.state.openfiles[fileHandle] = null
+}
+
+const fgets = () => {
+	pr.state.globals_int[1] = 0
+	const fileHandle = pr.state.globals_int[4]
+	if (fileHandle < 0 )
+	{
+		con.dPrint(`fgets: invalid file handle ${fileHandle}\n`);
+		return;
+	}
+	if (pr.state.openfiles[fileHandle] === null)
+	{
+		con.dPrint(`fgets: no such file handle ${fileHandle} (or file has been closed) \n`);
+		return;
+	}
+}
+const fputs = () => {
+	pr.state.globals_int[1] = 0
+	const fileHandle = pr.state.globals_int[4]
+	if (fileHandle < 0 )
+	{
+		con.dPrint(`fgets: invalid file handle ${fileHandle}\n`);
+		return;
+	}
+	if (pr.state.openfiles[fileHandle] === null)
+	{
+		con.dPrint(`fgets: no such file handle ${fileHandle} (or file has been closed) \n`);
+		return;
+	}
+}
 export const builtin = [
 	fixme,
 	makevectors,
@@ -1152,7 +1233,7 @@ export const ebfs_builtins = [
 	{ defaultFnNbr: 96, name: "fbound", fn: fixme, fnNbr: 0 },
 	{ defaultFnNbr: 97, name: "fpow", fn: fixme, fnNbr: 0 },
 	{ defaultFnNbr: 98, name: "findfloat", fn: fixme, fnNbr: 0 },
-	//	{ defaultFnNbr: 99, name: "extension_find", fn: extension_find, fnNbr: 0 },	// 2001-10-20 Extension System by Lord Havoc/Maddes
+	{ defaultFnNbr: 99, name: "checkextension", fn: checkextension, fnNbr: 0 },	// 2001-10-20 Extension System by Lord Havoc/Maddes
 	//	{ defaultFnNbr: 0, name: "checkextension", fn: extension_find, fnNbr: 0 },
 	{ defaultFnNbr: 100, name: "builtin_find", fn: fixme, fnNbr: 0 },		// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes
 	{ defaultFnNbr: 101, name: "cmd_find", fn: fixme, fnNbr: 0 },				// 2001-09-16 New BuiltIn Function: cmd_find() by Maddes
@@ -1187,7 +1268,7 @@ export const ebfs_builtins = [
 
 	// 2001-11-15 DarkPlaces general builtin functions by LordHavoc  start
 	{ defaultFnNbr: 400, name: "copyentity", fn: copyentity, fnNbr: 0 },
-	{ defaultFnNbr: 401, name: "setcolor", fn: fixme, fnNbr: 0 },
+	{ defaultFnNbr: 401, name: "setcolor", fn: setcolors, fnNbr: 0 },
 	{ defaultFnNbr: 402, name: "findchain", fn: findchain, fnNbr: 0 },
 	{ defaultFnNbr: 403, name: "findchainfloat", fn: findchainfloat, fnNbr: 0}
 ]
