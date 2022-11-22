@@ -4,16 +4,29 @@ import * as com from '../../engine/com'
 import * as sys from '../../engine/sys'
 import * as con from '../../engine/console'
 import IPackedFile from '../../engine/interfaces/store/IPackedFile'
-import * as fs from 'fs'
+import {promises as fs} from 'fs'
+import * as fsBase from 'fs'
 
 export const writeFile = (filename: string, data: Uint8Array, len: number) =>
 {
-  return Promise.reject(new Error('Not Implemented'))
+	return fs.open(filename, 'a')
+		.then(fd => fs.writeFile(fd, new Uint8Array(data, 0, len)))
+		.then(() => true)
+		.catch(err => {
+			sys.print(`Could not write '${filename}' to filesystem: ${err.message}\n`);
+			return false
+		})
 }
 
 export const writeTextFile = (filename, data) =>
 {
-  return Promise.reject(new Error('Not Implemented'))
+	return fs.open(filename, 'a')
+		.then(fd => fs.writeFile(fd, data))
+		.then(() => true)
+		.catch(err => {
+			sys.print(`Could not write '${filename}' to filesystem: ${err.message}\n`);
+			return false
+		})
 }
 
 export const loadFile = async function(filename: string)
@@ -34,7 +47,7 @@ export const loadFile = async function(filename: string)
 					return new ArrayBuffer(0);
 				try
 				{
-					fd = fs.openSync(search.dir + '/pak' + j + '.pak', 'r');
+					fd = fsBase.openSync(search.dir + '/pak' + j + '.pak', 'r');
 				}
 				catch (e)
 				{
@@ -42,8 +55,8 @@ export const loadFile = async function(filename: string)
 				}
 				sys.print('PackFile: ' + search.dir + '/pak' + j + '.pak : ' + filename + '\n')
 				src = Buffer.alloc(file.filelen);
-				fs.readSync(fd, src, 0, file.filelen, file.filepos);
-				fs.closeSync(fd);
+				fsBase.readSync(fd, src, 0, file.filelen, file.filepos);
+				fsBase.closeSync(fd);
 				break;
 			}
 		}
@@ -51,7 +64,7 @@ export const loadFile = async function(filename: string)
 			break;
 		try
 		{
-			src = fs.readFileSync(search.dir + '/' + filename);
+			src = fsBase.readFileSync(search.dir + '/' + filename);
 			sys.print('FindFile: ' + search.dir + '/' + filename + '\n');
 			break;
 		}
@@ -101,7 +114,7 @@ export const loadPackFile = async (dir: string, packName: string) : Promise<{nam
 	var fd;
 	try
 	{
-		fd = fs.openSync(packfile, 'r');
+		fd = fsBase.openSync(packfile, 'r');
 	}
 	catch (e)
 	{
@@ -109,7 +122,7 @@ export const loadPackFile = async (dir: string, packName: string) : Promise<{nam
 	}
 
 	var buf = Buffer.alloc(12);
-	fs.readSync(fd, buf, 0, 12, 0);
+	fsBase.readSync(fd, buf, 0, 12, 0);
 	if (buf.readUInt32LE(0) !== 0x4b434150)
 		sys.error(packfile + ' is not a packfile');
 	var dirofs = buf.readUInt32LE(4);
@@ -121,7 +134,7 @@ export const loadPackFile = async (dir: string, packName: string) : Promise<{nam
 	if (numpackfiles !== 0)
 	{
 		buf = Buffer.alloc(dirlen);
-		fs.readSync(fd, buf, 0, dirlen, dirofs);
+		fsBase.readSync(fd, buf, 0, dirlen, dirofs);
 		if (crc.block(buf) !== 32981)
 			com.state.modified = true;
 		var i;
@@ -135,7 +148,7 @@ export const loadPackFile = async (dir: string, packName: string) : Promise<{nam
 			}
 		}
 	}
-	fs.closeSync(fd);
+	fsBase.closeSync(fd);
 	con.print('Added packfile ' + packfile + ' (' + numpackfiles + ' files)\n');
 
 	return {

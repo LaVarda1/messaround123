@@ -1249,7 +1249,6 @@ export const parseServerInfo = async function()
     clState.sound_precache[i] = await s.precacheSound(sound_precache[i]);
     await keepaliveMessage();
   }
-
   clState.worldmodel = clState.model_precache[1];
   entityNum(0).model = clState.worldmodel;
   r.newMap();

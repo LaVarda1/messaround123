@@ -17,6 +17,11 @@ const progheader_crc = 5927;
 export const cvr = {
 } as any
 
+export type PRFile = {
+  name: string,
+  position: number,
+}
+
 export let state = {
   strings: null,
   globals_int: null,
@@ -27,9 +32,10 @@ export let state = {
   edict_size: 0,
   trace: false,
   alpha_supported: false,
-  numbuiltins: 0
+  numbuiltins: 0,
+  openfiles: {}
 
-} as any
+} as any & { openfiles: Record<number, string | null>}
 
 export const ETYPE = {
   ev_void: 0,
@@ -567,6 +573,7 @@ export const init = function () {
   cvar.registerVariable('saved4', '0', true);
   cvr.pr_builtin_find = cvar.registerVariable('pr_builtin_find', '0');
   cvr.pr_builtin_remap = cvar.registerVariable('pr_builtin_remap', '0');
+	cvr.pr_checkextension = cvar.registerVariable('pr_checkextension', '1', false, true); //"indicates to QuakeC that the standard quakec extensions system is available (if 0, quakec should not attempt to use extensions)"}
 };
 
 // exec

@@ -40,7 +40,9 @@ export let state = {
 		data: new ArrayBuffer(128),
 		cursize: 0
 	},
-	svs: {}
+	svs: {
+		serverinfo: {}
+	}
 } as any;
 
 export const cvr = {
@@ -442,6 +444,7 @@ const updateToReliableMessages = function () {
 			client = state.svs.clients[j];
 			if (client.active !== true)
 				continue;
+				
 			msg.writeByte(client.message, protocol.SVC.updatefrags);
 			msg.writeByte(client.message, i);
 			msg.writeShort(client.message, frags);
