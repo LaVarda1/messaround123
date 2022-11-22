@@ -25,7 +25,7 @@ export const checkForResend = (): number => {
   return 0
 }
 export const canSendMessage = (sock: ISocket) => {
-  return true
+  return sock.canSend
 }
 
 export const init = function()
@@ -84,6 +84,7 @@ export const checkNewConnections = (): ISocket => {
 	sock.driverdata = connection;
 	sock.receiveMessage = [];
 	sock.address = connection.socket.remoteAddress;
+	sock.canSend = true
 	connection.data_socket = sock;
 	connection.on('message', connectionOnMessage);
 	connection.on('close', connectionOnClose);
@@ -98,11 +99,13 @@ export const getMessage = (sock: ISocket) => {
 		return -1;
 	if (sock.receiveMessage.length === 0)
 		return 0;
+	sock.canSend= true
 	var src = sock.receiveMessage.shift(), dest = new Uint8Array(net.state.message.data);
 	net.state.message.cursize = src.length - 1;
 	var i;
 	for (i = 1; i < src.length; ++i)
 		dest[i - 1] = src[i];
+	sock.canSend = true
 	return src[0];
 }
 
@@ -116,7 +119,12 @@ export const sendMessage = (sock: ISocket, data: IDatagram) => {
 	var i;
 	for (i = 0; i < data.cursize; ++i)
 		dest[i + 1] = src[i];
+	
+	if (data.cursize === 1) {
+		debugger
+	}
 	sock.driverdata.sendBytes(dest);
+	sock.canSend = false
 	return 1;
 }
 
@@ -130,15 +138,9 @@ export const sendUnreliableMessage = (sock: ISocket, data: IDatagram) => {
 	var i;
 	for (i = 0; i < data.cursize; ++i)
 		dest[i + 1] = src[i];
+
 	sock.driverdata.sendBytes(dest);
 	return 1;
-};
-
-export const cnSendMessage = (sock: ISocket) => {
-	if (sock.driverdata == null)
-		return;
-	if (sock.driverdata.closeReasonCode === -1)
-		return true;
 };
 
 export const close = (sock: ISocket) => {

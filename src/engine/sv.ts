@@ -20,7 +20,6 @@ import * as pf from './pf'
 
 const MAX_ENT_LEAFS = 32
 
-
 export let state = {
 	fatpvs: [],
 	fatbytes: 0,
@@ -461,6 +460,7 @@ const updateToReliableMessages = function () {
 			client = state.svs.clients[j];
 			if (client.active !== true)
 				continue;
+				
 			msg.writeByte(client.message, protocol.SVC.updatefrags);
 			msg.writeByte(client.message, i);
 			msg.writeShort(client.message, frags);
@@ -2503,6 +2503,7 @@ export const sendClientMessages = async function () {
 		}
 		else if (client.sendsignon !== true) {
 			if ((host.state.realtime - client.last_message) > 5.0) {
+				console.log('sending nop')
 				if (net.sendUnreliableMessage(client.netconnection, state.nop) === -1)
 					await host.dropClient(true);
 				client.last_message = host.state.realtime;
