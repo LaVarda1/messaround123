@@ -998,65 +998,66 @@ const strcat = () => {
 	pr.state.globals_float[1] = pr.newString(out, out + 1)
 }
 
-const fopen = async () => {
-	const str = pr.getString(pr.state.globals_int[4])
-	const files = Object.keys(pr.state.openfiles)
-	let fileHandle = 0
-	for(var i = 0; i <= files.length; i ++)
-		if (!pr.state.openfiles[i]) {
-			fileHandle = i
-			pr.state.openfiles[i] = {
-				buffer: await com.loadFile('')
-			}
-			break
-		}
+// File Handling - someday
+// const fopen = async () => {
+// 	const str = pr.getString(pr.state.globals_int[4])
+// 	const files = Object.keys(pr.state.openfiles)
+// 	let fileHandle = 0
+// 	for(var i = 0; i <= files.length; i ++)
+// 		if (!pr.state.openfiles[i]) {
+// 			fileHandle = i
+// 			pr.state.openfiles[i] = {
+// 				buffer: await com.loadFile('')
+// 			}
+// 			break
+// 		}
 
-	pr.state.globals_float[1] = fileHandle
-}
+// 	pr.state.globals_float[1] = fileHandle
+// }
 
-const fclose = () => {
-	const fileHandle = pr.state.globals_int[4]
-	if (fileHandle < 0 )
-	{
-		con.dPrint(`fclose: invalid file handle ${fileHandle}\n`);
-		return;
-	}
-	if (pr.state.openfiles[fileHandle] === null)
-	{
-		con.dPrint(`fclose: no such file handle ${fileHandle} (or file has been closed) \n`);
-		return;
-	}
-	pr.state.openfiles[fileHandle] = null
-}
+// const fclose = () => {
+// 	const fileHandle = pr.state.globals_int[4]
+// 	if (fileHandle < 0 )
+// 	{
+// 		con.dPrint(`fclose: invalid file handle ${fileHandle}\n`);
+// 		return;
+// 	}
+// 	if (pr.state.openfiles[fileHandle] === null)
+// 	{
+// 		con.dPrint(`fclose: no such file handle ${fileHandle} (or file has been closed) \n`);
+// 		return;
+// 	}
+// 	pr.state.openfiles[fileHandle] = null
+// }
 
-const fgets = () => {
-	pr.state.globals_int[1] = 0
-	const fileHandle = pr.state.globals_int[4]
-	if (fileHandle < 0 )
-	{
-		con.dPrint(`fgets: invalid file handle ${fileHandle}\n`);
-		return;
-	}
-	if (pr.state.openfiles[fileHandle] === null)
-	{
-		con.dPrint(`fgets: no such file handle ${fileHandle} (or file has been closed) \n`);
-		return;
-	}
-}
-const fputs = () => {
-	pr.state.globals_int[1] = 0
-	const fileHandle = pr.state.globals_int[4]
-	if (fileHandle < 0 )
-	{
-		con.dPrint(`fgets: invalid file handle ${fileHandle}\n`);
-		return;
-	}
-	if (pr.state.openfiles[fileHandle] === null)
-	{
-		con.dPrint(`fgets: no such file handle ${fileHandle} (or file has been closed) \n`);
-		return;
-	}
-}
+// const fgets = () => {
+// 	pr.state.globals_int[1] = 0
+// 	const fileHandle = pr.state.globals_int[4]
+// 	if (fileHandle < 0 )
+// 	{
+// 		con.dPrint(`fgets: invalid file handle ${fileHandle}\n`);
+// 		return;
+// 	}
+// 	if (pr.state.openfiles[fileHandle] === null)
+// 	{
+// 		con.dPrint(`fgets: no such file handle ${fileHandle} (or file has been closed) \n`);
+// 		return;
+// 	}
+// }
+// const fputs = () => {
+// 	pr.state.globals_int[1] = 0
+// 	const fileHandle = pr.state.globals_int[4]
+// 	if (fileHandle < 0 )
+// 	{
+// 		con.dPrint(`fgets: invalid file handle ${fileHandle}\n`);
+// 		return;
+// 	}
+// 	if (pr.state.openfiles[fileHandle] === null)
+// 	{
+// 		con.dPrint(`fgets: no such file handle ${fileHandle} (or file has been closed) \n`);
+// 		return;
+// 	}
+// }
 export const builtin = [
 	fixme,
 	makevectors,

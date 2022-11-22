@@ -148,18 +148,6 @@ export const dPrint = function(_msg: string)
 
 export const print = async function(_msg: string)
 {
-  if (state.debuglog === true)
-  {
-    var data = await com.loadTextFile('qconsole.log');
-    if (data != null)
-    {
-      data += _msg;
-      if (data.length >= 32768)
-        data = data.substring(data.length - 16384);
-      com.writeTextFile('qconsole.log', data);
-    }
-  }
-
   if (host.state.dedicated) {
     sys.print(_msg)
     return
@@ -201,8 +189,6 @@ export const init = function()
   state.current = 0
   state.text = []
   state.debuglog = (com.checkParm('-condebug') != null);
-  if (state.debuglog === true)
-    com.writeTextFile('qconsole.log', '');
   print('Console initialized.\n');
 
   cvr.textsize = cvar.registerVariable('con_textsize', "16");

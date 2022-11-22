@@ -4,10 +4,15 @@ import * as com from '../../engine/com'
 import * as _assetStore from './assetStore'
 import * as webs from './net/webs'
 import * as datagram from './net/datagram'
+import * as fs from 'fs'
+import * as con from '../../engine/console'
 
 export const assetStore = _assetStore
+
+type LogDescriptor = number | 'ERROR'
 var commandBuffer = ''
 var oldTime = null
+let logFd: LogDescriptor = 0
 
 export const quit = (): void => {
 	process.exit(0);
@@ -15,6 +20,18 @@ export const quit = (): void => {
 
 export const print = (text: string): void => {
 	process.stdout.write(text);
+	if (con.state.debuglog && logFd !== 'ERROR') {
+		if (!logFd) {
+			try {
+				logFd = fs.openSync('qconsole.log', 'a')
+			} catch(err) {
+				logFd = 'ERROR'
+				process.stdout.write('Error opening qconsole.log: '+ err.message);
+				return
+			}
+		}
+		fs.appendFileSync(logFd, text)
+	}
 }
 
 export const error = (text: string): void => {
