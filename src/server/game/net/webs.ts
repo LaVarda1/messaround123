@@ -120,9 +120,6 @@ export const sendMessage = (sock: ISocket, data: IDatagram) => {
 	for (i = 0; i < data.cursize; ++i)
 		dest[i + 1] = src[i];
 	
-	if (data.cursize === 1) {
-		debugger
-	}
 	sock.driverdata.sendBytes(dest);
 	sock.canSend = false
 	return 1;

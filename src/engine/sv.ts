@@ -118,22 +118,6 @@ const initState = () => {
 }
 // main
 
-export const updateInfo = function(ed: number, key: string, value: string) {
-	let pre = ''
-	let info = null
-	let infoPlayer = null
-	if (!ed) {
-		let v = cvar.findVar(key)
-		if (v && v.server) {
-			cvar.set(key, value)
-			return
-		}
-		info = state.svs.serverinfo
-	} else if(ed < state.svs.maxclients) {
-		ed-=1
-		infoPlayer = state.svs.clients[ed].edict
-	}
-}
 export const startParticle = function (org, dir, color, count) {
 	var datagram = state.server.datagram;
 	if (datagram.cursize >= 1009)
