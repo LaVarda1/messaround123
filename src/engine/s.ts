@@ -716,8 +716,9 @@ export const loadSound = async function (s) {
 				if (cue !== true)
 					break;
 				cue = false;
-				if (view.getUint32(p + 28, true) === 0x6b72616d)
+				if (p + 32 < data.byteLength && view.getUint32(p + 28, true) === 0x6b72616d)
 					samples = loopstart + view.getUint32(p + 24, true);
+			
 				break;
 		}
 		p += view.getUint32(p + 4, true) + 8;
