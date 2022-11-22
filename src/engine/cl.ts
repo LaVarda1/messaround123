@@ -1155,7 +1155,6 @@ export const keepaliveMessage = async function()
   for (;;)
   {
     ret = getMessage();
-    console.log('Keepalive ret:' + ret)
     switch (ret)
     {
     case 0:

@@ -2503,7 +2503,6 @@ export const sendClientMessages = async function () {
 		}
 		else if (client.sendsignon !== true) {
 			if ((host.state.realtime - client.last_message) > 5.0) {
-				console.log('sending nop')
 				if (net.sendUnreliableMessage(client.netconnection, state.nop) === -1)
 					await host.dropClient(true);
 				client.last_message = host.state.realtime;

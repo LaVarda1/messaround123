@@ -945,16 +945,13 @@ const findchainfloat = function ()
 
 	pr.state.globals_int[1] = chain;
 }
-
+const extensions = {
+	'DP_SV_SETCOLOR': true
+}
 const checkextension = function () {
-	const extensions = [
-		'DP_SV_SETCOLOR'
-	]
-
+	
 	const extFind = pr.getString(pr.state.globals_int[4])
-
-	console.log(extFind)
-	pr.state.globals_int[1] = extensions.some(ext => ext === extFind)
+	pr.state.globals_int[1] = extensions[extFind] || false
 }
 // void PF_TraceToss (void)
 // {

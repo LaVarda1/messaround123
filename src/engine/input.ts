@@ -78,16 +78,6 @@ export const mouseMove = function()
 {
   if (state.mouse_avail !== true)
     return;
-  const date = Date.now()
-  // Debug chrome mouse issue
-  // https://bugs.chromium.org/p/chromium/issues/detail?id=1031906
-  // Will this ever be fixed? :(
-  // if (mouse_x > 300 || mouse_x < -300) {
-  //   console.log(date + ' !!!! -> ' + mouse_x + '\t' + mouse_y)
-  // } else {
-  //   if (mouse_x != 0 || mouse_y != 0 )
-  //     console.log(date + ' -> ' + mouse_x + '\t' + mouse_y)
-  // }
   var _mouse_x, _mouse_y;
   if (cvr.m_filter.value !== 0)
   {
