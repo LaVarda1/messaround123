@@ -15,10 +15,16 @@ import * as m from './m'
 import * as GL from './GL'
 import * as tx from './texture'
 
+
 export const state = {
   con_current: 0,
   centertime_off: 0.0,
-  centerstring: []
+  centerstring: [],
+	fps: {
+		oldtime: 0,
+		lastVal: 0,
+		oldframecount: 0
+	}
 } as any
 
 export const cvr = {
@@ -197,6 +203,7 @@ export const init = async function()
 	cvr.showpause = cvar.registerVariable('showpause', '1');
 	cvr.centertime = cvar.registerVariable('scr_centertime', '2');
 	cvr.printspeed = cvar.registerVariable('scr_printspeed', '8');
+	cvr.showfps = cvar.registerVariable('scr_showfps', '0');
 	cmd.addCommand('screenshot', screenShot_f);
 	cmd.addCommand('sizeup', sizeUp_f);
 	cmd.addCommand('sizedown', sizeDown_f);
@@ -260,6 +267,30 @@ export const setUpToDrawConsole = function()
 			state.con_current = conlines;
 	}
 };
+
+const drawFPS = function () {
+	let elapsed_time = host.state.realtime - state.fps.oldtime;
+	let frames = host.state.framecount - state.fps.oldframecount
+	if (elapsed_time < 0 || frames < 0)
+	{
+		state.fps.oldtime = host.state.realtime;
+		state.fps.oldframecount = host.state.framecount;
+		return;
+	}
+
+	if (elapsed_time > 0.75) {
+		state.fps.lastVal = frames / elapsed_time
+		state.fps.oldtime = host.state.realtime
+		state.fps.oldframecount = host.state.framecount
+	}
+
+	if (cvr.showfps.value) {
+		const str = `${Math.round(state.fps.lastVal)} fps`
+		const x = vid.state.width - (str.length << 4)
+		const y = vid.state.height - 16
+		draw.string(x, y, str)
+	}
+}
 
 export const drawConsole = function()
 {
@@ -369,6 +400,7 @@ export const updateScreen = function()
 		drawPause();
 		drawCenterString();
 		sbar.drawSbar();
+		drawFPS();
 		drawConsole();
 		m.drawMenu();
 	}

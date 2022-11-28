@@ -260,10 +260,11 @@ export const init = async (argv: string) =>
 			return;
 		}
 			
-		var timeOut = new Date().getTime()
-		var putzAroundTime = Math.max((1000.0 / (state.maxFps || 60)) - (timeOut - timeIn), 1);
+		// var timeOut = new Date().getTime()
+		// var putzAroundTime = Math.max((1000.0 / (state.maxFps || 60)) - (timeOut - timeIn), 1);
 		
-		return setTimeout(gameLoop, putzAroundTime);
+		
+		return window.requestAnimationFrame(gameLoop)
 	}
 
 	state.looping = true;
