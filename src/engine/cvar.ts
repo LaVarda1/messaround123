@@ -74,7 +74,7 @@ export const registerVariable = function(name: string, value: string, archive: a
   {
     if (vars[i].name === name)
     {
-      con.print('Can\'t register variable ' + name + ', allready defined\n');
+      con.print('Can\'t register variable ' + name + ', already defined\n');
       return;
     }
   }

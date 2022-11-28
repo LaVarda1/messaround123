@@ -17,6 +17,24 @@ import * as os from 'os'
 import { QConnectStatus } from '../../../engine/interfaces/net/INetworkDriver'
 
 const HEADER_SIZE = 8
+type RInfo = {
+	address: string // The sender address.
+	family: string //  The address family ('IPv4' or 'IPv6').
+	port: number // The sender port.
+	size: number // The message size.
+}
+
+const printAscii = (dec: number) => {
+	if (dec && dec > 31 && dec < 126) {
+		return ' ' + String.fromCharCode(dec).padStart(2, ' ')
+	} else {
+		return ' 0x' + dec.toString(16).padStart(2, '0')
+	}
+}
+
+export const byteArayToString = (bytes: ArrayBuffer) => {
+	return [].map.call(bytes.slice(0, 200), printAscii)
+}
 
 export const name = "datagram"
 export var initialized = false
@@ -39,7 +57,6 @@ export const checkForResend = (): number => {
 
 export const registerWithMaster = () => {
 }
-
 export const init = function()
 {
 	if (com.checkParm('-noudp') != null)
@@ -138,15 +155,15 @@ export const checkNewConnections = function()
 	sock.sendSequence = 0;
 	sock.unreliableSendSequence = 0;
 	sock.sendMessageLength = 0;
-	sock.sendMessage = new Buffer(def.max_message);
+	sock.sendMessage = Buffer.alloc(def.max_message);
 	sock.receiveSequence = 0;
 	sock.unreliableReceiveSequence = 0;
 	sock.receiveMessageLength = 0;
-	sock.receiveMessage = new Buffer(def.max_message);
+	sock.receiveMessage = Buffer.alloc(def.max_message);
 	sock.addr = [accetpData.address, accetpData.port],
 	sock.address = accetpData.address + ':' + accetpData.port
 	sock.messages = [];
-	var buf = new Buffer(def.max_message + HEADER_SIZE);
+	var buf = Buffer.alloc(def.max_message + HEADER_SIZE);
 	buf.writeUInt32LE(0x09000080, 0);
 	buf[4] = 0x81;
 	buf.writeUInt32LE(newsocket.data_port, 5);
@@ -158,8 +175,9 @@ export const getMessage = function(sock)
 {
 	if (sock.driverdata == null)
 		return -1;
-	if ((sock.canSend !== true) && ((net.state.time - sock.lastSendTime) > 1.0))
+	if ((sock.canSend !== true) && ((net.state.time - sock.lastSendTime) > 1.0)){
 		sendMessageNext(sock, true);
+	}
 	var message, length, flags, ret = 0, sequence, i;
 	for (; sock.messages.length > 0; )
 	{
@@ -181,7 +199,7 @@ export const getMessage = function(sock)
 				break;
 			}
 			if (sequence !== sock.unreliableReceiveSequence)
-        		con.dPrint('Dropped ' + (sequence - sock.unreliableReceiveSequence) + ' datagram(s)\n');
+        con.dPrint('Dropped ' + (sequence - sock.unreliableReceiveSequence) + ' datagram(s)\n');
 			sock.unreliableReceiveSequence = sequence + 1;
 			const dest = new Uint8Array(net.state.message.data)
 			net.state.message.cursize = length;
@@ -200,7 +218,7 @@ export const getMessage = function(sock)
 			if (sequence === sock.ackSequence)
 			{
 				if (++sock.ackSequence !== sock.sendSequence)
-          			con.dPrint('ack sequencing error\n');
+          con.dPrint('ack sequencing error\n');
 			}
 			else
 			{
@@ -220,7 +238,7 @@ export const getMessage = function(sock)
 		}
 		if ((flags & 1) !== 0)
 		{
-			sock.driverdata.send(new Buffer([0, 2, 0, 8, sequence >>> 24, (sequence & 0xff0000) >>> 16, (sequence & 0xff00) >>> 8, (sequence & 0xff) >>> 0]),
+			sock.driverdata.send(Buffer.from([0, 2, 0, 8, sequence >>> 24, (sequence & 0xff0000) >>> 16, (sequence & 0xff00) >>> 8, (sequence & 0xff) >>> 0]),
 				0, 8, sock.addr[1], sock.addr[0]);
 			if (sequence !== sock.receiveSequence)
 				continue;
@@ -248,7 +266,7 @@ export const getMessage = function(sock)
 	return ret;
 };
 
-export const sendMessage = function(sock, data)
+export const sendMessage = function(sock: ISocket, data: IDatagram)
 {
 	if (sock.driverdata == null)
 		return -1;
@@ -256,7 +274,7 @@ export const sendMessage = function(sock, data)
 	for (i = 0; i < data.cursize; ++i)
 		sock.sendMessage[i] = src[i];
 	sock.sendMessageLength = data.cursize;
-	var buf = new Buffer(def.max_message + HEADER_SIZE);
+	var buf = Buffer.alloc(def.max_message + HEADER_SIZE);
 	buf[0] = 0;
 	var dataLen;
 	if (data.cursize <= def.max_message)
@@ -275,12 +293,13 @@ export const sendMessage = function(sock, data)
 	sock.canSend = false;
 	sock.driverdata.send(buf, 0, dataLen + 8, sock.addr[1], sock.addr[0]);
 	sock.lastSendTime = net.state.time;
+	
 	return 1;
 };
 
-const sendMessageNext = function(sock, resend)
+const sendMessageNext = function(sock: ISocket, resend)
 {
-	var buf = new Buffer(def.max_message + HEADER_SIZE);
+	var buf = Buffer.alloc(def.max_message + HEADER_SIZE);
 	buf[0] = 0;
 	var dataLen;
 	if (sock.sendMessageLength <= def.max_message)
@@ -308,7 +327,7 @@ export const sendUnreliableMessage = function(sock, data)
 {
 	if (sock.driverdata == null)
 		return -1;
-	var buf = new Buffer(def.max_message + HEADER_SIZE);
+	var buf = Buffer.alloc(def.max_message + HEADER_SIZE);
 	buf.writeUInt32BE(data.cursize + 0x00100008, 0);
 	buf.writeUInt32BE(sock.unreliableSendSequence++, 4);
 	var i, src = new Uint8Array(data.data);
@@ -347,7 +366,7 @@ const controlOnMessage = function(msg, rinfo)
 	if (((msg[2] << 8) + msg[3]) !== rinfo.size)
 		return;
 	var command = msg[4];
-	var buf = new Buffer(def.max_message + HEADER_SIZE), str, cursize;
+	var buf = Buffer.alloc(def.max_message + HEADER_SIZE), str, cursize;
 	buf[0] = 0x80;
 	buf[1] = 0;
 
@@ -544,7 +563,7 @@ const dgramOnListening = function()
 	this.data_port = this.address().port;
 };
 
-const dgramOnMessage = function(msg, rinfo)
+const dgramOnMessage = function(msg: Buffer, rinfo: RInfo)
 {
 	if (this.data_socket == null)
 		return;

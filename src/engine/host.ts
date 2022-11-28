@@ -531,6 +531,7 @@ const reconnect_f = function()
   if (!state.dedicated) {
     scr.beginLoadingPlaque();
   }
+  // net.clearAllBuffers()
   cl.cls.signon = 0;
 };
 
@@ -931,7 +932,7 @@ const kill_f = async function()
   }
   if (sv.state.player.v_float[pr.entvars.health] <= 0.0)
   {
-    clientPrint('Can\'t suicide -- allready dead!\n');
+    clientPrint('Can\'t suicide -- already dead!\n');
     return;
   }
   pr.state.globals_float[pr.globalvars.time] = sv.state.server.time;
@@ -964,12 +965,14 @@ const preSpawn_f = function()
     con.print('prespawn is not valid from the console\n');
     return;
   }
+
   var client = state.client;
   if (client.spawned === true)
   {
-    con.print('prespawn not valid -- allready spawned\n');
+    con.print('prespawn not valid -- already spawned\n');
     return;
   }
+  state.client.reconnect = false
   sz.write(client.message, new Uint8Array(sv.state.server.signon.data), sv.state.server.signon.cursize);
   msg.writeByte(client.message, protocol.SVC.signonnum);
   msg.writeByte(client.message, 2);
@@ -986,7 +989,7 @@ const spawn_f = async function()
   var client = state.client;
   if (client.spawned === true)
   {
-    con.print('Spawn not valid -- allready spawned\n');
+    con.print('Spawn not valid -- already spawned\n');
     return;
   }
 
@@ -1059,6 +1062,10 @@ const spawn_f = async function()
 
 const begin_f = function()
 {
+  if (state.client.reconnect) {
+    con.print('Ignoring begin durring reconnect\n');
+    return;
+  }
   if (cmd.state.client !== true)
   {
     con.print('begin is not valid from the console\n');
@@ -1587,7 +1594,7 @@ export const shutdownServer = async function(crash: boolean = false)
   } while (count !== 0);
   var buf = {data: new ArrayBuffer(4), cursize: 1};
   (new Uint8Array(buf.data))[0] = protocol.SVC.disconnect;
-  count = net.sendToAll(buf);
+  count = await net.sendToAll(buf);
   if (count !== 0)
     con.print('Host.ShutdownServer: NET.SendToAll failed for ' + count + ' clients\n');
   for (i = 0; i < sv.state.svs.maxclients; ++i)

@@ -1144,44 +1144,6 @@ export const parseStartSoundPacket = async function()
   await s.startSound(ent, channel, clState.sound_precache[sound_num], pos, volume / 255.0, attenuation);
 };
 
-export const keepaliveMessage = async function()
-{
-  if ((sv.state.server.active === true) || (cls.demoplayback === true))
-    return;
-  var oldsize = net.state.message.cursize;
-  var olddata = new Uint8Array(def.max_message);
-  olddata.set(new Uint8Array(net.state.message.data, 0, oldsize));
-  var ret;
-  for (;;)
-  {
-    ret = getMessage();
-    switch (ret)
-    {
-    case 0:
-      break;
-    case 1:
-      await host.error('keepaliveMessage: received a message');
-    case 2:
-      if (msg.readByte() !== protocol.SVC.nop)
-        await host.error('keepaliveMessage: datagram wasn\'t a nop');
-    default:
-      await host.error('keepaliveMessage: CL.GetMessage failed');
-    }
-    if (ret === 0)
-      break;
-  }
-  net.state.message.cursize = oldsize;
-  (new Uint8Array(net.state.message.data, 0, oldsize)).set(olddata.subarray(0, oldsize));
-  var time = sys.floatTime();
-  if ((time - state.lastmsg) < 5.0)
-    return;
-  state.lastmsg = time;
-  con.print('--> client to server keepalive\n');
-  msg.writeByte(cls.message, protocol.CLC.nop);
-  net.sendMessage(cls.netcon, cls.message);
-  cls.message.cursize = 0;
-};
-
 export const parseServerInfo = async function()
 {
   con.dPrint('Serverinfo packet received.\n');
@@ -1241,13 +1203,11 @@ export const parseServerInfo = async function()
       con.print('Model ' + model_precache[i] + ' not found\n');
       break;
     }
-    await keepaliveMessage();
   }
   clState.sound_precache = [];
   for (i = 1; i < numsounds; ++i)
   {
     clState.sound_precache[i] = await s.precacheSound(sound_precache[i]);
-    await keepaliveMessage();
   }
   clState.worldmodel = clState.model_precache[1];
   entityNum(0).model = clState.worldmodel;

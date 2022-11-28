@@ -27,7 +27,6 @@ export const listen = () => {
 
 export const registerWithMaster = () => {
 }
-
 export const connect = async (host: string): Promise<QConnectStatus | ISocket> => {
 	if (host !== 'local')
 		return 'failed';
@@ -78,13 +77,12 @@ export const getMessage = function(sock: ISocket)
 	var length = sock.receiveMessage[1] + (sock.receiveMessage[2] << 8);
 	if (length > net.state.message.data.byteLength)
 		sys.error('Loop.GetMessage: overflow');
-		net.state.message.cursize = length;
+	net.state.message.cursize = length;
 	(new Uint8Array(net.state.message.data)).set(sock.receiveMessage.subarray(3, length + 3));
 	sock.receiveMessageLength -= length;
 	if (sock.receiveMessageLength >= 4)
 	{
-		var i;
-		for (i = 0; i < sock.receiveMessageLength; ++i)
+		for (var i = 0; i < sock.receiveMessageLength; ++i)
 			sock.receiveMessage[i] = sock.receiveMessage[length + 3 + i];
 	}
 	sock.receiveMessageLength -= 3;

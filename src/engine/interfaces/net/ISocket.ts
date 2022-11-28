@@ -1,3 +1,6 @@
+import { byteArayToString } from "../../../server/game/net/webs"
+import { netquake } from "../../protocol"
+
 export default interface ISocket {
   connecttime: number,
   lastMessageTime: number,
@@ -5,6 +8,7 @@ export default interface ISocket {
   address: string,
   disconnected: boolean,
   canSend: boolean,
+  sendNext: boolean,
   receiveMessage: any,
   receiveMessageLength: number,
   driverdata: any,
@@ -17,7 +21,7 @@ export default interface ISocket {
   unreliableSendSequence: number,
   receiveSequence: number,
   unreliableReceiveSequence: number,
-  addr: any,
+  addr: [string, number],
   messages: Buffer[],
   netWait: boolean
 }
