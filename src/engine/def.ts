@@ -1,5 +1,5 @@
-export const webquake_version = 58;
-export const timedate = 'Exe: 13:00:49 Aug 8 2019\n';
+export const webquake_version = 59;
+export const timedate = 'Exe: 12:40:00 Nov 28 2022\n';
 
 export const max_edicts = 8192;
 export const max_vis_edicts = 4096;

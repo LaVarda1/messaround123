@@ -91,7 +91,8 @@ export const newQSocket = function()
 		unreliableReceiveSequence: 0,
 		addr: null,
 		messages: null,
-		netWait: false
+		netWait: false,
+		sendNext: false
 	};
 	return activeSockets[i];
 };
@@ -254,9 +255,12 @@ export const canSendMessage = function(sock)
 	return state.drivers[sock.driver].canSendMessage(sock);
 };
 
-export const sendToAll = function(data)
+export const sendToAll = async function(data)
 {
-	var i, count = 0, state1 = [], state2 = [];
+	var i, 
+		count = 0, 
+		msg_init = [], 
+		msg_sent = [];
 	for (i = 0; i < sv.state.svs.maxclients; ++i)
 	{
 		host.state.client = sv.state.svs.clients[i];
@@ -264,17 +268,17 @@ export const sendToAll = function(data)
 			continue;
 		if (host.state.client.active !== true)
 		{
-			state1[i] = state2[i] = true;
+			msg_init[i] = msg_sent[i] = true;
 			continue;
 		}
 		if (host.state.client.netconnection.name === 'loop')
 		{
 			sendMessage(host.state.client.netconnection, data);
-			state1[i] = state2[i] = true;
+			msg_init[i] = msg_sent[i] = true;
 			continue;
 		}
 		++count;
-		state1[i] = state2[i] = false;
+		msg_init[i] = msg_sent[i] = false;
 	}
 	var start = sys.floatTime();
 	for (; count !== 0; )
@@ -283,24 +287,34 @@ export const sendToAll = function(data)
 		for (i = 0; i < sv.state.svs.maxclients; ++i)
 		{
 			host.state.client = sv.state.svs.clients[i];
-			if (state1[i] !== true)
+			if (host.state.client.netconnection == null)
+				continue;
+			if (!msg_init[i])
 			{
-				if (canSendMessage(host.state.client.netconnection) === true)
-				{
-					state1[i] = true;
-					sendMessage(host.state.client.netconnection, data);
-				}
-				else
+				let canSend = true
+				let retry = 0;
+				// wait three seconds for each client to process ack and receive reconnect
+				while (!(canSend = canSendMessage(host.state.client.netconnection)) && retry++ < 3) {
 					getMessage(host.state.client.netconnection);
+					con.dPrint('SendToAll - waiting to send\n')
+					await new Promise(resolve => setTimeout(resolve, 1000))
+				}
+				if (canSend)
+				{
+					msg_init[i] = true;
+					sendMessage(host.state.client.netconnection, data);
+				} else {
+					con.dPrint('SendToAll - could not send to client\n')
+				}
 				++count;
 				continue;
 			}
-			if (state2[i] !== true)
+			if (msg_sent[i] !== true)
 			{
 				if (canSendMessage(host.state.client.netconnection) === true)
-					state2[i] = true;
-				
-				getMessage(host.state.client.netconnection);
+					msg_sent[i] = true;
+				else
+					getMessage(host.state.client.netconnection);
 				++count;
 			}
 		}

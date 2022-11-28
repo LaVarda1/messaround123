@@ -2359,7 +2359,7 @@ export const spawnServer = async function (server) {
 	state.svs.changelevel_issued = false;
 
 	if (state.server.active === true) {
-		net.sendToAll(state.reconnect);
+		await net.sendToAll(state.reconnect);
 		await cmd.executeString('reconnect\n', undefined);
 	}
 
@@ -2468,6 +2468,7 @@ export const spawnServer = async function (server) {
 		if (host.state.client.active !== true)
 			continue;
 		host.state.client.edict.v_int[pr.entvars.netname] = pr.state.netnames + (i << 5);
+		host.state.client.reconnect = true
 		sendServerinfo(host.state.client);
 	}
 	net.registerWithMaster()
