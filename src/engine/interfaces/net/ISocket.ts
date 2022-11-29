@@ -22,6 +22,5 @@ export default interface ISocket {
   receiveSequence: number,
   unreliableReceiveSequence: number,
   addr: [string, number],
-  messages: Buffer[],
-  netWait: boolean
+  messages: Buffer[]
 }

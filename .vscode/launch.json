@@ -124,7 +124,7 @@
           "cwd": "${workspaceFolder}",
           "protocol": "inspector",
           "env": {
-            "STARTUP_CFG": "web_description halloween\n  web_connect_url sv.netquake.io/fortress\n web_location Ohio\n maxplayers 16\n hostname "WebQuake Team Fortress"\n deathmatch 3\n teamplay 31?TF2.5\n timelimit 31\n fraglimit 100\n samelevel 2"
+            "STARTUP_CFG": "web_description halloween\n  web_connect_url sv.netquake.io/fortress\n web_location Ohio\n maxplayers 16\n hostname "WebQuake Team Fortress"\n deathmatch 3\n teamplay 31?TF2.5\n timelimit 10\n fraglimit 100\n samelevel 2"
           },
           "args":
            [

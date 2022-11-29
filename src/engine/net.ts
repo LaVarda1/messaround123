@@ -91,7 +91,6 @@ export const newQSocket = function()
 		unreliableReceiveSequence: 0,
 		addr: null,
 		messages: null,
-		netWait: false,
 		sendNext: false
 	};
 	return activeSockets[i];
