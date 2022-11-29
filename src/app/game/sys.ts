@@ -2,7 +2,7 @@ import * as com from '../../engine/com'
 import * as host from '../../engine/host'
 import * as key from '../../engine/key'
 import * as vid from '../../engine/vid'
-import * as con from '../../engine/console'
+import * as cl from '../../engine/cl'
 import * as q from '../../engine/q'
 import * as _assetStore from './assetStore'
 import * as loop from './net/loop'
@@ -259,12 +259,12 @@ export const init = async (argv: string) =>
 			}
 			return;
 		}
-			
-		// var timeOut = new Date().getTime()
-		// var putzAroundTime = Math.max((1000.0 / (state.maxFps || 60)) - (timeOut - timeIn), 1);
 		
-		
-		return window.requestAnimationFrame(gameLoop)
+		// return window.requestAnimationFrame(gameLoop)
+
+		var timeOut = new Date().getTime()
+		var putzAroundTime = Math.max((1000.0 / (cl.cvr.maxfps.value || 60)) - (timeOut - timeIn), 1);
+		return setTimeout(gameLoop, putzAroundTime);
 	}
 
 	state.looping = true;
