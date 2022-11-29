@@ -1,17 +1,13 @@
 import ISocket from '../../../engine/interfaces/net/ISocket'
 import IDatagram from '../../../engine/interfaces/net/IDatagram'
 import * as sv from '../../../engine/sv'
-import * as host from '../../../engine/host'
 import * as pr from '../../../engine/pr'
 import * as com from '../../../engine/com'
 import * as con from '../../../engine/console'
 import * as net from '../../../engine/net'
 import * as def from '../../../engine/def'
 import * as cvar from '../../../engine/cvar'
-import * as websocket from 'websocket'
 import * as sys from '../sys'
-import * as http from 'http'
-import * as url from 'url'
 import * as dgram from 'dgram'
 import * as os from 'os'
 import { QConnectStatus } from '../../../engine/interfaces/net/INetworkDriver'
@@ -64,25 +60,6 @@ export const init = function()
 		return;
 
 	let i
-	// const portStartArg = com.checkParm('-udpportstart')
-	// let startPort = 0
-	// if (portStartArg) {
-	// 	startPort = parseInt(com.state.argv[portStartArg + 1])
-	// }
-	// var i, newsocket;
-	// for (i = 0; i < sv.state.svs.maxclientslimit; ++i)
-	// {
-	// 	newsocket = dgram.createSocket('udp4');
-	// 	state.sockets[i] = newsocket;
-	// 	if(startPort) {
-	// 		newsocket.bind(startPort + i);
-	// 	} else {
-	// 		newsocket.bind();
-	// 	}
-	// 	newsocket.on('listening', dgramOnListening);
-	// 	newsocket.on('message', dgramOnMessage);
-	// 	newsocket.on('error', dgramOnError);
-	// }
 
 	var local = os.networkInterfaces(), j, k, addr;
 	for (i in local)
@@ -128,9 +105,6 @@ export const listen = function()
 		return;
 	}
 	controlsocket.on('message', onMessage);
-	//controlsocket.on('listening', dgramOnListening);
-	//controlsocket.on('message', dgramOnMessage);
-	//controlsocket.on('error', dgramOnError);
 	state.controlsocket = controlsocket;
 };
 
@@ -140,19 +114,6 @@ export const checkNewConnections = function()
 		return;
 	var sock = net.newQSocket();
 	var acceptData = state.acceptsockets.shift();
-	var i, newsocket;
-	// for (i = 0; i < state.sockets.length; ++i)
-	// {
-	// 	newsocket = state.sockets[i];
-	// 	if ((newsocket.data_port != null) && (newsocket.data_socket == null))
-	// 		break;
-	// }
-	// if (i === state.sockets.length)
-	// 	return;
-	//newsocket.data_socket = sock;
-	if (acceptData.mod && acceptData.mod.type == 0x01 && acceptData.mod.version >= 34) {
-		sock.netWait = true;		// JPG 3.40 - NAT fix
-	}
 	sock.lastSendTime = net.state.time;
 	sock.canSend = true;
 	sock.driverdata = state.controlsocket;
@@ -187,10 +148,6 @@ export const getMessage = function(sock)
 	var message, length, flags, ret = 0, sequence, i;
 	for (; sock.messages.length > 0; )	
 	{
-		// if (!sock.netWait && sfunc.AddrCompare(&readaddr, &sock->addr) != 0)
-		// {
-		// 	continue;
-		// }
 		message = sock.messages.shift();
 		length = (message[2] << 8) + message[3] - 8;
 		flags = message[1];
@@ -357,20 +314,21 @@ export const close = function(sock)
 {
 	if (sock.driverdata == null)
 		return;
-	state.sockets[sock.address] = null
+	
+	delete state.sockets[sock.address]
 	sock.driverdata = null;
 };
 
 const onMessage = function(msg, rinfo)
 {
-	console.log(`msg: ${byteArayToString(msg)}`)
+	const sockets = state.sockets
 	if (sv.state.server.active !== true)
 		return;
 	const address = rinfo.address +':'+ rinfo.port
-	if (state.sockets[address] && rinfo.size >= 8) {
+	if (sockets[address] && rinfo.size >= 8) {
 		if ((msg[0] & 0x80) !== 0)
 			return;
-		const sock = state.sockets[address]
+		const sock = sockets[address]
 		sock.messages.push(msg)
 		return
 	}
@@ -380,7 +338,7 @@ const onMessage = function(msg, rinfo)
 	if ((msg[0] !== 0x80) || (msg[1] !== 0))
 		return;
 	if (((msg[2] << 8) + msg[3]) !== rinfo.size)
-		return;
+		return;``
 	var command = msg[4];
 	var buf = Buffer.alloc(def.max_message + HEADER_SIZE), str, cursize;
 	buf[0] = 0x80;
@@ -511,29 +469,6 @@ const onMessage = function(msg, rinfo)
 	}
 	var s;
 
-	// Joe - Allow clients to join with same IP (clients behind NAT)
-	// for (i = 0; i < net.activeSockets.length; ++i)
-	// {
-	// 	s = net.activeSockets[i];
-	// 	if (s.disconnected === true)
-	// 		continue;
-	// 	if (net.state.drivers[s.driver].name !== "datagram")
-	// 		continue;
-	// 	if (rinfo.address !== s.addr[0])
-	// 		continue;
-	// 	if ((rinfo.port !== s.addr[1]) || ((sys.floatTime() - s.connecttime) >= 2.0))
-	// 	{
-	// 		net.close(s);
-	// 		return;
-	// 	}
-	// 	buf[2] = 0;
-	// 	buf[3] = 9;
-	// 	buf[4] = 0x81;
-	// 	buf.writeUInt32LE(s.driverdata.data_port, 5);
-	// 	state.controlsocket.send(buf, 0, 9, rinfo.port, rinfo.address);
-	// 	return;
-	// }
-
 	// JPG - support for mods
 	let mod = 0, modVersion = 0, modFlags = 0
 	if (msg.length > 12)
@@ -545,12 +480,6 @@ const onMessage = function(msg, rinfo)
 	if (msg.length > 14)
 		modFlags = msg[14]
 
-	// for (i = 0; i < state.sockets.length; ++i)
-	// {
-	// 	s = state.sockets[i];
-	// 	if ((s.data_port != null) && (s.data_socket == null))
-	// 		break;
-	// }
 	if ((i === Object.keys(state.sockets).length) || ((net.state.activeconnections + state.acceptsockets.length) >= sv.state.svs.maxclients))
 	{
 		buf[2] = 0;
@@ -570,30 +499,3 @@ const onMessage = function(msg, rinfo)
 		}
 	});
 };
-
-// const dgramOnError = function(e)
-// {
-// 	//this.data_port = null;
-// 	if (this.data_socket != null)
-// 		net.close(this.data_socket);
-// };
-
-
-// const dgramOnMessage = function(msg: Buffer, rinfo: RInfo)
-// {
-// 	if (this.data_socket == null)
-// 		return;
-// 	var addr = this.data_socket.addr;
-// 	if (!this.data_socket.netWait && ((rinfo.address !== addr[0]) || (rinfo.port !== addr[1])))
-// 		return;
-// 	if (rinfo.size < 8)
-// 		return;
-// 	if ((msg[0] & 0x80) !== 0)
-// 		return;
-// 	if (this.data_socket.netWait) {
-// 		this.data_socket.addr = [rinfo.address, rinfo.port]
-// 		this.data_socket.address = rinfo.address + ':' + rinfo.port
-// 		this.data_socket.netWait = false
-// 	}
-// 	this.data_socket.messages.push(msg);
-// };
