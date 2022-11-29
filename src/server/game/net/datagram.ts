@@ -41,7 +41,7 @@ export var initialized = false
 export var available = true
 export const state = {
   server: null,
-  sockets: [],
+  sockets: {},
   acceptsockets: [],
   myAddr: null,
   controlsocket: null
@@ -57,30 +57,32 @@ export const checkForResend = (): number => {
 
 export const registerWithMaster = () => {
 }
+
 export const init = function()
 {
 	if (com.checkParm('-noudp') != null)
 		return;
 
-	const portStartArg = com.checkParm('-udpportstart')
-	let startPort = 0
-	if (portStartArg) {
-		startPort = parseInt(com.state.argv[portStartArg + 1])
-	}
-	var i, newsocket;
-	for (i = 0; i < sv.state.svs.maxclientslimit; ++i)
-	{
-		newsocket = dgram.createSocket('udp4');
-		state.sockets[i] = newsocket;
-		if(startPort) {
-			newsocket.bind(startPort + i);
-		} else {
-			newsocket.bind();
-		}
-		newsocket.on('listening', dgramOnListening);
-		newsocket.on('message', dgramOnMessage);
-		newsocket.on('error', dgramOnError);
-	}
+	let i
+	// const portStartArg = com.checkParm('-udpportstart')
+	// let startPort = 0
+	// if (portStartArg) {
+	// 	startPort = parseInt(com.state.argv[portStartArg + 1])
+	// }
+	// var i, newsocket;
+	// for (i = 0; i < sv.state.svs.maxclientslimit; ++i)
+	// {
+	// 	newsocket = dgram.createSocket('udp4');
+	// 	state.sockets[i] = newsocket;
+	// 	if(startPort) {
+	// 		newsocket.bind(startPort + i);
+	// 	} else {
+	// 		newsocket.bind();
+	// 	}
+	// 	newsocket.on('listening', dgramOnListening);
+	// 	newsocket.on('message', dgramOnMessage);
+	// 	newsocket.on('error', dgramOnError);
+	// }
 
 	var local = os.networkInterfaces(), j, k, addr;
 	for (i in local)
@@ -125,7 +127,10 @@ export const listen = function()
 		controlsocket.close();
 		return;
 	}
-	controlsocket.on('message', controlOnMessage);
+	controlsocket.on('message', onMessage);
+	//controlsocket.on('listening', dgramOnListening);
+	//controlsocket.on('message', dgramOnMessage);
+	//controlsocket.on('error', dgramOnError);
 	state.controlsocket = controlsocket;
 };
 
@@ -134,23 +139,23 @@ export const checkNewConnections = function()
 	if (state.acceptsockets.length === 0)
 		return;
 	var sock = net.newQSocket();
-	var accetpData = state.acceptsockets.shift();
+	var acceptData = state.acceptsockets.shift();
 	var i, newsocket;
-	for (i = 0; i < state.sockets.length; ++i)
-	{
-		newsocket = state.sockets[i];
-		if ((newsocket.data_port != null) && (newsocket.data_socket == null))
-			break;
-	}
-	if (i === state.sockets.length)
-		return;
-	newsocket.data_socket = sock;
-	if (accetpData.mod && accetpData.mod.type == 0x01 && accetpData.mod.version >= 34) {
+	// for (i = 0; i < state.sockets.length; ++i)
+	// {
+	// 	newsocket = state.sockets[i];
+	// 	if ((newsocket.data_port != null) && (newsocket.data_socket == null))
+	// 		break;
+	// }
+	// if (i === state.sockets.length)
+	// 	return;
+	//newsocket.data_socket = sock;
+	if (acceptData.mod && acceptData.mod.type == 0x01 && acceptData.mod.version >= 34) {
 		sock.netWait = true;		// JPG 3.40 - NAT fix
 	}
 	sock.lastSendTime = net.state.time;
 	sock.canSend = true;
-	sock.driverdata = newsocket;
+	sock.driverdata = state.controlsocket;
 	sock.ackSequence = 0;
 	sock.sendSequence = 0;
 	sock.unreliableSendSequence = 0;
@@ -160,14 +165,15 @@ export const checkNewConnections = function()
 	sock.unreliableReceiveSequence = 0;
 	sock.receiveMessageLength = 0;
 	sock.receiveMessage = Buffer.alloc(def.max_message);
-	sock.addr = [accetpData.address, accetpData.port],
-	sock.address = accetpData.address + ':' + accetpData.port
+	sock.addr = [acceptData.address, acceptData.port],
+	sock.address = acceptData.address + ':' + acceptData.port
 	sock.messages = [];
+	state.sockets[sock.address] = sock
 	var buf = Buffer.alloc(def.max_message + HEADER_SIZE);
 	buf.writeUInt32LE(0x09000080, 0);
 	buf[4] = 0x81;
-	buf.writeUInt32LE(newsocket.data_port, 5);
-	state.controlsocket.send(buf, 0, 9, accetpData.port, accetpData.address);
+	buf.writeUInt32LE(net.state.hostport, 5);
+	state.controlsocket.send(buf, 0, 9, acceptData.port, acceptData.address);
 	return sock;
 };
 
@@ -179,7 +185,7 @@ export const getMessage = function(sock)
 		sendMessageNext(sock, true);
 	}
 	var message, length, flags, ret = 0, sequence, i;
-	for (; sock.messages.length > 0; )
+	for (; sock.messages.length > 0; )	
 	{
 		// if (!sock.netWait && sfunc.AddrCompare(&readaddr, &sock->addr) != 0)
 		// {
@@ -351,14 +357,24 @@ export const close = function(sock)
 {
 	if (sock.driverdata == null)
 		return;
-	sock.driverdata.data_socket = null;
+	state.sockets[sock.address] = null
 	sock.driverdata = null;
 };
 
-const controlOnMessage = function(msg, rinfo)
+const onMessage = function(msg, rinfo)
 {
+	console.log(`msg: ${byteArayToString(msg)}`)
 	if (sv.state.server.active !== true)
 		return;
+	const address = rinfo.address +':'+ rinfo.port
+	if (state.sockets[address] && rinfo.size >= 8) {
+		if ((msg[0] & 0x80) !== 0)
+			return;
+		const sock = state.sockets[address]
+		sock.messages.push(msg)
+		return
+	}
+
 	if (rinfo.size < 4)
 		return;
 	if ((msg[0] !== 0x80) || (msg[1] !== 0))
@@ -529,13 +545,13 @@ const controlOnMessage = function(msg, rinfo)
 	if (msg.length > 14)
 		modFlags = msg[14]
 
-	for (i = 0; i < state.sockets.length; ++i)
-	{
-		s = state.sockets[i];
-		if ((s.data_port != null) && (s.data_socket == null))
-			break;
-	}
-	if ((i === state.sockets.length) || ((net.state.activeconnections + state.acceptsockets.length) >= sv.state.svs.maxclients))
+	// for (i = 0; i < state.sockets.length; ++i)
+	// {
+	// 	s = state.sockets[i];
+	// 	if ((s.data_port != null) && (s.data_socket == null))
+	// 		break;
+	// }
+	if ((i === Object.keys(state.sockets).length) || ((net.state.activeconnections + state.acceptsockets.length) >= sv.state.svs.maxclients))
 	{
 		buf[2] = 0;
 		buf[3] = 22;
@@ -544,40 +560,40 @@ const controlOnMessage = function(msg, rinfo)
 		state.controlsocket.send(buf, 0, 22, rinfo.port, rinfo.address);
 		return;
 	}
-	state.acceptsockets.push({address: rinfo.address, port: rinfo.port, mod: {
-		type: mod,
-		version: modVersion,
-		flags: modFlags
-	}});
+	state.acceptsockets.push({
+		address: rinfo.address,
+		port: rinfo.port, 
+		mod: {
+			type: mod,
+			version: modVersion,
+			flags: modFlags
+		}
+	});
 };
 
-const dgramOnError = function(e)
-{
-	this.data_port = null;
-	if (this.data_socket != null)
-		net.close(this.data_socket);
-};
+// const dgramOnError = function(e)
+// {
+// 	//this.data_port = null;
+// 	if (this.data_socket != null)
+// 		net.close(this.data_socket);
+// };
 
-const dgramOnListening = function()
-{
-	this.data_port = this.address().port;
-};
 
-const dgramOnMessage = function(msg: Buffer, rinfo: RInfo)
-{
-	if (this.data_socket == null)
-		return;
-	var addr = this.data_socket.addr;
-	if (!this.data_socket.netWait && ((rinfo.address !== addr[0]) || (rinfo.port !== addr[1])))
-		return;
-	if (rinfo.size < 8)
-		return;
-	if ((msg[0] & 0x80) !== 0)
-		return;
-	if (this.data_socket.netWait) {
-		this.data_socket.addr = [rinfo.address, rinfo.port]
-		this.data_socket.address = rinfo.address + ':' + rinfo.port
-		this.data_socket.netWait = false
-	}
-	this.data_socket.messages.push(msg);
-};
+// const dgramOnMessage = function(msg: Buffer, rinfo: RInfo)
+// {
+// 	if (this.data_socket == null)
+// 		return;
+// 	var addr = this.data_socket.addr;
+// 	if (!this.data_socket.netWait && ((rinfo.address !== addr[0]) || (rinfo.port !== addr[1])))
+// 		return;
+// 	if (rinfo.size < 8)
+// 		return;
+// 	if ((msg[0] & 0x80) !== 0)
+// 		return;
+// 	if (this.data_socket.netWait) {
+// 		this.data_socket.addr = [rinfo.address, rinfo.port]
+// 		this.data_socket.address = rinfo.address + ':' + rinfo.port
+// 		this.data_socket.netWait = false
+// 	}
+// 	this.data_socket.messages.push(msg);
+// };
