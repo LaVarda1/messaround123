@@ -2495,9 +2495,6 @@ export const sendClientMessages = async function () {
 			continue;
 		}
 
-		// JPG 3.40 - NAT fix
-		if (client.netconnection.netWait)
-			continue;
 		if (client.message.overflowed === true) {
 			await host.dropClient(true);
 			client.message.overflowed = false;
