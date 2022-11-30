@@ -1434,13 +1434,15 @@ export const parseStatic = function(version) {
   ent.origin = [ent.baseline.origin[0], ent.baseline.origin[1], ent.baseline.origin[2]];
   ent.angles = [ent.baseline.angles[0], ent.baseline.angles[1], ent.baseline.angles[2]];
 
-  var emins = [ent.origin[0] + ent.model.mins[0], ent.origin[1] + ent.model.mins[1], ent.origin[2] + ent.model.mins[2]];
-  var emaxs = [ent.origin[0] + ent.model.maxs[0], ent.origin[1] + ent.model.maxs[1], ent.origin[2] + ent.model.maxs[2]];
-
-  state.pefragtopnode = null
-  r.splitEntityOnNode(clState.worldmodel.nodes[0], ent, emins, emaxs);
-  // Not used??
-  ent.topnode = state.pefragtopnode
+  if (ent.model) {
+    var emins = [ent.origin[0] + ent.model.mins[0], ent.origin[1] + ent.model.mins[1], ent.origin[2] + ent.model.mins[2]];
+    var emaxs = [ent.origin[0] + ent.model.maxs[0], ent.origin[1] + ent.model.maxs[1], ent.origin[2] + ent.model.maxs[2]];
+  
+    state.pefragtopnode = null
+    r.splitEntityOnNode(clState.worldmodel.nodes[0], ent, emins, emaxs);
+    // Not used??
+    ent.topnode = state.pefragtopnode
+  }
 };
 
 export const parseStaticSound = async function(version) {

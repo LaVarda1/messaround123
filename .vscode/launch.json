@@ -131,7 +131,7 @@
             "-port", "26003",
             "-udpportstart","26004",
             "-game", "crx",
-            "+map", "dm2"
+            "+map", "alcyone"
           ],
           "outFiles": [
             "${workspaceFolder}/dist/**/*.js"
