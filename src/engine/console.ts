@@ -96,8 +96,9 @@ export const drawNotify = function()
     draw.string(cvr.textsize.value, v, state.text[i].text.substring(0, width));
     v += cvr.textsize.value;
   }
+  const prfix = key.state.team_message ? 'say_team' : 'say'
   if (key.state.dest === key.KEY_DEST.message)
-    draw.string(cvr.textsize.value, v, 'say: ' + key.state.chat_buffer + String.fromCharCode(10 + ((host.state.realtime * 4.0) & 1)));
+    draw.string(cvr.textsize.value, v, prfix + ': ' + key.state.chat_buffer + String.fromCharCode(10 + ((host.state.realtime * 4.0) & 1)));
 };
 
 export const drawConsole = function(lines: number)

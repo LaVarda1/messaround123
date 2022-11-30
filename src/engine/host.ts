@@ -824,11 +824,27 @@ const say = function(teamonly: boolean = false)
   }
   if (cmd.state.argv.length <= 1)
     return;
+  
+  if (!teamonly || !sv.cvr.sv_floodprotect_team_exception.value) {
+    let floodtime = 0
+    if ((floodtime = sv.checkFloodProt(state.client)))
+    {
+      if (sv.cvr.sv_floodprotect_silencetime.value === floodtime) {
+        clientPrint(`* Spam protection is on\n`);
+      } else {
+        clientPrint(`You can't talk for ${floodtime} more seconds\n`);
+      }
+      return;
+    }
+    sv.pushFloodProt(state.client);
+  }
   var save = state.client;
   var p = cmd.state.args;
   if (p.charCodeAt(0) === 34)
     p = p.substring(1, p.length - 1);
-  let text = '\x01' + sv.getClientName(save) + ': ';
+  let name = sv.getClientName(save);
+  let name2 = cvr.teamplay.value !== 0 && teamonly ? '(' + name + ')' : name
+  let text = '\x01' + name2 + ': ';
   var i = 62 - text.length;
   if (p.length > i)
     p = p.substring(0, i);
@@ -929,6 +945,15 @@ const kill_f = async function()
   {
     cmd.forwardToServer();
     return;
+  }
+  if (sv.cvr.sv_floodprotect_suicide.value) {
+    let floodtime = 0
+    if ((floodtime = sv.checkFloodProt(state.client)))
+    {
+      clientPrint(`You can't suicide for ${floodtime} seconds\n`);
+      return;
+    }
+    sv.pushFloodProt(state.client);
   }
   if (sv.state.player.v_float[pr.entvars.health] <= 0.0)
   {

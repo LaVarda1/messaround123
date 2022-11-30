@@ -2590,6 +2590,50 @@ export const getClientName = function (client) {
 	return pr.getString(pr.state.netnames + (client.num << 5));
 };
 
+
+export const checkFloodProt = function (client)
+{
+	if (!cvr.sv_floodprotect.value)
+		return 0;
+	if (cvr.sv_floodprotect_messages.value <= 0 || cvr.sv_floodprotect_interval.value <= 0)
+		return 0;
+	if (state.server.paused)
+		return 0;
+	if (host.state.realtime < client.lockedtill)
+		return Math.ceil(client.lockedtill - host.state.realtime);
+
+	if (client.floodprotmessage > cvr.sv_floodprotect_messages.value)
+	{
+		client.lockedtill = host.state.realtime + cvr.sv_floodprotect_silencetime.value;
+		client.floodprotmessage = 0.0;
+		client.lastspoke = 0.0;
+		return cvr.sv_floodprotect_silencetime.value;
+	}
+
+	return 0;
+}
+
+export const pushFloodProt = function(client) {
+	if (!cvr.sv_floodprotect.value)
+		return;
+	if (cvr.sv_floodprotect_messages.value <= 0 || cvr.sv_floodprotect_interval.value <= 0)
+		return;
+	if (state.server.paused)
+		return;
+
+	if (client.lastspoke)
+	{
+		client.floodprotmessage -= (host.state.realtime - client.lastspoke)
+			* cvr.sv_floodprotect_messages.value
+			/ cvr.sv_floodprotect_interval.value;
+		client.floodprotmessage = Math.max(0, client.floodprotmessage);
+		client.floodprotmessage++;
+	}
+	else
+		client.floodprotmessage = 1.0;
+	client.lastspoke = host.state.realtime;
+}
+
 export const init = function () {
 	initState()
 	cvr.maxvelocity = cvar.registerVariable('sv_maxvelocity', '2000');
@@ -2602,6 +2646,14 @@ export const init = function () {
 	cvr.idealpitchscale = cvar.registerVariable('sv_idealpitchscale', '0.8');
 	cvr.aim = cvar.registerVariable('sv_aim', '0.93');
 	cvr.nostep = cvar.registerVariable('sv_nostep', '0');
+
+
+	cvr.sv_floodprotect = cvar.registerVariable('sv_floodprotect', '1');
+	cvr.sv_floodprotect_messages = cvar.registerVariable('sv_floodprotect_messages', '4');
+	cvr.sv_floodprotect_interval	= cvar.registerVariable('sv_floodprotect_interval', '3');
+	cvr.sv_floodprotect_silencetime = cvar.registerVariable('sv_floodprotect_silencetime', '10');
+	cvr.sv_floodprotect_suicide = cvar.registerVariable('sv_floodprotect_suicide', '1');
+	cvr.sv_floodprotect_team_exception = cvar.registerVariable('sv_floodprotect_team_exception', '1');
 
 	(new Uint8Array(state.nop.data))[0] = protocol.SVC.nop;
 	msg.writeByte(state.reconnect, protocol.SVC.stufftext);
