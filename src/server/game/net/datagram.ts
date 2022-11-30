@@ -173,6 +173,7 @@ export const getMessage = function(sock)
 		}
 		if ((flags & 2) !== 0)
 		{
+			console.log(`ACK < s: ${sequence}`)
 			if (sequence !== (sock.sendSequence - 1))
 			{
 				con.dPrint('Stale ACK received\n');
@@ -219,6 +220,7 @@ export const getMessage = function(sock)
 				data[sock.receiveMessageLength + i] = message[8 + i];
 			net.state.message.cursize = sock.receiveMessageLength + length;
 
+			console.log(`GET < s: ${sequence} ${byteArayToString(data)}`)
 			sock.receiveMessageLength = 0;
 			ret = 1;
 			break;
@@ -254,6 +256,7 @@ export const sendMessage = function(sock: ISocket, data: IDatagram)
 	buf.writeUInt32BE(sock.sendSequence++, 4);
 	sock.sendMessage.copy(buf, 8, 0, dataLen);
 	sock.canSend = false;
+	console.log(`SEND > s: ${sock.sendSequence - 1} ${byteArayToString(buf)}`)
 	sock.driverdata.send(buf, 0, dataLen + 8, sock.addr[1], sock.addr[0]);
 	sock.lastSendTime = net.state.time;
 	
@@ -282,6 +285,7 @@ const sendMessageNext = function(sock: ISocket, resend)
 		buf.writeUInt32BE(sock.sendSequence - 1, 4);
 	sock.sendMessage.copy(buf, 8, 0, dataLen);
 	sock.sendNext = false;
+	console.log(`SEND_NEXT > s: ${sock.sendSequence - 1} ${byteArayToString(buf)}`)
 	sock.driverdata.send(buf, 0, dataLen + 8, sock.addr[1], sock.addr[0]);
 	sock.lastSendTime = net.state.time;
 };
@@ -410,7 +414,10 @@ const onMessage = function(msg, rinfo)
 
 	if (command === 4) // CCREQ_RULE_INFO
 	{
-		var prevCvarName = msg.toString('ascii', 5).slice('\0')[0];
+		var cvarBytes = []
+		for (i  = 5; i < msg.length && msg[i] !== 0; i++)
+			cvarBytes.push(String.fromCharCode(msg[i]))
+		var prevCvarName = cvarBytes.join('')
 		if (prevCvarName.length !== 0)
 		{
 			for (i = 0; i < cvar.vars.length; ++i)
