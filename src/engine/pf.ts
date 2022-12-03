@@ -1038,7 +1038,7 @@ const bound = function () {
 	pr.state.globals_int[1] = curval
 }
 
-const pow = function () {
+const pow = function ()
 {
 	pr.state.globals_int[1] = Math.pow(pr.state.globals_float[4], pr.state.globals_float[7])
 }
