@@ -115,7 +115,6 @@ export const getMessage = function(sock: ISocket)
 			++sock.receiveSequence;
 			net.state.message.cursize = message.length - HEADER_SIZE;
 			(new Uint8Array(net.state.message.data)).set(message.subarray(HEADER_SIZE));
-
 			return 1
 		} else if (messageType === MESSAGE_TYPE.ACK){
 			
@@ -176,7 +175,6 @@ export const sendUnreliableMessage = function(sock: ISocket, data: IDatagram)
 	dest[0] = MESSAGE_TYPE.UNRELIABLE
 	dest.set(new Uint8Array(data.data, 0, data.cursize), HEADER_SIZE);
 	sock.driverdata.send(buf);
-	
 	return 1;
 };
 

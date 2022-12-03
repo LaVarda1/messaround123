@@ -22,6 +22,12 @@ export type PRFile = {
   position: number,
 }
 
+export type QCToken = {
+  token: string
+  start: number
+  end: number
+}
+
 export let state = {
   strings: null,
   globals_int: null,
@@ -30,12 +36,16 @@ export let state = {
   functions: null,
   argc: null,
   edict_size: 0,
-  trace: false,
+  trace: true,
   alpha_supported: false,
   numbuiltins: 0,
-  openfiles: {}
+  openfiles: {},
+  qctoken: []
 
-} as any & { openfiles: Record<number, string | null>}
+} as any & { 
+  openfiles: Record<number, string | null>,
+  qctoken: QCToken[]
+}
 
 export const ETYPE = {
   ev_void: 0,
@@ -365,9 +375,9 @@ export const loadProgs = async function () {
   for (i = 0; i < num; ++i) {
     state.statements[i] = {
       op: view.getUint16(ofs, true),
-      a: view.getInt16(ofs + 2, true),
-      b: view.getInt16(ofs + 4, true),
-      c: view.getInt16(ofs + 6, true)
+      a: view.getUint16(ofs + 2, true),
+      b: view.getUint16(ofs + 4, true),
+      c: view.getUint16(ofs + 6, true)
     };
     ofs += 8;
   }
@@ -604,14 +614,13 @@ const opnames = [
 ];
 
 export const printStatement = function (s) {
-  var text;
+  var text = state.xstatement.toString().padEnd(7, ' ')
+
   if (s.op < opnames.length) {
-    text = opnames[s.op] + ' ';
-    for (; text.length <= 9;)
+    text += opnames[s.op] + ' ';
+    for (; text.length <= 17;)
       text += ' ';
   }
-  else
-    text = '';
   if ((s.op === OP.jnz) || (s.op === OP.jz))
     text += globalString(s.a) + 'branch ' + s.b;
   else if (s.op === OP.jump)
@@ -883,9 +892,6 @@ export const executeProgram = async function (fnum) {
       case OP.load_ent:
       case OP.load_s:
       case OP.load_fnc:
-        if (!sv.state.server.edicts[state.globals_int[st.a]]) {
-          debugger
-        }
         state.globals_int[st.c] = sv.state.server.edicts[state.globals_int[st.a]].v_int[state.globals_int[st.b]];
         continue;
       case OP.load_v:
@@ -897,14 +903,14 @@ export const executeProgram = async function (fnum) {
         continue;
       case OP.jz:
         if (state.globals_int[st.a] === 0)
-          s += st.b - 1;
+          s += ((st.b << 16) >> 16) - 1;
         continue;
       case OP.jnz:
-        if (state.globals_int[st.a] !== 0)
-          s += st.b - 1;
+        if (state.globals_int[st.a] !== 0) 
+          s += ((st.b << 16) >> 16) - 1;
         continue;
       case OP.jump:
-        s += st.a - 1;
+        s += ((st.a << 16) >> 16) - 1;
         continue;
       case OP.call0:
       case OP.call1:

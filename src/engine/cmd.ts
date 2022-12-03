@@ -5,13 +5,20 @@ import * as com from './com'
 import * as cl from './cl'
 import * as protocol from './protocol'
 
+export enum CMD_SOURCE {
+	src_client,
+	src_command,
+	src_server
+}
+
 export let state = {
   wait: false,
   alias: [],
   text: '',
   argv: [],
   functions: [],
-  client: null
+  client: null,
+  cmdSource: CMD_SOURCE.src_client
 } as any
 
 const initState = () => {
@@ -148,9 +155,9 @@ export const completeCommand = function(partial: string)
   }
 };
 
-export const executeString = async function(text: string, client: any = undefined)
+export const executeString = async function(text: string, cmdSource: CMD_SOURCE)
 {
-  state.client = client;
+  state.cmdSource = cmdSource;
   tokenizeString(text);
   if (state.argv.length === 0)
     return;
@@ -245,7 +252,7 @@ export const execute = async function()
     {
       if (line.length === 0)
         continue;
-      await executeString(line, null);
+      await executeString(line, CMD_SOURCE.src_command);
       if (state.wait === true)
       {
         state.wait = false;

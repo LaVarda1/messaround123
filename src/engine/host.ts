@@ -197,7 +197,7 @@ export const remoteCommand = function(from, data, password)
 		return;
 	};
 	con.print('Rcon from ' + from + ':\n' + data + '\n');
-	cmd.executeString(data);
+	cmd.executeString(data, cmd.CMD_SOURCE.src_command);
 	return true;
 };
 
@@ -315,7 +315,7 @@ export const quit_f = function()
 const status_f = function()
 {
   var print;
-  if (cmd.state.client !== true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client)
   {
     if (sv.state.server.active !== true)
     {
@@ -368,13 +368,18 @@ const status_f = function()
     if (seconds <= 9)
       str += '0';
     print(str + seconds + '\n');
-    print('   ' + client.netconnection.address + '\n');
+    if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client) {
+      print('   ' + client.netconnection.address + '\n');
+    } else {
+      // TODO: Mask this IP
+      print('   ' + client.netconnection.address + '\n');
+    }
   }
 };
 
 const god_f = function()
 {
-  if (cmd.state.client !== true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client)
   {
     cmd.forwardToServer();
     return;
@@ -390,7 +395,7 @@ const god_f = function()
 
 const notarget_f = function()
 {
-  if (cmd.state.client !== true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client)
   {
     cmd.forwardToServer();
     return;
@@ -406,7 +411,7 @@ const notarget_f = function()
 
 const noclip_f = function()
 {
-  if (cmd.state.client !== true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client)
   {
     cmd.forwardToServer();
     return;
@@ -427,7 +432,7 @@ const noclip_f = function()
 
 const fly_f = function()
 {
-  if (cmd.state.client !== true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client)
   {
     cmd.forwardToServer();
     return;
@@ -446,7 +451,7 @@ const fly_f = function()
 
 const ping_f = function()
 {
-  if (cmd.state.client !== true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client)
   {
     cmd.forwardToServer();
     return;
@@ -479,7 +484,7 @@ const map_f = async function()
     con.print('USAGE: map <map>\n');
     return;
   }
-  if (cmd.state.client === true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_command)
     return;
   
   if (!state.dedicated) {
@@ -500,7 +505,7 @@ const map_f = async function()
     var i;
     for (i = 2; i < cmd.state.argv.length; ++i)
       cl.cls.spawnparms += cmd.state.argv[i] + ' ';
-    await cmd.executeString('connect local', null);
+    await cmd.executeString('connect local', cmd.CMD_SOURCE.src_command);
   }
 };
 
@@ -522,7 +527,9 @@ const changelevel_f = async function()
 
 const restart_f = async function()
 {
-  if ((cl.cls.demoplayback !== true) && (sv.state.server.active === true) && (cmd.state.client !== true))
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_command)
+    return
+  if ((cl.cls.demoplayback !== true) && (sv.state.server.active === true))
     await sv.spawnServer(pr.getString(pr.state.globals_int[pr.globalvars.mapname]));
 };
 
@@ -573,7 +580,7 @@ const savegameComment = function()
 
 const savegame_f = async function()
 {
-  if (cmd.state.client === true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_command)
     return;
   if (sv.state.server.active !== true)
   {
@@ -677,7 +684,7 @@ const savegame_f = async function()
 
 const loadgame_f = async function()
 {
-  if (cmd.state.client === true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_command)
     return;
   if (cmd.state.argv.length !== 2)
   {
@@ -791,7 +798,7 @@ const name_f = function()
   else
     newName = cmd.state.args.substring(0, 15);
 
-  if (cmd.state.client !== true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client)
   {
     cvar.set('_cl_name', newName);
     if (cl.cls.state === cl.ACTIVE.connected)
@@ -817,10 +824,13 @@ const version_f = function()
 
 const say = function(teamonly: boolean = false)
 {
-  if (cmd.state.client !== true)
+  if (cmd.state.cmdSource === cmd.CMD_SOURCE.src_command)
   {
-    cmd.forwardToServer();
-    return;
+    if (!state.dedicated) {
+      cmd.forwardToServer();
+      return;
+    }
+    teamonly = false
   }
   if (cmd.state.argv.length <= 1)
     return;
@@ -843,6 +853,9 @@ const say = function(teamonly: boolean = false)
   if (p.charCodeAt(0) === 34)
     p = p.substring(1, p.length - 1);
   let name = sv.getClientName(save);
+  if (cmd.state.cmdSource === cmd.CMD_SOURCE.src_command) {
+    name = '<' + net.cvr.hostname.string + '>'
+  }
   let name2 = cvr.teamplay.value !== 0 && teamonly ? '(' + name + ')' : name
   let text = '\x01' + name2 + ': ';
   var i = 62 - text.length;
@@ -871,7 +884,7 @@ const say_Team_f = function()
 
 const tell_f = function()
 {
-  if (cmd.state.client !== true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client)
   {
     cmd.forwardToServer();
     return;
@@ -923,7 +936,7 @@ const color_f = function()
     bottom = 13;
   var playercolor = (top << 4) + bottom;
 
-  if (cmd.state.client !== true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client)
   {
     cvar.setValue('_cl_color', playercolor);
     if (cl.cls.state === cl.ACTIVE.connected)
@@ -941,7 +954,7 @@ const color_f = function()
 
 const kill_f = async function()
 {
-  if (cmd.state.client !== true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client)
   {
     cmd.forwardToServer();
     return;
@@ -967,7 +980,7 @@ const kill_f = async function()
 
 const pause_f = function()
 {
-  if (cmd.state.client !== true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client)
   {
     cmd.forwardToServer();
     return;
@@ -985,7 +998,7 @@ const pause_f = function()
 
 const preSpawn_f = function()
 {
-  if (cmd.state.client !== true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client)
   {
     con.print('prespawn is not valid from the console\n');
     return;
@@ -1006,7 +1019,7 @@ const preSpawn_f = function()
 
 const spawn_f = async function()
 {
-  if (cmd.state.client !== true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client)
   {
     con.print('spawn is not valid from the console\n');
     return;
@@ -1091,7 +1104,7 @@ const begin_f = function()
     con.print('Ignoring begin durring reconnect\n');
     return;
   }
-  if (cmd.state.client !== true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client)
   {
     con.print('begin is not valid from the console\n');
     return;
@@ -1101,7 +1114,7 @@ const begin_f = function()
 
 const kick_f = async function()
 {
-  if (cmd.state.client !== true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client)
   {
     if (sv.state.server.active !== true)
     {
@@ -1145,8 +1158,8 @@ const kick_f = async function()
   if (state.client === save)
     return;
   var who;
-  if (cmd.state.client !== true){
-    if (cl.cvr.name) {
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client){
+    if (!state.dedicated) {
       who = cl.cvr.name.string;
     } else {
       who = "Server"
@@ -1189,7 +1202,7 @@ const kick_f = async function()
 
 const give_f = function()
 {
-  if (cmd.state.client !== true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_client)
   {
     cmd.forwardToServer();
     return;

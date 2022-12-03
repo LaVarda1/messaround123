@@ -945,11 +945,110 @@ const findchainfloat = function ()
 
 	pr.state.globals_int[1] = chain;
 }
-const extensions = {
-	'DP_SV_SETCOLOR': true
+const clientcommand = function ()
+{
+	const ed = sv.state.server.edicts[pr.state.globals_int[4]]
+  const str = pr.getString(pr.state.globals_int[7])
+	const i = ed.num - 1
+
+	if (i < sv.state.svs.maxclients && sv.state.svs.clients[i].active)
+	{
+		const save = host.state.client
+		host.state.client = sv.state.svs.clients[i]
+		cmd.executeString(str, cmd.CMD_SOURCE.src_client)
+		host.state.client = save
+	}
+	else
+		con.print("pf.clientcommand: not a client\n");
 }
+
+const tokenize = function () {
+  let str = pr.getString(pr.state.globals_int[4])
+	let start = 0;
+	pr.state.qctoken = []
+	while (pr.state.qctoken.length < 64)
+	{
+		var i = 0;
+		/*skip whitespace here so the token's start is accurate*/
+		while (i < str.length && str.charCodeAt(i) <= 32)
+			i++
+
+		if (i >= str.length)
+			break
+		let newToken = { 
+			start: i - start,
+			end: 0,
+			token: ''
+		 }
+		pr.state.qctoken.push(newToken)
+
+		str = com.parse(str.substring(i))
+		if (!str)
+			break
+
+		newToken.token = com.state.token
+
+		newToken.end = str.length - start;
+	}
+	pr.state.globals_int[1] = pr.state.qctoken.length;
+}
+
+const argv = function () {
+	let idx = pr.state.globals_int[4]
+	if (idx < 0)
+		idx += pr.state.qctoken.length
+
+	if (idx >= pr.state.qctoken.length) {
+		pr.state.globals_int[1] = 0
+	} else {
+		const token = pr.state.qctoken[idx].token
+		pr.state.globals_int[1] = pr.newString(token, token.length)
+	}
+}
+
+const stof = function () {
+	pr.state.globals_float[1] = parseFloat(pr.getString(pr.state.globals_int[4]))
+}
+
+const min = function ()  {
+	let r = pr.state.globals_float[4]
+	for (let i = 1; i < pr.state.argc; i++) {
+		if (r > pr.state.globals_float[4 + i * 3])
+			r = pr.state.globals_float[4 + i * 3]
+	}
+	pr.state.globals_int[1] = r
+}
+
+const max = function ()  {
+	let r = pr.state.globals_float[4]
+	for (let i = 1; i < pr.state.argc; i++) {
+		if (r < pr.state.globals_float[4 + i * 3])
+			r = pr.state.globals_float[4 + i * 3]
+	}
+	pr.state.globals_int[1] = r
+}
+const bound = function () {
+	let minval = pr.state.globals_float[4]
+	let curval = pr.state.globals_float[7]
+	let maxval = pr.state.globals_float[10]
+	if (curval > maxval)
+		curval = maxval;
+	if (curval < minval)
+		curval = minval;
+	pr.state.globals_int[1] = curval
+}
+
+const pow = function () {
+{
+	pr.state.globals_int[1] = Math.pow(pr.state.globals_float[4], pr.state.globals_float[7])
+}
+
+const extensions = {
+	'DP_SV_SETCOLOR': true,
+	'KRIMZON_SV_PARSECLIENTCOMMAND': true
+}
+
 const checkextension = function () {
-	
 	const extFind = pr.getString(pr.state.globals_int[4])
 	pr.state.globals_int[1] = extensions[extFind] || false
 }
@@ -1219,17 +1318,17 @@ export const ebfs_builtins = [
 	{ defaultFnNbr: 78, name: "setspawnparms", fn: setspawnparms, fnNbr: 0 },
 	//	{  79, "fixme", FIXME},
 	//	{  80, "fixme", FIXME},
-	{ defaultFnNbr: 81, name: "stof", fn: fixme, fnNbr: 0 },	// 2001-09-20 QuakeC string manipulation by FrikaC/Maddes
+	{ defaultFnNbr: 81, name: "stof", fn: stof, fnNbr: 0 },	// 2001-09-20 QuakeC string manipulation by FrikaC/Maddes
 
 	// 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  start
 	{ defaultFnNbr: 90, name: "tracebox", fn: fixme, fnNbr: 0 },
 	{ defaultFnNbr: 91, name: "randomvec", fn: fixme, fnNbr: 0 },
 	//	{ defaultFnNbr: 92, name: "getlight", fn: GetLight, fnNbr: 0 },	// not implemented yet
 	//	{ defaultFnNbr: 93, name: "cvar_create", fn: cvar_create, fnNbr: 0 },		// 2001-09-18 New BuiltIn Function: cvar_create() by Maddes
-	{ defaultFnNbr: 94, name: "fmin", fn: fixme, fnNbr: 0 },
-	{ defaultFnNbr: 95, name: "fmax", fn: fixme, fnNbr: 0 },
-	{ defaultFnNbr: 96, name: "fbound", fn: fixme, fnNbr: 0 },
-	{ defaultFnNbr: 97, name: "fpow", fn: fixme, fnNbr: 0 },
+	{ defaultFnNbr: 94, name: "fmin", fn: min, fnNbr: 0 },
+	{ defaultFnNbr: 95, name: "fmax", fn: max, fnNbr: 0 },
+	{ defaultFnNbr: 96, name: "fbound", fn: bound, fnNbr: 0 },
+	{ defaultFnNbr: 97, name: "fpow", fn: pow, fnNbr: 0 },
 	{ defaultFnNbr: 98, name: "findfloat", fn: fixme, fnNbr: 0 },
 	{ defaultFnNbr: 99, name: "checkextension", fn: checkextension, fnNbr: 0 },	// 2001-10-20 Extension System by Lord Havoc/Maddes
 	//	{ defaultFnNbr: 0, name: "checkextension", fn: extension_find, fnNbr: 0 },
@@ -1268,5 +1367,9 @@ export const ebfs_builtins = [
 	{ defaultFnNbr: 400, name: "copyentity", fn: copyentity, fnNbr: 0 },
 	{ defaultFnNbr: 401, name: "setcolor", fn: setcolors, fnNbr: 0 },
 	{ defaultFnNbr: 402, name: "findchain", fn: findchain, fnNbr: 0 },
-	{ defaultFnNbr: 403, name: "findchainfloat", fn: findchainfloat, fnNbr: 0}
+	{ defaultFnNbr: 403, name: "findchainfloat", fn: findchainfloat, fnNbr: 0},
+	{ defaultFnNbr: 440, name: 'clientcommand', fn: clientcommand, fnNbr: 0},
+	{ defaultFnNbr: 441, name: 'tokenize', fn: tokenize, fnNbr: 0},
+	{ defaultFnNbr: 442, name: 'argv', fn: argv, fnNbr: 0},
+	{ defaultFnNbr: 514, name: 'tokenize_console', fn: tokenize, fnNbr: 0}
 ]

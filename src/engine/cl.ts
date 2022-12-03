@@ -209,8 +209,9 @@ export const getMessage = function()
 
 export const stop_f = function()
 {
-  if (cmd.state.client === true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_command)
     return;
+  
   if (cls.demorecording !== true)
   {
     con.print('Not recording a demo.\n');
@@ -228,6 +229,9 @@ export const stop_f = function()
 
 export const record_f = async function()
 {
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_command)
+    return;
+
   var c = cmd.state.argv.length;
   if ((c <= 1) || (c >= 5))
   {
@@ -253,7 +257,7 @@ export const record_f = async function()
     cls.forcetrack = -1;
   cls.demoname = com.defaultExtension(cmd.state.argv[1], '.dem');
   if (c >= 3)
-    await cmd.executeString('map ' + cmd.state.argv[2]);
+    await cmd.executeString('map ' + cmd.state.argv[2], cmd.CMD_SOURCE.src_command);
   con.print('recording to ' + cls.demoname + '.\n');
   cls.demofile = new ArrayBuffer(16384);
   var track = cls.forcetrack.toString() + '\n';
@@ -266,7 +270,7 @@ export const record_f = async function()
 
 export const playDemo_f = async function()
 {
-  if (cmd.state.client === true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_command)
     return;
   if (cmd.state.argv.length !== 2)
   {
@@ -318,7 +322,7 @@ export const finishTimeDemo = function()
 
 export const timeDemo_f = async function()
 {
-  if (cmd.state.client === true)
+  if (cmd.state.cmdSource !== cmd.CMD_SOURCE.src_command)
     return;
   if (cmd.state.argv.length !== 2)
   {
@@ -1644,7 +1648,7 @@ export const parseServerMessage = async function()
       scr.centerPrint(msg.readString());
       continue;
     case protocol.SVC.sellscreen:
-      await cmd.executeString('help');
+      await cmd.executeString('help', cmd.CMD_SOURCE.src_command);
       continue;
     case protocol.SVC.showlmp:
       sys.error('showlmp not implemented')
