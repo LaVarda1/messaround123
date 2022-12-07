@@ -251,6 +251,7 @@ const initState = () => {
     argc: null,
     edict_size: 0,
     trace: false,
+    openfiles: [],
     numbuiltins: 0
   }
 }
@@ -527,6 +528,9 @@ export const loadProgs = async function () {
     state.strings[i] = view.getUint8(ofs + i);
   state.string_temp = newString('', 128);
   state.netnames = newString('', sv.state.svs.maxclients << 5);
+
+  state.openfiles = {}
+  state.qctoken = []
 
   ofs = view.getUint32(48, true);
   num = view.getUint32(52, true);
@@ -966,13 +970,14 @@ export const getString = function (num) {
   return string.join('');
 };
 
-export const newString = function (s, length) {
+export const newString = function (s: string, length: number) {
   var ofs = state.strings.length;
   var i;
   if (s.length >= length) {
     for (i = 0; i < (length - 1); ++i)
       state.strings[state.strings.length] = s.charCodeAt(i);
     state.strings[state.strings.length] = 0;
+
     return ofs;
   }
   for (i = 0; i < s.length; ++i)
@@ -983,13 +988,13 @@ export const newString = function (s, length) {
   return ofs;
 };
 
-export const tempString = function (string) {
-  var i;
-  if (string.length > 127)
-    string = string.substring(0, 127);
-  for (i = 0; i < string.length; ++i)
-    state.strings[state.string_temp + i] = string.charCodeAt(i);
-  state.strings[state.string_temp + string.length] = 0;
+export const tempString = function (str) {
+  var i;  
+  if (str.length > 127)
+    str = str.str(0, 127);
+  for (i = 0; i < str.length; ++i)
+    state.strings[state.string_temp + i] = str.charCodeAt(i);
+  state.strings[state.string_temp + str.length] = 0;
 };
 
 export const encodeAlpha = val => {

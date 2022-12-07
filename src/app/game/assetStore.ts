@@ -7,8 +7,10 @@ import * as con from '../../engine/console'
 import * as indexeddb from '../../shared/indexeddb'
 import IPackedFile from '../../engine/interfaces/store/IPackedFile'
 import axios from 'axios'
+import { FileMode } from '../../engine/interfaces/store/IAssetStore'
 
 const remoteIndexes = {}
+
 const checkRemoteFileList = async function (game, fileName) : Promise<boolean> {
   if (!remoteIndexes[game]) {
     try {
@@ -83,6 +85,12 @@ const getFile = async function(file: string) {
   });
 };
 
+export const openFile = (filename: string, mode: FileMode) => {
+  return true
+}
+export const readFile = (filename: string) => {
+	throw new Error('Not Implemented')
+}
 export const writeFile = (filename: string, data: Uint8Array, len: number) =>
 {
   filename = filename.toLowerCase();

@@ -4,8 +4,15 @@ import * as host from './host'
 import * as q from './q'
 import * as sv from './sv'
 
+export type CVar = {
+  name: string,
+  string: string,
+  archive: boolean,
+  server: boolean,
+  value: number
+}
 const changeEvents = {}
-export var vars = [] as any
+export var vars = [] as CVar[]
 
 export const registerChangedEvent = (cvar, fn) => {
   if (changeEvents[cvar]) {
@@ -24,6 +31,15 @@ export const findVar = function(name)
       return vars[i];
   }
 };
+
+const create = function (name: string, value: string) {
+  const found = findVar(name)
+  if (found)
+    return found
+  else if(cmd.exists(name))
+    return null
+  return registerVariable(name, value)
+}
 
 export const completeVariable = function(partial)
 {
@@ -67,6 +83,20 @@ export const setValue = function(name: string, value: any)
   set(name, value.toFixed(6));
 };
 
+export const setQuick = function (v: CVar, value) {
+  var i, changed;
+  if (v.string !== value)
+    changed = true;
+  v.string = value;
+  v.value = q.atof(value);
+  if (changed && changeEvents[v.name]) {
+    const events = changeEvents[v.name]
+    for(var j = 0; j < events.length; j++) {
+      events[j](value)
+    } 
+  }
+}
+
 export const registerVariable = function(name: string, value: string, archive: any = undefined, server: any = undefined)
 {
   var i;
@@ -78,6 +108,7 @@ export const registerVariable = function(name: string, value: string, archive: a
       return;
     }
   }
+  
   vars[vars.length] =
   {
     name: name,
@@ -115,6 +146,27 @@ export const writeVariables = function()
   return f.join('');
 };
 
+const set_f = () => {	
+	if (cmd.state.argv.length < 3)
+	{
+		con.print(`${cmd.state.argv[0]} <cvar> <value>\n`)
+		return;
+	}
+  const varname = cmd.state.argv[1];
+	const varvalue = cmd.state.argv[2];
+	if (cmd.state.argv.length > 3)
+	{
+		con.print(`${cmd.state.argv[0]} "${varname}" command with extra args\n`);
+		return;
+	}
+  const cvar = create(varname, varvalue)
+  setQuick(cvar, varvalue)
+  if (cmd.state.argv[0] === 'seta') {
+    cvar.archive = true
+  }
+}
 export const init = () =>  {
   vars = []
+  cmd.addCommand('set', set_f)
+  cmd.addCommand('seta', set_f)
 }

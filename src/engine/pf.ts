@@ -10,7 +10,16 @@ import * as msg from './msg'
 import * as cvar from './cvar'
 import * as protocol from './protocol'
 import * as com from './com'
+import {sprintf_format, sprintf_parse} from './pf_sprintf'
+import { FileMode } from './interfaces/store/IAssetStore'
 
+const PARM0 = 4
+const PARM1 = 7
+const PARM2 = 10
+const RETURN = 1
+const RETURN_V1 = 1
+const RETURN_V2 = 2
+const RETURN_V3 = 3
 
 let checkpvs = null
 
@@ -18,7 +27,7 @@ export const varString = function(first)
 {
 	var i, out = '';
 	for (i = first; i < pr.state.argc; ++i)
-		out += pr.getString(pr.state.globals_int[4 + i * 3]);
+		out += pr.getString(pr.state.globals_int[PARM0 + i * 3]);
 	return out;
 };
 
@@ -964,7 +973,6 @@ const clientcommand = function ()
 
 const tokenize = function () {
   let str = pr.getString(pr.state.globals_int[4])
-	let start = 0;
 	pr.state.qctoken = []
 	while (pr.state.qctoken.length < 64)
 	{
@@ -976,25 +984,26 @@ const tokenize = function () {
 		if (i >= str.length)
 			break
 		let newToken = { 
-			start: i - start,
+			start: i,
 			end: 0,
 			token: ''
 		 }
 		pr.state.qctoken.push(newToken)
 
 		str = com.parse(str.substring(i))
-		if (!str)
+		i += str.length
+		if (!str && str !== '')
 			break
 
 		newToken.token = com.state.token
 
-		newToken.end = str.length - start;
+		newToken.end = i;
 	}
 	pr.state.globals_int[1] = pr.state.qctoken.length;
 }
 
 const argv = function () {
-	let idx = pr.state.globals_int[4]
+	let idx = pr.state.globals_int[PARM0]
 	if (idx < 0)
 		idx += pr.state.qctoken.length
 
@@ -1002,12 +1011,12 @@ const argv = function () {
 		pr.state.globals_int[1] = 0
 	} else {
 		const token = pr.state.qctoken[idx].token
-		pr.state.globals_int[1] = pr.newString(token, token.length)
+		pr.state.globals_int[1] = pr.newString(token, token.length + 1)
 	}
 }
 
 const stof = function () {
-	pr.state.globals_float[1] = parseFloat(pr.getString(pr.state.globals_int[4]))
+	pr.state.globals_float[RETURN] = parseFloat(pr.getString(pr.state.globals_int[PARM0]))
 }
 
 const min = function ()  {
@@ -1045,13 +1054,15 @@ const pow = function ()
 
 const extensions = {
 	'DP_SV_SETCOLOR': true,
-	'KRIMZON_SV_PARSECLIENTCOMMAND': true
-}
+	'KRIMZON_SV_PARSECLIENTCOMMAND': true,
+	'FRIK_FILE': true
+}	
 
 const checkextension = function () {
-	const extFind = pr.getString(pr.state.globals_int[4])
-	pr.state.globals_int[1] = extensions[extFind] || false
+	const extFind = pr.getString(pr.state.globals_int[PARM0])
+	pr.state.globals_int[RETURN] = extensions[extFind] || false
 }
+
 // void PF_TraceToss (void)
 // {
 // 	trace_t	trace;
@@ -1077,83 +1088,196 @@ const checkextension = function () {
 // }
 
 const strlen = () => {
-	const str = pr.getString(pr.state.globals_int[4])
+	const str = pr.getString(pr.state.globals_int[PARM0])
 	pr.state.globals_float[1] = str.length
 }
 
 const strcat = () => {
 	let out = ''
 	for (var i = 0; i < pr.state.argc; ++i){
-		out += pr.getString(pr.state.globals_int[4 + i * 3]);
+		out += pr.getString(pr.state.globals_int[PARM0 + i * 3]);
 		if (out.length >= 1024)
 		{
 			con.dPrint("PF strcat: overflow (string truncated)\n");
 			break;
 		}
 	}
-	pr.state.globals_float[1] = pr.newString(out, out + 1)
+	pr.state.globals_float[RETURN] = pr.newString(out, out.length + 1)
 }
 
-// File Handling - someday
-// const fopen = async () => {
-// 	const str = pr.getString(pr.state.globals_int[4])
-// 	const files = Object.keys(pr.state.openfiles)
-// 	let fileHandle = 0
-// 	for(var i = 0; i <= files.length; i ++)
-// 		if (!pr.state.openfiles[i]) {
-// 			fileHandle = i
-// 			pr.state.openfiles[i] = {
-// 				buffer: await com.loadFile('')
-// 			}
-// 			break
-// 		}
+const substring = () => {
+	let str = pr.getString(pr.state.globals_int[PARM0]),
+		start = pr.state.globals_float[PARM1],
+		length = pr.state.globals_float[PARM2]
+	if (start < 0)
+		start = str.length + start;
+	if (length < 0)
+		length = str.length - start + (length+1);
+	if (start < 0)
+		start = 0;
 
-// 	pr.state.globals_float[1] = fileHandle
-// }
+	let result = ''
+	if (start < str.length && length > 0) {
+		result = str.substring(start, start + length)
+	}
+	pr.state.globals_float[RETURN] = pr.newString(result, result.length + 1)
+}
+const stov = () => {
+	const s = pr.getString(pr.state.globals_int[PARM0])
+	let str = com.parse(s)
+	pr.state.globals_float[RETURN_V1] = parseFloat(com.state.token)
+	str = com.parse(str)
+	pr.state.globals_float[RETURN_V2] = parseFloat(com.state.token)
+	str = com.parse(str)
+	pr.state.globals_float[RETURN_V3] = parseFloat(com.state.token)
+}
 
-// const fclose = () => {
-// 	const fileHandle = pr.state.globals_int[4]
-// 	if (fileHandle < 0 )
-// 	{
-// 		con.dPrint(`fclose: invalid file handle ${fileHandle}\n`);
-// 		return;
-// 	}
-// 	if (pr.state.openfiles[fileHandle] === null)
-// 	{
-// 		con.dPrint(`fclose: no such file handle ${fileHandle} (or file has been closed) \n`);
-// 		return;
-// 	}
-// 	pr.state.openfiles[fileHandle] = null
-// }
+const sprintf = function () {
+	const templateStr = pr.getString(pr.state.globals_int[PARM0])
+	const formatTree = sprintf_parse(templateStr)
+	const result = sprintf_format(formatTree)
+	pr.state.globals_int[RETURN] = pr.newString(result, result.length + 1)
+}
 
-// const fgets = () => {
-// 	pr.state.globals_int[1] = 0
-// 	const fileHandle = pr.state.globals_int[4]
-// 	if (fileHandle < 0 )
-// 	{
-// 		con.dPrint(`fgets: invalid file handle ${fileHandle}\n`);
-// 		return;
-// 	}
-// 	if (pr.state.openfiles[fileHandle] === null)
-// 	{
-// 		con.dPrint(`fgets: no such file handle ${fileHandle} (or file has been closed) \n`);
-// 		return;
-// 	}
-// }
-// const fputs = () => {
-// 	pr.state.globals_int[1] = 0
-// 	const fileHandle = pr.state.globals_int[4]
-// 	if (fileHandle < 0 )
-// 	{
-// 		con.dPrint(`fgets: invalid file handle ${fileHandle}\n`);
-// 		return;
-// 	}
-// 	if (pr.state.openfiles[fileHandle] === null)
-// 	{
-// 		con.dPrint(`fgets: no such file handle ${fileHandle} (or file has been closed) \n`);
-// 		return;
-// 	}
-// }
+const strzone = function() {
+	var i, out = '';
+	for (i = 0; i < pr.state.argc; ++i)
+		out += pr.getString(pr.state.globals_int[PARM0 + i * 3]);
+
+	pr.state.globals_int[RETURN] =pr.newString(out, out.length + 1)
+}
+
+const strunzone = function() {
+	// var i, out = '';
+	
+	// if (!pr.state.globals_int[PARM0])
+	// 	return
+	// pr.c
+	// for (i = 0; i < pr.state.argc; ++i)
+	// 	out += pr.getString(pr.state.globals_int[PARM0 + i * 3]);
+
+	// pr.state.globals_int[RETURN] =pr.newString(out, out + 1)
+}
+
+const fixFileName = function (name: string): null | string {
+	
+	if (!name ||	//blank names are bad
+		name.includes(':') ||	//dos/win absolute path, ntfs ADS, amiga drives. reject them all.
+		name.includes('\\') ||	//windows-only paths.
+		name === '/' ||	//absolute path was given - reject
+		name.includes('..'))	//someone tried to be clever.
+	{
+		return null;
+	}
+	return `data/${name}`
+}
+
+// File Handling - kind of a hack
+const fopen = async () => {
+
+	const name = pr.getString(pr.state.globals_int[4])
+	const mode = pr.state.globals_float[7] as FileMode
+	const files = Object.keys(pr.state.openfiles)
+	let fileHandle = 0
+
+	pr.state.globals_float[1] = -1
+	let file: string | ArrayBuffer = null
+	const fname = fixFileName(name)
+	const gameDirFile = `${com.cvr.game.value}/${fname}`
+
+	if (!fname)
+	{
+		con.print(`fopen: Access denied: ${fname}\n`);
+		return;
+	}
+	switch (mode) {
+		case FileMode.READ:
+			file = await com.loadFile(fname)
+			if (!file) {
+				// can only *read* files that are not in data
+				file = await com.loadFile(name)
+			}
+			break
+		case FileMode.APPEND:
+		case FileMode.WRITE:
+			if(!await com.state.assetStore.openFile(gameDirFile, mode)) {
+				return
+			}
+			file = gameDirFile
+			break
+	}		
+
+	for(var i = 0; i <= files.length; i ++)
+		if (!pr.state.openfiles[i]) {
+			fileHandle = i
+			pr.state.openfiles[i] = {
+				file,
+				mode
+			}
+			break
+		}
+
+	pr.state.globals_float[1] = fileHandle
+}
+
+const fclose = () => {
+	const fileHandle = pr.state.globals_int[4]
+	if (fileHandle < 0 )
+	{
+		con.dPrint(`fclose: invalid file handle ${fileHandle}\n`);
+		return;
+	}
+	if (pr.state.openfiles[fileHandle] === null)
+	{
+		con.dPrint(`fclose: no such file handle ${fileHandle} (or file has been closed) \n`);
+		return;
+	}
+	pr.state.openfiles[fileHandle] = null
+}
+
+const fgets =  async () => {
+	pr.state.globals_int[1] = 0
+	if (pr.state.globals_float[4] >= pr.state.openfiles) {
+		con.dPrint('fgets: invalid file handle ${fileHandle}\n')
+		return
+	} 
+	const handle = pr.state.openfiles[pr.state.globals_float[4]]
+	if (!handle || !handle.file){
+		con.dPrint(`fgets: no such file handle ${handle} (or file has been closed) \n`);
+		return
+	}
+	if (handle.mode != 0) {
+		con.dPrint("fgets: file not open for reading\n");
+		return
+	}
+	
+	let content = ''
+	if ('byteLength' in handle.file) {
+		content = String.fromCharCode.apply(null, new Uint8Array(handle.file));
+	} else {
+		content = await pr.state.openfiles.readFile(handle.file).toString('utf8')
+	}
+	pr.state.globals_int[1] = pr.newString(content, content.length + 1)
+}
+
+const fputs = async () => {
+	pr.state.globals_int[1] = 0
+	if (pr.state.globals_float[4] >= pr.state.openfiles) {
+		con.dPrint('fputs: invalid file handle ${fileHandle}\n')
+		return
+	} 
+	const handle = pr.state.openfiles[pr.state.globals_float[4]]
+	if (!handle || !handle.file){
+		con.dPrint(`fputs: no such file handle ${handle} (or file has been closed) \n`);
+		return
+	}
+	if (handle.mode != 0) {
+		con.dPrint("fputs: file not open for reading\n");
+		return
+	}
+	const str = varString(1)
+	await com.state.assetStore.writeFile(handle.file, str, str.length)
+}
 export const builtin = [
 	fixme,
 	makevectors,
@@ -1342,10 +1466,10 @@ export const ebfs_builtins = [
 	{ defaultFnNbr: 108, name: "etof", fn: fixme, fnNbr: 0 },						// 2001-09-25 New BuiltIn Function: etof() by Maddes
 	{ defaultFnNbr: 109, name: "ftoe", fn: fixme, fnNbr: 0 },						// 2001-09-25 New BuiltIn Function: ftoe() by Maddes
 	// 2001-09-20 QuakeC file access by FrikaC/Maddes  start
-	{ defaultFnNbr: 110, name: "fopen", fn: fixme, fnNbr: 0 },
-	{ defaultFnNbr: 111, name: "fclose", fn: fixme, fnNbr: 0 },
-	{ defaultFnNbr: 112, name: "fgets", fn: fixme, fnNbr: 0 },
-	{ defaultFnNbr: 113, name: "fputs", fn: fixme, fnNbr: 0 },
+	{ defaultFnNbr: 110, name: "fopen", fn: fopen, fnNbr: 0 },
+	{ defaultFnNbr: 111, name: "fclose", fn: fclose, fnNbr: 0 },
+	{ defaultFnNbr: 112, name: "fgets", fn: fgets, fnNbr: 0 },
+	{ defaultFnNbr: 113, name: "fputs", fn: fputs, fnNbr: 0 },
 	{ defaultFnNbr: 0, name: "open", fn: fixme, fnNbr: 0 },						// 0 indicates that this entry is just for remapping (because of name and number change)
 	{ defaultFnNbr: 0, name: "close", fn: fixme, fnNbr: 0 },
 	{ defaultFnNbr: 0, name: "read", fn: fixme, fnNbr: 0 },
@@ -1355,10 +1479,10 @@ export const ebfs_builtins = [
 	// 2001-09-20 QuakeC string manipulation by FrikaC/Maddes  start
 	{ defaultFnNbr: 114, name: "strlen", fn: strlen, fnNbr: 0 },
 	{ defaultFnNbr: 115, name: "strcat", fn: strcat, fnNbr: 0 },
-	{ defaultFnNbr: 116, name: "substring", fn: fixme, fnNbr: 0 },
-	{ defaultFnNbr: 117, name: "stov", fn: fixme, fnNbr: 0 },
-	{ defaultFnNbr: 118, name: "strzone", fn: fixme, fnNbr: 0 },
-	{ defaultFnNbr: 119, name: "strunzone", fn: fixme, fnNbr: 0 },
+	{ defaultFnNbr: 116, name: "substring", fn: substring, fnNbr: 0 },
+	{ defaultFnNbr: 117, name: "stov", fn: stov, fnNbr: 0 },
+	{ defaultFnNbr: 118, name: "strzone", fn: strzone, fnNbr: 0 },
+	{ defaultFnNbr: 119, name: "strunzone", fn: strunzone, fnNbr: 0 },
 	{ defaultFnNbr: 0, name: "zone", fn: fixme, fnNbr: 0 },		// 0 indicates that this entry is just for remapping (because of name and number change)
 	{ defaultFnNbr: 0, name: "unzone", fn: fixme, fnNbr: 0 },
 	// 2001-09-20 QuakeC string manipulation by FrikaC/Maddes  end
@@ -1371,5 +1495,7 @@ export const ebfs_builtins = [
 	{ defaultFnNbr: 440, name: 'clientcommand', fn: clientcommand, fnNbr: 0},
 	{ defaultFnNbr: 441, name: 'tokenize', fn: tokenize, fnNbr: 0},
 	{ defaultFnNbr: 442, name: 'argv', fn: argv, fnNbr: 0},
-	{ defaultFnNbr: 514, name: 'tokenize_console', fn: tokenize, fnNbr: 0}
+	{ defaultFnNbr: 514, name: 'tokenize_console', fn: tokenize, fnNbr: 0},
+	{ defaultFnNbr: 627, name: 'sprintf', fn: sprintf, fnNbr: 0}
+	
 ]

@@ -233,6 +233,7 @@ export const init = function()
   addCommand('alias', alias_f);
   addCommand('cmd', forwardToServer);
   addCommand('wait', wait_f);
+
 }
 
 export const execute = async function()
@@ -265,3 +266,15 @@ export const execute = async function()
   }
   state.text = '';
 };
+
+export const exists = (name: string) => {
+  for (let i = 0; i < state.functions.length; ++i)
+  {
+    if (state.functions[i].name === name)
+    {
+      return true
+    }
+  }
+  
+  return false;
+}

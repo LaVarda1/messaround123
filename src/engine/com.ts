@@ -307,7 +307,7 @@ export const init = async function(assetStore: IAssetStore)
 
   cvr.registered = cvar.registerVariable('registered', '0');
   cvar.registerVariable('cmdline', state.cmdline, false, true);
-  cvar.registerVariable('game', 'id1', false, true);
+  cvr.game = cvar.registerVariable('game', 'id1', false, true);
 
   cmd.addCommand('path', path_f);
 
