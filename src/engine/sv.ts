@@ -1663,7 +1663,7 @@ const readClientMessage = async function () {
 				for (i = 0; i < cmds.length; ++i) {
 					if (s.substring(0, cmds[i].length).toLowerCase() !== cmds[i])
 						continue;
-					await cmd.executeString(s, true);
+					await cmd.executeString(s, cmd.CMD_SOURCE.src_client);
 					break;
 				}
 				if (i === cmds.length)
@@ -2360,7 +2360,7 @@ export const spawnServer = async function (server) {
 
 	if (state.server.active === true) {
 		await net.sendToAll(state.reconnect);
-		await cmd.executeString('reconnect\n', undefined);
+		await cmd.executeString('reconnect\n', cmd.CMD_SOURCE.src_server);
 	}
 
 	if (host.cvr.coop.value !== 0)

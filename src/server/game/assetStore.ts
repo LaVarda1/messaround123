@@ -6,6 +6,33 @@ import * as con from '../../engine/console'
 import IPackedFile from '../../engine/interfaces/store/IPackedFile'
 import {promises as fs} from 'fs'
 import * as fsBase from 'fs'
+import { FileMode } from '../../engine/interfaces/store/IAssetStore'
+import * as path from 'path'
+const modeMap = {
+	[FileMode.READ]: 'r',
+	[FileMode.APPEND]: 'w+',
+	[FileMode.WRITE]: 'w'
+}
+
+export const openFile = (filename: string, mode: FileMode) => {
+	const dir = path.dirname(filename)
+	return (dir && dir != '/' ? fs.mkdir(dir): Promise.resolve())
+		.then(() => fs.open(filename, modeMap[mode]))
+		.then(fd => fd.close())
+		.then(() => true)
+		.catch(err => {
+			sys.print(`Could not open '${filename}': ${err.message}\n`);
+			return false
+		})
+}
+
+export const readFile = (filename: string) => {
+	return fs.readFile(filename, 'utf8')
+		.catch(err => {
+			sys.print(`Could not read file : ${err.message}\n`);
+			return null
+		})
+}
 
 export const writeFile = (filename: string, data: Uint8Array, len: number) =>
 {
@@ -28,6 +55,7 @@ export const writeTextFile = (filename, data) =>
 			return false
 		})
 }
+
 
 export const loadFile = async function(filename: string)
 {

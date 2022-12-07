@@ -150,7 +150,7 @@ export const getMessage = (sock: ISocket) => {
 			++sock.receiveSequence;
 			net.state.message.cursize = message.length - HEADER_SIZE;
 			(new Uint8Array(net.state.message.data)).set(message.subarray(HEADER_SIZE));	
-	
+
 			return 1
 		} else if (messageType === MESSAGE_TYPE.ACK){
 			
@@ -256,19 +256,4 @@ const serverOnRequest = (request) => {
 		state.acceptsockets.push(request.accept('quake', request.origin));
 		return;
 	}
-	var i, s;
-	
-	// Joe - Allow clients to join with same IP (clients behind NAT)
-	// for (i = 0; i < net.activeSockets.length; ++i)
-	// {
-	// 	s = net.activeSockets[i];
-	// 	if (s.disconnected === true)
-	// 		continue;
-	// 	if (net.state.drivers[s.driver].name !== "websocket")
-	// 		continue;
-	// 	if (request.remoteAddress !== s.address)
-	// 		continue;
-	// 	net.close(s);
-	// 	break;
-	// }
 };

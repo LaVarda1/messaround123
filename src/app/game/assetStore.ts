@@ -7,8 +7,10 @@ import * as con from '../../engine/console'
 import * as indexeddb from '../../shared/indexeddb'
 import IPackedFile from '../../engine/interfaces/store/IPackedFile'
 import axios from 'axios'
+import { FileMode } from '../../engine/interfaces/store/IAssetStore'
 
 const remoteIndexes = {}
+
 const checkRemoteFileList = async function (game, fileName) : Promise<boolean> {
   if (!remoteIndexes[game]) {
     try {
@@ -83,6 +85,12 @@ const getFile = async function(file: string) {
   });
 };
 
+export const openFile = (filename: string, mode: FileMode) => {
+  return true
+}
+export const readFile = (filename: string) => {
+	throw new Error('Not Implemented')
+}
 export const writeFile = (filename: string, data: Uint8Array, len: number) =>
 {
   filename = filename.toLowerCase();
@@ -180,16 +188,18 @@ const _loadFile = async (filename: string) : Promise<ArrayBuffer> => {
 
   // As a workaround to the above, lets only search the server if we can't
   // find it in known packs
-  // for (i = com.state.searchpaths.length - 1; i >= 0; --i) {
-  //   search = com.state.searchpaths[i];
-  //   const netpath = search.dir + '/' + filename;
-  //   const gotFile = await getFile(netpath) as any;
-  //   if ((gotFile.status >= 200) && (gotFile.status <= 299))
-  //   {
-  //     sys.print('FindFile: ' + netpath + '\n');
-  //     return q.strmem(gotFile.responseText);
-  //   }
-  // }
+  if (import.meta.env.VITE_ALLOW_SERVER_DOWNLOADS) {
+    for (i = com.state.searchpaths.length - 1; i >= 0; --i) {
+      search = com.state.searchpaths[i];
+      const netpath = search.dir + '/' + filename;
+      const gotFile = await getFile(netpath) as any;
+      if ((gotFile.status >= 200) && (gotFile.status <= 299))
+      {
+        sys.print('FindFile: ' + netpath + '\n');
+        return q.strmem(gotFile.responseText);
+      }
+    }
+  }
 
   sys.print('FindFile: can\'t find ' + filename + '\n');
 };
