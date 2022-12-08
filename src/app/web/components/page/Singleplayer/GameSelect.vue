@@ -7,7 +7,7 @@
 <script lang="ts" setup>
 import type { GameDefinition } from '../../../helpers/games';
 
-const emits = defineEmits<{
+const emit = defineEmits<{
   (e: 'update:modelValue', modelValue: string): void
 }>()
 const props = withDefaults(
