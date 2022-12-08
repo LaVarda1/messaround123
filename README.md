@@ -22,8 +22,7 @@ Based on JS port of GLQuake by Triang3l
 
 # Installing
 
-Install Node.js version 8 or above (lower versions my work, I haven't tested)
-All other dependencies are managed by NPM
+Install Node.js 16.x or above. All other dependencies are managed by NPM.
 
 # Running game server
 
