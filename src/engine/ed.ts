@@ -166,7 +166,7 @@ export const count = function () {
   con.print('step      :' + (step <= 9 ? '  ' : (step <= 99 ? ' ' : '')) + step + '\n');
 };
 
-export const parseGlobals = async function (data) {
+export const parseGlobals = function (data) {
   var keyname, key;
   for (; ;) {
     data = com.parse(data);
@@ -186,7 +186,7 @@ export const parseGlobals = async function (data) {
       continue;
     }
     if (parseEpair(pr.state.globals, key, com.state.token) !== true)
-      await host.error('parseGlobals: parse error');
+      host.error('parseGlobals: parse error');
   }
 };
 
@@ -243,7 +243,7 @@ export const parseEpair = function (base, key, s) {
   return true;
 };
 
-export const parseEdict = async function (data, ent) {
+export const parseEdict = function (data, ent) {
   var i, init, anglehack, keyname, n, key;
   if (ent !== sv.state.server.edicts[0]) {
     for (i = 0; i < pr.state.entityfields; ++i)
@@ -291,7 +291,7 @@ export const parseEdict = async function (data, ent) {
     if (anglehack == true)
       com.state.token = '0 ' + com.state.token + ' 0';
     if (parseEpair(ent.v, key, com.state.token) !== true)
-      await host.error('parseEdict: parse error');
+      host.error('parseEdict: parse error');
   }
   if (init !== true)
     ent.free = true;

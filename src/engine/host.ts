@@ -71,8 +71,12 @@ export const endGame = async function(message: string)
   con.dPrint('Host.EndGame: ' + message + '\n');
   if (cl.cls.demonum !== -1)
     cl.nextDemo();
-  else
-    await cl.disconnect();
+  else {
+    cl.disconnect();
+    if (sv.state.server.active === true) {
+      await shutdownServer();
+    }
+  }
   throw 'Host.abortserver';
 };
 
@@ -130,25 +134,24 @@ export const broadcastPrint = function(string)
   }
 };
 
-export const dropClient = async function(crash: boolean)
+export const dropClient = async function()
 {
   var client = state.client;
-  if (crash !== true)
+
+  if (net.canSendMessage(client.netconnection) === true)
   {
-    if (net.canSendMessage(client.netconnection) === true)
-    {
-      msg.writeByte(client.message, protocol.SVC.disconnect);
-      net.sendMessage(client.netconnection, client.message);
-    }
-    if ((client.edict != null) && (client.spawned === true))
-    {
-      var saveSelf = pr.state.globals_int[pr.globalvars.self];
-      pr.state.globals_int[pr.globalvars.self] = client.edict.num;
-      await pr.executeProgram(pr.state.globals_int[pr.globalvars.ClientDisconnect]);
-      pr.state.globals_int[pr.globalvars.self] = saveSelf;
-    }
-    sys.print('Client ' + sv.getClientName(client) + ' removed\n');
+    msg.writeByte(client.message, protocol.SVC.disconnect);
+    net.sendMessage(client.netconnection, client.message);
   }
+  if ((client.edict != null) && (client.spawned === true))
+  {
+    var saveSelf = pr.state.globals_int[pr.globalvars.self];
+    pr.state.globals_int[pr.globalvars.self] = client.edict.num;
+    await pr.executeProgram(pr.state.globals_int[pr.globalvars.ClientDisconnect]);
+    pr.state.globals_int[pr.globalvars.self] = saveSelf;
+  }
+  sys.print('Client ' + sv.getClientName(client) + ' removed\n');
+  
   net.close(client.netconnection);
   client.netconnection = null;
   client.active = false;
@@ -172,6 +175,33 @@ export const dropClient = async function(crash: boolean)
     msg.writeByte(client.message, 0);
   }
 };
+
+// in the case of a crash
+export const hardDropClient = () => {
+  var client = state.client;
+  net.close(client.netconnection);
+  client.netconnection = null;
+  client.active = false;
+  sv.setClientName(client, '');
+  client.old_frags = -999999;
+  --net.state.activeconnections;
+  var i, num = client.num;
+  for (i = 0; i < sv.state.svs.maxclients; ++i)
+  {
+    client = sv.state.svs.clients[i];
+    if (client.active !== true)
+      continue;
+    msg.writeByte(client.message, protocol.SVC.updatename);
+    msg.writeByte(client.message, num);
+    msg.writeByte(client.message, 0);
+    msg.writeByte(client.message, protocol.SVC.updatefrags);
+    msg.writeByte(client.message, num);
+    msg.writeShort(client.message, 0);
+    msg.writeByte(client.message, protocol.SVC.updatecolors);
+    msg.writeByte(client.message, num);
+    msg.writeByte(client.message, 0);
+  }
+}
 
 const writeConfiguration = function()
 {
@@ -489,9 +519,9 @@ const map_f = async function()
   
   if (!state.dedicated) {
     cl.cls.demonum = -1;
-    await cl.disconnect();
+    cl.disconnect();
   }
-  await shutdownServer(false);
+  await shutdownServer();
   key.state.dest = key.KEY_DEST.game
   if (!state.dedicated) {
     scr.beginLoadingPlaque();
@@ -548,7 +578,10 @@ const connect_f = async function()
   if (cl.cls.demoplayback === true)
   {
     cl.stopPlayback();
-    await cl.disconnect();
+    cl.disconnect();
+    if (sv.state.server.active === true) {
+      await shutdownServer();
+    }
   }
   await cl.establishConnection(cmd.state.argv[1]);
   cl.cls.signon = 0;
@@ -719,7 +752,10 @@ const loadgame_f = async function()
   cvar.setValue('skill', state.current_skill);
 
   var time = parseFloat(flines[20]);
-  await cl.disconnect();
+  cl.disconnect();
+  if (sv.state.server.active === true) {
+    await shutdownServer();
+  }
   await sv.spawnServer(flines[19]);
   if (sv.state.server.active !== true)
   {
@@ -1196,7 +1232,7 @@ const kick_f = async function()
   }
   else
     clientPrint('Kicked by ' + who + '\n');
-  await dropClient(false);
+  await dropClient();
   state.client = save;
 };
 
@@ -1412,7 +1448,10 @@ const demos_f = async function()
 {
   if (cl.cls.demonum === -1)
     cl.cls.demonum = 1;
-  await cl.disconnect();
+  cl.disconnect();
+  if (sv.state.server.active === true) {
+    await shutdownServer();
+  }
   cl.nextDemo();
 };
 
@@ -1421,7 +1460,10 @@ const stopdemo_f = async function()
   if (cl.cls.demoplayback !== true)
     return;
   cl.stopPlayback();
-  await cl.disconnect();
+  cl.disconnect();
+  if (sv.state.server.active === true) {
+    await shutdownServer();
+  }
 };
 
 const initCommands = () => {
@@ -1473,8 +1515,7 @@ export const error = async function(error: string)
   }
   con.print('Host.Error: ' + error + '\n');
   if (sv.state.server.active === true)
-    await shutdownServer(false);
-  await cl.disconnect();
+    shutdownServer();
   cl.cls.demonum = -1;
   state.inerror = false;
   throw new Error('Host.abortserver');
@@ -1602,13 +1643,14 @@ export const shutdown = function()
   vid.free()
 };
 
-export const shutdownServer = async function(crash: boolean = false)
+export const shutdownServer = async function()
 {
   if (sv.state.server.active !== true)
     return;
   sv.state.server.active = false;
-  if (cl.cls.state === cl.ACTIVE.connected)
-    await cl.disconnect();
+  if (cl.cls.state === cl.ACTIVE.connected) {
+    cl.disconnect();
+  }
   var start = sys.floatTime(), count, i;
   do
   {
@@ -1632,13 +1674,13 @@ export const shutdownServer = async function(crash: boolean = false)
   } while (count !== 0);
   var buf = {data: new ArrayBuffer(4), cursize: 1};
   (new Uint8Array(buf.data))[0] = protocol.SVC.disconnect;
-  count = await net.sendToAll(buf);
+  count = net.sendToAll(buf, true);
   if (count !== 0)
     con.print('Host.ShutdownServer: NET.SendToAll failed for ' + count + ' clients\n');
   for (i = 0; i < sv.state.svs.maxclients; ++i)
   {
     state.client = sv.state.svs.clients[i];
     if (state.client.active === true)
-      await dropClient(crash);
+      await dropClient();
   }
 };

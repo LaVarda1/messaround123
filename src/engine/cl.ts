@@ -277,7 +277,9 @@ export const playDemo_f = async function()
     con.print('playdemo <demoname> : plays a demo\n');
     return;
   }
-  await disconnect();
+  disconnect();
+  if (sv.state.server.active === true)
+    await host.shutdownServer();
   var name = com.defaultExtension(cmd.state.argv[1], '.dem');
   con.print('Playing demo from ' + name + '.\n');
   var demofile = await com.loadFile(name) as any;
@@ -520,7 +522,9 @@ export const sendMove = async function()
   if (net.sendUnreliableMessage(cls.netcon, buf) === -1)
   {
     con.print('CL.SendMove: lost server connection\n');
-    await disconnect();
+    disconnect();
+    if (sv.state.server.active === true)
+      await host.shutdownServer();
   }
 };
 
@@ -687,8 +691,6 @@ export const disconnect = async function()
     cls.message.cursize = 0;
     net.close(cls.netcon);
     cls.state = ACTIVE.disconnected;
-    if (sv.state.server.active === true)
-      await host.shutdownServer();
   }
   cls.demoplayback = cls.timedemo = false;
   cls.signon = 0;
@@ -707,11 +709,13 @@ export const establishConnection = async function(host_url)
 {
   if (cls.demoplayback === true)
     return;
-  await disconnect();
+  disconnect();
+  if (sv.state.server.active === true)
+    await host.shutdownServer();
   state.host = host_url;
   var sock = await net.connect(host_url);
   if (sock == null)
-    await host.error('CL.EstablishConnection: connect failed\n');
+    host.error('CL.EstablishConnection: connect failed\n');
   connect(sock);
 };
 
@@ -1566,19 +1570,19 @@ export const parseServerMessage = async function()
     case protocol.SVC.updatename:
       i = msg.readByte();
       if (i >= clState.maxclients)
-        await host.error('CL.ParseServerMessage: svc_updatename > MAX_SCOREBOARD');
+        host.error('CL.ParseServerMessage: svc_updatename > MAX_SCOREBOARD');
       clState.scores[i].name = msg.readString();
       continue;
     case protocol.SVC.updatefrags:
       i = msg.readByte();
       if (i >= clState.maxclients)
-        await host.error('CL.ParseServerMessage: svc_updatefrags > MAX_SCOREBOARD');
+        host.error('CL.ParseServerMessage: svc_updatefrags > MAX_SCOREBOARD');
       clState.scores[i].frags = msg.readShort();
       continue;
     case protocol.SVC.updatecolors:
       i = msg.readByte();
       if (i >= clState.maxclients)
-        await host.error('CL.ParseServerMessage: svc_updatecolors > MAX_SCOREBOARD');
+        host.error('CL.ParseServerMessage: svc_updatecolors > MAX_SCOREBOARD');
       clState.scores[i].colors = msg.readByte();
       continue;
     case protocol.SVC.particle:
@@ -1603,7 +1607,7 @@ export const parseServerMessage = async function()
     case protocol.SVC.signonnum:
       i = msg.readByte();
       if (i <= cls.signon)
-        await host.error('Received signon ' + i + ' when at ' + cls.signon);
+        host.error('Received signon ' + i + ' when at ' + cls.signon);
       cls.signon = i;
       signonReply();
       continue;

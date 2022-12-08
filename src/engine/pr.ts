@@ -690,18 +690,18 @@ export const profile_f = function () {
   }
 };
 
-export const runError = async function (error) {
+export const runError = function (error) {
   printStatement(state.statements[state.xstatement]);
   stackTrace();
   con.print(error + '\n');
-  await host.error('Program error');
+  host.error('Program error');
 };
 
 const enterFunction = async function (f) {
   state.stack[state.depth++] = [state.xstatement, state.xfunction];
   var c = f.locals;
   if ((state.localstack_used + c) > state.localstack_size)
-    await runError('PR.EnterFunction: locals stack overflow\n');
+    runError('PR.EnterFunction: locals stack overflow\n');
   var i;
   for (i = 0; i < c; ++i)
     state.localstack[state.localstack_used + i] = state.globals_int[f.parm_start + i];
@@ -715,13 +715,13 @@ const enterFunction = async function (f) {
   return f.first_statement - 1;
 };
 
-const leaveFunction = async function () {
+const leaveFunction = function () {
   if (state.depth <= 0)
     sys.error('prog stack underflow');
   var c = state.xfunction.locals;
   state.localstack_used -= c;
   if (state.localstack_used < 0)
-    await runError('PR.LeaveFunction: locals stack underflow\n');
+    runError('PR.LeaveFunction: locals stack underflow\n');
   for (--c; c >= 0; --c)
     state.globals_int[state.xfunction.parm_start + c] = state.localstack[state.localstack_used + c];
   state.xfunction = state.stack[--state.depth][1];
@@ -732,7 +732,7 @@ export const executeProgram = async function (fnum) {
   if ((fnum === 0) || (fnum >= state.functions.length)) {
     if (state.globals_int[globalvars.self] !== 0)
       ed.print(sv.state.server.edicts[state.globals_int[globalvars.self]]);
-    await host.error('PR.ExecuteProgram: NULL function');
+    host.error('PR.ExecuteProgram: NULL function');
   }
   var runaway = 100000;
   var exitdepth = state.depth;
@@ -743,7 +743,7 @@ export const executeProgram = async function (fnum) {
     ++s;
     st = state.statements[s];
     if (--runaway === 0)
-      await runError('runaway loop error');
+      runError('runaway loop error');
     ++state.xfunction.profile;
     state.xstatement = s;
     if (state.trace === true)
@@ -945,7 +945,7 @@ export const executeProgram = async function (fnum) {
         state.globals_int[1] = state.globals_int[st.a];
         state.globals_int[2] = state.globals_int[st.a + 1];
         state.globals_int[3] = state.globals_int[st.a + 2];
-        s = await leaveFunction();
+        s = leaveFunction();
         if (state.depth === exitdepth)
           return;
         continue;
@@ -956,7 +956,7 @@ export const executeProgram = async function (fnum) {
         _ed.v_int[entvars.think] = state.globals_int[st.b];
         continue;
     }
-    await runError('Bad opcode ' + st.op);
+    runError('Bad opcode ' + st.op);
   }
 };
 

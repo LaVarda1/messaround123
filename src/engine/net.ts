@@ -127,7 +127,7 @@ export const connect = async function(host)
 	}
 };
 
-export const checkForResend = async function()
+export const checkForResend = function()
 {
 	state.time = sys.floatTime();
 	var dfunc = state.drivers[state.newsocket.driver];
@@ -146,7 +146,7 @@ export const checkForResend = async function()
 			close(state.newsocket);
 			cl.cls.state = cl.ACTIVE.disconnected;
 			con.print('No Response\n');
-			await host.error('NET.CheckForResend: connect failed\n');
+			host.error('NET.CheckForResend: connect failed\n');
 		}
 	}
 	var ret = dfunc.checkForResend();
@@ -161,7 +161,7 @@ export const checkForResend = async function()
 		close(state.newsocket);
 		cl.cls.state = cl.ACTIVE.disconnected;
 		con.print('Network Error\n');
-		await host.error('NET.CheckForResend: connect failed\n');
+		host.error('NET.CheckForResend: connect failed\n');
 	}
 };
 
@@ -254,7 +254,7 @@ export const canSendMessage = function(sock)
 	return state.drivers[sock.driver].canSendMessage(sock);
 };
 
-export const sendToAll = async function(data)
+export const sendToAll = async function(data, immediate: boolean = false)
 {
 	var i, 
 		count = 0, 
@@ -292,11 +292,15 @@ export const sendToAll = async function(data)
 			{
 				let canSend = true
 				let retry = 0;
-				// wait three seconds for each client to process ack and receive reconnect
-				while (!(canSend = canSendMessage(host.state.client.netconnection)) && retry++ < 3) {
-					getMessage(host.state.client.netconnection);
-					con.dPrint('SendToAll - waiting to send\n')
-					await new Promise(resolve => setTimeout(resolve, 1000))
+				if (immediate) {
+					canSend = canSendMessage(host.state.client.netconnection)
+				} else {
+					// wait three seconds for each client to process ack and receive reconnect
+					while (!(canSend = canSendMessage(host.state.client.netconnection)) && retry++ < 3) {
+						getMessage(host.state.client.netconnection);
+						con.dPrint('SendToAll - waiting to send\n')
+						await new Promise(resolve => setTimeout(resolve, 1000))
+					}
 				}
 				if (canSend)
 				{

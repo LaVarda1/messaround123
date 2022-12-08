@@ -31,18 +31,18 @@ export const varString = function(first)
 	return out;
 };
 
-export const error = async function()
+export const error = function()
 {
 	con.print('======SERVER ERROR in ' + pr.getString(pr.state.xfunction.name) + '\n' + varString(0) + '\n');
 	ed.print(sv.state.server.edicts[pr.state.globals_int[pr.globalvars.self]]);
-	await host.error('Program error');
+	host.error('Program error');
 };
 
-export const objerror = async function()
+export const objerror = function()
 {
 	con.print('======OBJECT ERROR in ' + pr.getString(pr.state.xfunction.name) + '\n' + varString(0) + '\n');
 	ed.print(sv.state.server.edicts[pr.state.globals_int[pr.globalvars.self]]);
-	await host.error('Program error');
+	host.error('Program error');
 };
 
 export const makevectors = function()

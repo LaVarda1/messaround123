@@ -414,7 +414,7 @@ const writeEntitiesToClient = function (clent, message) {
 };
 
 
-const sendClientDatagram = async function () {
+const sendClientDatagram = function () {
 	var client = host.state.client;
 	var message = state.clientdatagram;
 	message.cursize = 0;
@@ -425,7 +425,7 @@ const sendClientDatagram = async function () {
 	if ((message.cursize + state.server.datagram.cursize) < message.data.byteLength)
 		sz.write(message, new Uint8Array(state.server.datagram.data), state.server.datagram.cursize);
 	if (net.sendUnreliableMessage(client.netconnection, message) === -1) {
-		await host.dropClient(true);
+		host.hardDropClient();
 		return;
 	}
 	return true;
@@ -2154,7 +2154,7 @@ export const runClients = async function () {
 			continue;
 		state.player = host.state.client.edict;
 		if (await readClientMessage() !== true) {
-			await host.dropClient(false);
+			await host.dropClient();
 			continue;
 		}
 		if (host.state.client.spawned !== true) {
@@ -2483,32 +2483,32 @@ export const sendClientMessages = async function () {
 		if (client.active !== true)
 			continue;
 		if (client.spawned === true) {
-			if (await sendClientDatagram() !== true)
+			if (sendClientDatagram() !== true)
 				continue;
 		}
 		else if (client.sendsignon !== true) {
 			if ((host.state.realtime - client.last_message) > 5.0) {
 				if (net.sendUnreliableMessage(client.netconnection, state.nop) === -1)
-					await host.dropClient(true);
+					host.hardDropClient();
 				client.last_message = host.state.realtime;
 			}
 			continue;
 		}
 
 		if (client.message.overflowed === true) {
-			await host.dropClient(true);
+			host.hardDropClient();
 			client.message.overflowed = false;
 			continue;
 		}
 		if (client.dropasap === true) {
 			if (net.canSendMessage(client.netconnection) === true)
-				await host.dropClient(false);
+				await host.dropClient();
 		}
 		else if (client.message.cursize !== 0) {
 			if (net.canSendMessage(client.netconnection) !== true)
 				continue;
 			if (net.sendMessage(client.netconnection, client.message) === -1)
-				await host.dropClient(true);
+				host.hardDropClient();
 			client.message.cursize = 0;
 			client.last_message = host.state.realtime;
 			client.sendsignon = false;
