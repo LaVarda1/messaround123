@@ -23,6 +23,7 @@ import * as lm from './lightmap'
 import * as tx from './texture'
 import * as mapAlpha from './mapAlpha'
 import * as fog from './fog'
+import { V3 } from './vec'
 
 export const MAX_DLIGHTS = 32
 export const LERP = {
@@ -327,58 +328,59 @@ state.refdef = {
 	vieworg: [0.0, 0.0, 0.0],
 	viewangles: [0.0, 0.0, 0.0]
 };
-const cullBox = function(mins, maxs)
-{
-	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[0]) === 2)
-		return true;
-	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[1]) === 2)
-		return true;
-	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[2]) === 2)
-		return true;
-	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[3]) === 2)
-		return true;
-};
-// export const cullBox = function (emins, emaxs) {
-// 	for (var i = 0; i < 4; i++) {
-// 		var p = state.frustum[i];
-// 		switch (p.signbits) {
-// 			default:
-// 			case 0:
-// 				if (p.normal[0] * emaxs[0] + p.normal[1] * emaxs[1] + p.normal[2] * emaxs[2] < p.dist)
-// 					return true;
-// 				break;
-// 			case 1:
-// 				if (p.normal[0] * emins[0] + p.normal[1] * emaxs[1] + p.normal[2] * emaxs[2] < p.dist)
-// 					return true;
-// 				break;
-// 			case 2:
-// 				if (p.normal[0] * emaxs[0] + p.normal[1] * emins[1] + p.normal[2] * emaxs[2] < p.dist)
-// 					return true;
-// 				break;
-// 			case 3:
-// 				if (p.normal[0] * emins[0] + p.normal[1] * emins[1] + p.normal[2] * emaxs[2] < p.dist)
-// 					return true;
-// 				break;
-// 			case 4:
-// 				if (p.normal[0] * emaxs[0] + p.normal[1] * emaxs[1] + p.normal[2] * emins[2] < p.dist)
-// 					return true;
-// 				break;
-// 			case 5:
-// 				if (p.normal[0] * emins[0] + p.normal[1] * emaxs[1] + p.normal[2] * emins[2] < p.dist)
-// 					return true;
-// 				break;
-// 			case 6:
-// 				if (p.normal[0] * emaxs[0] + p.normal[1] * emins[1] + p.normal[2] * emins[2] < p.dist)
-// 					return true;
-// 				break;
-// 			case 7:
-// 				if (p.normal[0] * emins[0] + p.normal[1] * emins[1] + p.normal[2] * emins[2] < p.dist)
-// 					return true;
-// 				break;
-// 		}
-// 	}
-// 	return false;
+// const cullBox = function(mins, maxs)
+// {
+// 	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[0]) === 2)
+// 		return true;
+// 	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[1]) === 2)
+// 		return true;
+// 	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[2]) === 2)
+// 		return true;
+// 	if (vec.boxOnPlaneSide(mins, maxs, state.frustum[3]) === 2)
+// 		return true;
 // };
+
+export const cullBox = function (emins, emaxs) {
+	for (var i = 0; i < 4; i++) {
+		var p = state.frustum[i];
+		switch (p.signbits) {
+			default:
+			case 0:
+				if (p.normal[0] * emaxs[0] + p.normal[1] * emaxs[1] + p.normal[2] * emaxs[2] < p.dist)
+					return true;
+				break;
+			case 1:
+				if (p.normal[0] * emins[0] + p.normal[1] * emaxs[1] + p.normal[2] * emaxs[2] < p.dist)
+					return true;
+				break;
+			case 2:
+				if (p.normal[0] * emaxs[0] + p.normal[1] * emins[1] + p.normal[2] * emaxs[2] < p.dist)
+					return true;
+				break;
+			case 3:
+				if (p.normal[0] * emins[0] + p.normal[1] * emins[1] + p.normal[2] * emaxs[2] < p.dist)
+					return true;
+				break;
+			case 4:
+				if (p.normal[0] * emaxs[0] + p.normal[1] * emaxs[1] + p.normal[2] * emins[2] < p.dist)
+					return true;
+				break;
+			case 5:
+				if (p.normal[0] * emins[0] + p.normal[1] * emaxs[1] + p.normal[2] * emins[2] < p.dist)
+					return true;
+				break;
+			case 6:
+				if (p.normal[0] * emaxs[0] + p.normal[1] * emins[1] + p.normal[2] * emins[2] < p.dist)
+					return true;
+				break;
+			case 7:
+				if (p.normal[0] * emins[0] + p.normal[1] * emins[1] + p.normal[2] * emins[2] < p.dist)
+					return true;
+				break;
+		}
+	}
+	return false;
+};
 
 export const drawSpriteModel = function (e) {
 	var program = GL.useProgram('Sprite', true);
@@ -915,6 +917,19 @@ export const setupGL = function () {
 	gl.enable(gl.DEPTH_TEST);
 };
 
+// let array = []
+// let lastREport = 0
+// const perf = (start, end) => {
+// 	let ms = end - start
+// 	if(array.length> 50) {
+// 		array.pop()
+// 	}
+// 	array.push(ms)
+// 	if (end - lastREport > 1000) {
+// 		lastREport = end
+// 		console.log('Performance: ' + ((array.reduce((partialSum, a) => partialSum + a, 0)) / array.length).toFixed(2))
+// 	}
+// }
 export const renderScene = function () {
 	const gl = GL.getContext()
 	animateLight();
@@ -923,7 +938,6 @@ export const renderScene = function () {
 	v.setContentsColor(state.viewleaf.contents);
 	v.calcBlend();
 	state.dowarp = (cvr.waterwarp.value !== 0) && (state.viewleaf.contents <= mod.CONTENTS.water);
-
 	setFrustum();
 	setupGL();
 	markSurfaces();
@@ -1019,6 +1033,7 @@ export const init = function () {
   cvr.lavaalpha = cvar.registerVariable('r_lavaalpha', '0')
   cvr.telealpha = cvar.registerVariable('r_telealpha', '0')
   cvr.slimealpha = cvar.registerVariable('r_slimealpha', '0')
+  cvr.dynamic = cvar.registerVariable('r_dynamic', '1')
   cvr.test = cvar.registerVariable('r_test', '0')
 
 	cvar.registerChangedEvent('r_novis', () => state.vis_changed = true)
