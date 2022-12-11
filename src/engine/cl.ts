@@ -1078,6 +1078,7 @@ export const init = async function()
   cvr.yawspeed = cvar.registerVariable('cl_yawspeed', '140');
   cvr.pitchspeed = cvar.registerVariable('cl_pitchspeed', '150');
   cvr.anglespeedkey = cvar.registerVariable('cl_anglespeedkey', '1.5');
+  cvr.maxfps = cvar.registerVariable('cl_maxfps', '60', true);
   cvr.shownet = cvar.registerVariable('cl_shownet', '0');
   cvr.nolerp = cvar.registerVariable('cl_nolerp', '0');
   cvr.lookspring = cvar.registerVariable('lookspring', '0', true);
