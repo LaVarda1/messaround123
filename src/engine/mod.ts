@@ -330,7 +330,13 @@ export const loadTextures = function(buf)
     else
     {
       if (GL.getContext()) {
-        glt = tx.loadTexture(loadmodel, texture.name, texture.width, texture.height, new Uint8Array(buf, miptexofs + view.getUint32(miptexofs + 24, true), texture.width * texture.height));
+        let data = null
+        if (texture.height === 0 || texture.width === 0) {
+          data = new Uint8Array()
+        } else {
+          data = new Uint8Array(buf, miptexofs + view.getUint32(miptexofs + 24, true), texture.width * texture.height)
+        }
+        glt = tx.loadTexture(loadmodel, texture.name, texture.width, texture.height, data);
         texture.texturenum = glt.texnum;
       }
       if (texture.name.charCodeAt(0) === 42)
