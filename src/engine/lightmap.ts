@@ -5,18 +5,20 @@ import * as def from './def'
 import * as GL from './GL'
 import * as texture from './texture'
 import * as con from './console'
+import {cvr} from './r'
 
 export const LM_BLOCK_WIDTH = 128
 export const LM_BLOCK_HEIGHT = 128
 export const MAXLIGHTMAPS = 512
 export const MAX_LIGHTSTYLES = 64
 
-const cvr = {
-	gl_overbright: {value: 1},
-	gl_fullbrights: {value: 0},
-	r_novis: {value: 0},
-	oldskyleaf: {value: 0}
-}
+// const cvr = {
+// 	gl_overbright: {value: 1},
+// 	gl_fullbrights: {value: 0},
+// 	r_novis: {value: 0},
+//   dynamic: {value:0},
+// 	oldskyleaf: {value: 0}
+// }
 
 export const state = {
 	lightmap_modified: [],
@@ -332,7 +334,7 @@ const renderDynamicLightmaps = (model, surf) => {
 		|| surf.dlightframe === state.dlightframecount	// dynamic this frame
 		|| surf.cached_dlight)			// dynamic previously
 	{
-		if (true) // (r_dynamic.value)
+		if (cvr.dynamic.value)
 		{
 			state.lightmap_modified[surf.lightmaptexturenum] = true;
 			var theRect = state.lightmap_rectchange[surf.lightmaptexturenum];
