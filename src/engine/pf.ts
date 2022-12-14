@@ -973,7 +973,8 @@ const clientcommand = function ()
 }
 
 const tokenize = function () {
-  let str = pr.getString(pr.state.globals_int[4])
+  const start = pr.getString(pr.state.globals_int[4])
+	let str = start
 	pr.state.qctoken = []
 	while (pr.state.qctoken.length < 64)
 	{
@@ -981,30 +982,30 @@ const tokenize = function () {
 		/*skip whitespace here so the token's start is accurate*/
 		while (i < str.length && str.charCodeAt(i) <= 32)
 			i++
+		str = str.substring(i)
 
-		if (i >= str.length)
+		if (!str)
 			break
 		let newToken = { 
-			start: i,
+			start: start.length - str.length,
 			end: 0,
 			token: ''
 		 }
 		pr.state.qctoken.push(newToken)
 
-		str = com.parse(str.substring(i))
-		i += str.length
+		str = com.parse(str)
 		if (!str && str !== '')
 			break
 
 		newToken.token = com.state.token
 
-		newToken.end = i;
+		newToken.end = start.length - str.length;
 	}
 	pr.state.globals_int[1] = pr.state.qctoken.length;
 }
 
 const argv = function () {
-	let idx = pr.state.globals_int[PARM0]
+	let idx = pr.state.globals_float[PARM0]
 	if (idx < 0)
 		idx += pr.state.qctoken.length
 
@@ -1012,7 +1013,8 @@ const argv = function () {
 		pr.state.globals_int[1] = 0
 	} else {
 		const token = pr.state.qctoken[idx].token
-		pr.state.globals_int[1] = pr.newString(token, token.length + 1)
+		pr.tempString(token)
+		pr.state.globals_int[RETURN] = pr.state.string_temp
 	}
 }
 
@@ -1142,8 +1144,9 @@ const sprintf = function () {
 
 const strzone = function() {
 	var i, out = '';
-	for (i = 0; i < pr.state.argc; ++i)
-		out += pr.getString(pr.state.globals_int[PARM0 + i * 3]);
+	for (i = 0; i < pr.state.argc; ++i){
+		out += pr.getString(pr.state.globals_int[PARM0 + (i * 3)]);
+	}
 
 	pr.state.globals_int[RETURN] = pr.newString(out, out.length + 1)
 }
@@ -1208,17 +1211,20 @@ const fopen = async () => {
 			break
 	}		
 
-	for(var i = 0; i <= files.length; i ++)
-		if (!pr.state.openfiles[i]) {
-			fileHandle = i
-			pr.state.openfiles[i] = {
-				file,
-				mode
+	if (file) {
+		for(var i = 0; i <= files.length; i ++)
+			if (!pr.state.openfiles[i]) {
+				fileHandle = i
+				pr.state.openfiles[i] = {
+					position: -1,
+					file,
+					mode
+				}
+				break
 			}
-			break
-		}
+			pr.state.globals_float[1] = fileHandle
+	}
 
-	pr.state.globals_float[1] = fileHandle
 }
 
 const fclose = () => {
@@ -1252,13 +1258,22 @@ const fgets =  async () => {
 		return
 	}
 	
-	let content = ''
-	if ('byteLength' in handle.file) {
-		content = String.fromCharCode.apply(null, new Uint8Array(handle.file));
-	} else {
-		content = await pr.state.openfiles.readFile(handle.file).toString('utf8')
+	if (!handle.content) {
+		let content = ''
+		if ('byteLength' in handle.file) {
+			content = String.fromCharCode.apply(null, new Uint8Array(handle.file));
+		} else {
+			content = await pr.state.openfiles.readFile(handle.file).toString('utf8')
+		}
+		handle.content = content.split(/\r?\n/)
 	}
-	pr.state.globals_int[1] = pr.newString(content, content.length + 1)
+	handle.position++;
+	if (handle.position >= handle.content.length) {
+		return
+	} else {
+		pr.tempString(handle.content[handle.position]);
+		pr.state.globals_int[RETURN] = pr.state.string_temp;
+	}
 }
 
 const fputs = async () => {
@@ -1339,7 +1354,7 @@ const infokey = () => {
 		pr.state.globals_int[RETURN] = 0
 	} else {
 		pr.tempString(r)
-		pr.state.globals_int[RETURN] = pr.getString(pr.state.string_temp)
+		pr.state.globals_int[RETURN] = pr.state.string_temp
 	}
 }
 const strpad = function() {
