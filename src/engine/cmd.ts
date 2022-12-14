@@ -233,6 +233,8 @@ export const init = function()
   addCommand('alias', alias_f);
   addCommand('cmd', forwardToServer);
   addCommand('wait', wait_f);
+  addCommand('set', cvar.set_f)
+  addCommand('seta', cvar.set_f)
 
 }
 

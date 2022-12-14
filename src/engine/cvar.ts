@@ -146,7 +146,7 @@ export const writeVariables = function()
   return f.join('');
 };
 
-const set_f = () => {	
+export const set_f = () => {	
 	if (cmd.state.argv.length < 3)
 	{
 		con.print(`${cmd.state.argv[0]} <cvar> <value>\n`)
@@ -167,6 +167,4 @@ const set_f = () => {
 }
 export const init = () =>  {
   vars = []
-  cmd.addCommand('set', set_f)
-  cmd.addCommand('seta', set_f)
 }

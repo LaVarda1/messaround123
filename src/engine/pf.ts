@@ -7,6 +7,7 @@ import * as host from './host'
 import * as mod from './mod'
 import * as cmd from './cmd'
 import * as msg from './msg'
+import * as def from './def'
 import * as cvar from './cvar'
 import * as protocol from './protocol'
 import * as com from './com'
@@ -1144,7 +1145,7 @@ const strzone = function() {
 	for (i = 0; i < pr.state.argc; ++i)
 		out += pr.getString(pr.state.globals_int[PARM0 + i * 3]);
 
-	pr.state.globals_int[RETURN] =pr.newString(out, out.length + 1)
+	pr.state.globals_int[RETURN] = pr.newString(out, out.length + 1)
 }
 
 const strunzone = function() {
@@ -1277,6 +1278,81 @@ const fputs = async () => {
 	}
 	const str = varString(1)
 	await com.state.assetStore.writeFile(handle.file, str, str.length)
+}
+
+const infokey = () => {
+	const ent = sv.state.server.edicts[pr.state.globals_int[4]];
+	const key = pr.getString(pr.state.globals_int[PARM1])
+	let r: null | string = null
+	if (!ent) {
+		if (key === '*version') {
+			r = `WebQuake ${def.webquake_version}`
+		} else {
+			con.dPrint(`infokey: unsupported key ${key}`)
+		}
+	} else if (ent && ent.num <= sv.state.svs.maxclients && sv.state.svs.clients[ent.num - 1].active) {
+		
+		const cl = sv.state.svs.clients[ent.num-1];
+		switch (key) {
+			case "ip":
+				r = cl.netconnection.address
+				break
+			case "ping":
+				let total = 0;
+				for (var j = 0; j <= 15; ++j)
+					total += cl.ping_times[j];
+				r = (total * 62.5).toFixed(2);
+				break
+			case "protocol":
+				switch(sv.state.server.protocol) {
+					case protocol.netquake:
+						r = 'quake'
+						break;
+					case protocol.fitzquake:
+						r = 'fitz666'
+						break;
+				}
+				break;
+			case "name":
+				r = cl.name
+				break;
+			case "topcolor":
+				r = (cl.colors >> 4).toFixed(0)
+				break;
+			case "bottomcolor":
+				r = (cl.colors & 15).toFixed(0)
+				break;
+			case "*VIP":
+				r = ""
+				break;
+			case "*spectator":
+				r = ""
+				break;
+			case "*csqcactive":
+				r = "0"
+				break;
+			default: 
+				con.dPrint(`infokey: unsupported ent key ${key}`)
+		}
+	}
+	if (r === null) {
+		pr.state.globals_int[RETURN] = 0
+	} else {
+		pr.tempString(r)
+		pr.state.globals_int[RETURN] = pr.getString(pr.state.string_temp)
+	}
+}
+const strpad = function() {
+	const pad = pr.state.globals_float[PARM0]
+	const str = varString(1)
+	let r = ''
+	if (pad < 0) {
+		r = str.padStart(Math.abs(pad), ' ')
+	} else {
+		r = str.padEnd(pad, ' ')
+	}
+	
+	pr.state.globals_int[RETURN] = pr.newString(r, r.length + 1)
 }
 export const builtin = [
 	fixme,
@@ -1442,6 +1518,7 @@ export const ebfs_builtins = [
 	{ defaultFnNbr: 78, name: "setspawnparms", fn: setspawnparms, fnNbr: 0 },
 	//	{  79, "fixme", FIXME},
 	//	{  80, "fixme", FIXME},
+	{ defaultFnNbr: 80, name: 'infokey', fn: infokey, fnNbr: 0 },
 	{ defaultFnNbr: 81, name: "stof", fn: stof, fnNbr: 0 },	// 2001-09-20 QuakeC string manipulation by FrikaC/Maddes
 
 	// 2001-11-15 DarkPlaces general builtin functions by Lord Havoc  start
@@ -1483,6 +1560,7 @@ export const ebfs_builtins = [
 	{ defaultFnNbr: 117, name: "stov", fn: stov, fnNbr: 0 },
 	{ defaultFnNbr: 118, name: "strzone", fn: strzone, fnNbr: 0 },
 	{ defaultFnNbr: 119, name: "strunzone", fn: strunzone, fnNbr: 0 },
+	{ defaultFnNbr: 225, name: "strpad", fn: strpad, fnNbr: 0 },
 	{ defaultFnNbr: 0, name: "zone", fn: fixme, fnNbr: 0 },		// 0 indicates that this entry is just for remapping (because of name and number change)
 	{ defaultFnNbr: 0, name: "unzone", fn: fixme, fnNbr: 0 },
 	// 2001-09-20 QuakeC string manipulation by FrikaC/Maddes  end
