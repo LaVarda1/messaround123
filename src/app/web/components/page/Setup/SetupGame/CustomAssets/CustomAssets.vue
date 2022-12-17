@@ -22,12 +22,12 @@ import { useMapsStore } from '../../../../../stores/maps';
 const model = reactive<{
   selectedStore: string, 
   loading: boolean}>({
-  selectedStore: 'id1',
+  selectedStore: 'id1', 
   loading: false
 })
 
 const gameStore = useGameStore()
 const mapsStore = useMapsStore()
 const groupedAssets = computed(() => groupBy(e => e.game, gameStore.allAssetMetas))
-const removeGame = (game: string) => assetStore.removeGame(game).then(() => gameStore.loadAssets)
+const removeGame = (game: string) => assetStore.removeGame(game).then(gameStore.loadAssets)
 </script>

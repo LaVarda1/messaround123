@@ -6,6 +6,7 @@ import {any, tail, find, prop} from 'ramda'
 import {QuaddictedMap} from '../types/QuaddictedMap'
 import { defineStore } from 'pinia'
 import { useGameStore } from './game'
+import { readPackFile } from '../helpers/assetChecker'
 
 var mapListingPromise = null
 
@@ -179,5 +180,10 @@ const fixBaseDir = (fileList) => {
 }
 
 const saveToIndexedDb = (mapId, fileName, data) => {
-  return indexedDb.saveAsset(mapId, fileName, 0, data)
+  let fileCount = 0
+  if (fileName.toLowerCase().includes('pak')) {
+    const pak = readPackFile(data)
+    fileCount = pak.length
+  }
+  return indexedDb.saveAsset(mapId, fileName, fileCount, data)
 }

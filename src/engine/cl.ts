@@ -349,6 +349,7 @@ export const keyDown = function()
     k = q.atoi(cmd.state.argv[1]);
   else
     k = -1;
+    
 
   if ((k === b.down[0]) || (k === b.down[1]))
     return;
@@ -541,7 +542,6 @@ export const initInput = function()
   cmd.addCommand('impulse', impulse);
   cmd.addCommand('+mlook', keyDown);
   cmd.addCommand('-mlook', mLookUp);
-
   for (i = 0; i < KBUTTON.num; ++i)
     state.kbuttons[i] = {down: [0, 0], state: 0};
 };

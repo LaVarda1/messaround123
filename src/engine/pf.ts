@@ -869,7 +869,9 @@ export const changelevel = function()
 
 export const fixme = async function()
 {
-	await pr.runError('unimplemented builtin');
+	
+	con.dPrint('Unimplemented builtin')
+	//await pr.runError('unimplemented builtin');
 };
 
 
