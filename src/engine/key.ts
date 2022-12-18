@@ -38,6 +38,7 @@ export const KEY = {
   home: 151,
   end: 152,
   
+  command: 170,
   pause: 255,
   
   mouse1: 200,
@@ -99,6 +100,7 @@ const keyNames = [
   {name: 'PGUP', keynum: KEY.pgup},
   {name: 'HOME', keynum: KEY.home},
   {name: 'END', keynum: KEY.end},
+  {name: 'COMMAND', keynum: KEY.command},
   {name: 'MOUSE1', keynum: KEY.mouse1},
   {name: 'MOUSE2', keynum: KEY.mouse2},
   {name: 'MOUSE3', keynum: KEY.mouse3},
@@ -361,7 +363,6 @@ export const init = function()
   shift[47] = 63;
   shift[59] = 58;
   shift[39] = 34;
-  shift[91] = 123;
   shift[93] = 125;
   shift[96] = 126;
   shift[92] = 124;

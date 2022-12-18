@@ -200,6 +200,7 @@ export const init = async (argv: string) =>
 	state.scantokey[61] = state.scantokey[187] = 61; // =
 	for (i = 65; i <= 90; ++i)
 		state.scantokey[i] = i + 32; // a-z
+	state.scantokey[91] = 170; // *
 	state.scantokey[106] = 42; // *
 	state.scantokey[107] = 43; // +
 	state.scantokey[109] = state.scantokey[173] = state.scantokey[189] = 45; // -
