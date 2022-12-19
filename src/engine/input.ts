@@ -131,11 +131,14 @@ export const move = function()
   mouseMove();
 };
 
-export const onclick = function()
+export const onclick = async function()
 {
   if (document[state.pointerLockElement] !== this){
     try { 
-      this[state.requestPointerLock]({unadjustedMovement: true}); // this will fail on linux :(
+      const r = this[state.requestPointerLock]({unadjustedMovement: true}) // this will fail on linux :(
+      if (r.then) {
+        await r
+      }
     } catch(_ex) {
       this[state.requestPointerLock]();
     }
