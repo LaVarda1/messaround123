@@ -134,14 +134,17 @@ export const move = function()
 export const onclick = async function()
 {
   if (document[state.pointerLockElement] !== this){
-    try { 
-      const r = this[state.requestPointerLock]({unadjustedMovement: true}) // this will fail on linux :(
-      if (r.then) {
-        await r
+    if ('chrome' in window) {
+      try { 
+        const r = this[state.requestPointerLock]({unadjustedMovement: true}) // this will fail on linux :(
+        if (r.then) {
+          await r
+        }
+        return
+      } catch(_ex) {
       }
-    } catch(_ex) {
-      this[state.requestPointerLock]();
     }
+    this[state.requestPointerLock]();
   }
 };
 
