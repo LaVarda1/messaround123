@@ -8,19 +8,21 @@
       .modal-title.h5 Customize Player
     .modal-body
       .content.container
-        .general-fields
-          .name Player Name
-          .value
-            QuakeTextInput(:maxLength="15" :modelValue="playerName" @update:modelValue="setPlayerName($event)")
+        .controls.columns
+          .control-selection.column.col-8
+            .general-fields
+              .name Player Name
+              .value
+                QuakeTextInput(:maxLength="15" :modelValue="playerName" @update:modelValue="setPlayerName($event)")
 
-          .name Shirt Color
-          .value
-            ColorSelect(:modelValue="shirtValue" @update:modelValue="setShirtColor($event)")
+              .name Shirt Color
+              .value
+                ColorSelect(:modelValue="shirtValue" @update:modelValue="setShirtColor($event)")
 
-          .name Pant Color 
-          .value
-            ColorSelect(:modelValue="pantValue" @update:modelValue="setPantColor($event)")  
-          
+              .name Pant Color 
+              .value
+                ColorSelect(:modelValue="pantValue" @update:modelValue="setPantColor($event)")  
+              
         .controls.columns
           .header.column.col-12 Select your control scheme
           .control-selection.column.col-6
@@ -88,7 +90,16 @@ const setColors = (colorValue: number) => gameStore.setConfigValue({name: '_cl_c
   }
   .general-fields {
     display: grid;
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: 1.5fr 2fr;
+    row-gap: .2rem;
+    .name {
+      font-weight: 500;
+    }
+    .value {
+      .color-select {
+        width: fit-content;
+      }
+    }
   }
   .modal-container {
     max-width: 860px;

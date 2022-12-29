@@ -42,6 +42,9 @@ const select = (colorValue: number) => {
   padding: .15rem;
   display: flex;
   align-items: center;
+  background-color: lighten($body-bg, 1%);
+  box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);
+  padding:4px;
   cursor: pointer;
   :active {
     box-shadow: 0 0 0 0.1rem rgb(87 85 217 / 20%);;

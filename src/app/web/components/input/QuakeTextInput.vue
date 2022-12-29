@@ -1,6 +1,6 @@
 <template lang="pug">
-.quake-text-input(v-on-click-outside="() => model.editing = false")
-  QuakeText(:value="props.modelValue" :size="14" @click="edit" )
+.quake-text-input(v-on-click-outside="() => model.editing = false" @click="edit" )
+  QuakeText(:value="props.modelValue" :size="14")
   .edit-box(v-if="model.editing")
     NameMakerVue(
       :maxLength="props.maxLength"
@@ -38,6 +38,9 @@ const model = reactive<{
   position: relative;
   display: flex;
   cursor:pointer;
+  background-color: lighten($body-bg, 1%);
+  box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);
+  padding: 4px;
 }
 .edit-box {
   background-color: $body-bg;
