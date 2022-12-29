@@ -1,6 +1,6 @@
 <template lang="pug">
-  .setup-player
-    Textbox(label="Player Name")
+.setup-player
+  Textbox(label="Player Name")
 </template>
 
 <script>

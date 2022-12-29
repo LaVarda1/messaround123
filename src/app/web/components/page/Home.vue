@@ -9,12 +9,11 @@
             | First written by 
             a(href="https://github.com/Triang3l/WebQuake") Triang3l 
             |
-            | then forked and extended to support a few more features.
+            | then forked and extended with modern features.
             br 
-            | This version uses the latest HTML5 API's which will not work in older browsers.
+            | Runs best in the latest Chrome browser
             p.upload Upload your pak1.pak from a purchased copy of quake in order to enjoy all mods and maps.
-
-
+          
   h2
     .containers
       template(v-if="!packOne")
@@ -34,6 +33,8 @@
       .columns.mt-2
         .column.col-xs-12
           .btn.solid.btn-large.full-width(@click="multiplayer()") Multiplayer
+  
+
 </template>
 <script lang="ts" setup>
 import {reactive, onMounted, computed, watch} from 'vue'

@@ -5,11 +5,9 @@
       .name-label Your Name:
       .name-value 
         QuakeText(:value="playerName" :size="14")
-        small(v-if="!model.changeName")
-          a(@click="model.changeName=true") change...
+        small
+          a(@click="model.customizeState = 'customize'") customize...
     
-    .name-change(v-if="model.changeName")
-      NameMaker(:value="playerName" @done="doneChangingName" @input="setPlayerName($event)")
   .server-list(v-if="!model.changeName")
     table.table(:class="(model.refreshing ? 'loading' : '')")
       thead
@@ -20,8 +18,21 @@
         th Ping
         th 
       tbody
-        ServerRow(v-for="(server, key) in multiplayerStore.getServerStatuses" :server="server" @join="join")
+        ServerRow(
+          v-for="(server, key) in multiplayerStore.getServerStatuses" 
+          :server="server"
+          @join="testPrejoin")
   Discord
+  Prejoin(
+    v-if="model.customizeState === 'customize'" 
+    :showCancel="false"
+    @ok="model.customizeState = 'none'")
+  Prejoin(
+    v-if="model.customizeState.connecthostport" 
+    :showCancel="true"
+    okText="Join"
+    @cancel="model.customizeState = 'none'"
+    @ok="executePrejoin")
 </template>
 
 <script lang="ts">
@@ -29,6 +40,7 @@ import { defineComponent } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import { useMultiplayerStore } from '../../../stores/multiplayer'
 
+const PREJOIN_KEY = 'Quake.multiplayer.prejoin'
 interface IInstance extends ComponentPublicInstance {
   refreshing: boolean,
   setAutoRefreshOn: () => void
@@ -53,20 +65,23 @@ import QuakeText from '../../QuakeText.vue'
 import NameMaker from '../../input/NameMaker.vue'
 import ServerRow from './ServerRow.vue'
 import Discord from './Discord.vue'
+import Prejoin from './Prejoin.vue'
 import { useGameStore } from '../../../stores/game'
 import type { ServerStatus } from '../../../stores/multiplayer'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
+
+type CustomizeState = 'none' | ServerStatus | 'customize'
 
 const router = useRouter()
 const multiplayerStore = useMultiplayerStore()
 const gameStore = useGameStore()
 const model = reactive<{
   refreshing: boolean,
-  changeName: boolean,
+  customizeState: CustomizeState,
   playersImg: any[]
 }>({
   refreshing: false,
-  changeName: false,
+  customizeState: 'none',
   playersImg: []
 })
 
@@ -76,6 +91,19 @@ const model = reactive<{
 
 const playerName = computed(() => gameStore.getAutoexecValue('name') ?? 'player')
 const setPlayerName = (name: string) => gameStore.setAutoexecValue({name: 'name', value: name})
+const testPrejoin = (server: ServerStatus) => {
+  if (!localStorage[PREJOIN_KEY]) {
+    model.customizeState = server
+  } else {
+    join(server)
+  }
+}
+const executePrejoin = () => {
+  const server = model.customizeState as ServerStatus
+  model.customizeState = 'none'
+  localStorage[PREJOIN_KEY] = 'done'
+  join(server)
+}
 const join = (server: ServerStatus) => {
   var query = {
     "-connect": `wss://${server.connecthostport}`,
@@ -85,7 +113,6 @@ const join = (server: ServerStatus) => {
   }
   router.push({name: 'quake', query})
 }
-const doneChangingName = () => model.changeName = false
 
 onBeforeRouteLeave((to, from, next) => {
   multiplayerStore.setAutoRefreshOff()

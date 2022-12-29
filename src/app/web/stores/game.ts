@@ -1,8 +1,44 @@
   import * as indexedDb from '../../../shared/indexeddb'
 import { defineStore } from 'pinia'
 import { AssetMeta } from '../../../shared/types/Store'
+import { NameValue } from '../types/NameValue'
 
-const recommendedCfg = 
+export type ConfigType = 'classic' | 'modern' | 'custom'
+
+const theseShouldBeSet = [
+  {name: 'cl_forwardspeed', value: '400'},
+  {name: 'cl_backspeed', value: '400'},
+  {name: 'crosshair', value: '1'},
+  {name: 'm_filter', value: '1'}
+]
+const modernBinds = [
+  {name: 'MOUSE1', value: '+attack'},
+  {name: 'MOUSE2', value: '+jump'},
+  {name: 'w', value: '+forward'},
+  {name: 's', value: '+back'},
+  {name: 'a', value: '+moveleft'},
+  {name: 'd', value: '+moveright'},
+  {name: 'ENTER', value: 'messagemode'},
+  {name: 't', value: 'messagemode'},
+  {name: 'y', value: 'messagemode2'}
+]
+
+const classicBinds = [
+  {name: 'UPARROW', value: '+forward'},
+  {name: 'DOWNARROW', value: '+back'},
+  {name: 'LEFTARROW', value: '+left'},
+  {name: 'RIGHTARROW', value: '+right'},
+  {name: 'ALT', value: '+strafe'},
+  {name: 'COMMAND', value: '+attack'},
+  {name: 'CTRL', value: '+attack'},
+  {name: 'a', value: '+lookup'},
+  {name: 'z', value: '+lookdown'},
+  {name: 'ENTER', value: 'messagemode'},
+  {name: 't', value: 'messagemode'},
+  {name: 'y', value: 'messagemode2'}
+]
+
+const baseCfg = 
 `bind "TAB" "+showscores"
 bind "ENTER" "messagemode"
 bind "ESCAPE" "togglemenu"
@@ -24,11 +60,10 @@ bind "8" "impulse 8"
 bind "=" "sizeup"
 bind "\\" "+mlook"
 bind "\`" "toggleconsole"
-bind "a" "+lookup"
 bind "c" "+movedown"
 bind "d" "+moveup"
 bind "t" "messagemode"
-bind "z" "+lookdown"
+bind "y" "messagemode2"
 bind "~" "toggleconsole"
 bind "w" "+forward"
 bind "s" "+back"
@@ -39,8 +74,8 @@ bind "DOWNARROW" "+back"
 bind "LEFTARROW" "+left"
 bind "RIGHTARROW" "+right"
 bind "ALT" "+strafe"
+bind "COMMAND" "+attack"
 bind "CTRL" "+attack"
-bind "SHIFT" "+speed"
 bind "F1" "help"
 bind "F2" "menu_save"
 bind "F3" "menu_load"
@@ -68,7 +103,6 @@ saved4 "0"
 viewsize "100"
 volume "0.7"
 bgmvolume "1"
-_cl_name "player"
 _cl_color "0"
 cl_forwardspeed "400"
 cl_backspeed "400"
@@ -85,6 +119,7 @@ const recommendedAutoexec = `+mlook
 bind e "impulse 22" // Hook
 `
 
+const configBindRx = (key) => `^([ \t]*bind[ \t]+"?${key}"?[ \t]+"?(.+?)"?)$`
 const configValueRx = (name) => `^([ \t]*${name}[ \t]+"?(.*?)"?)$`
 const configFileName = 'Quake.id1/config.cfg'
 const autoExecFileName = 'Quake.id1/autoexec.cfg'
@@ -95,27 +130,80 @@ interface State {
   autoexecFile: string
   newGameType: string
 }
+const setBindInConfig = (cfg: string, nameValue: NameValue) => {
+  const regex =  new RegExp(configBindRx(nameValue.name), 'gim')
+  let match, m
+  while ((m = regex.exec(cfg)) !== null) {
+    // This is necessary to avoid infinite loops with zero-width matches
+    if (m.index === regex.lastIndex) {
+      regex.lastIndex++;
+    }
+    match = m
+  }
+  const newSetting = `bind "${nameValue.name}" "${nameValue.value}"`
+  if (match) {
+    const newConfig = [
+      cfg.substring(0,match.index),
+      newSetting,
+      cfg.substring(match.index + match[0].length, cfg.length)
+    ]
+    return newConfig.join('')
+  } else {
+    return cfg +'\n' + newSetting
+  }
+}
+const setValueInConfig = (cfg: string, nameValue: NameValue) => {
+  const regex =  new RegExp(configValueRx(nameValue.name), 'gim')
+  let match, m
+  while ((m = regex.exec(cfg)) !== null) {
+    // This is necessary to avoid infinite loops with zero-width matches
+    if (m.index === regex.lastIndex) {
+      regex.lastIndex++;
+    }
+    match = m
+  }
+  const newSetting = `${nameValue.name} "${nameValue.value}"`
+  if (match) {
+    const newConfig = [
+      cfg.substring(0,match.index),
+      newSetting,
+      cfg.substring(match.index + match[0].length, cfg.length)
+    ]
+    return newConfig.join('')
+  } else {
+    return cfg +'\n' + newSetting
+  }
+}
 
+const getValueInConfig = (cfg: string, name: string) => {
+  const regex =  new RegExp(configValueRx(name), 'gim')
+  let match, m
+  while ((m = regex.exec(cfg)) !== null) {
+    // This is necessary to avoid infinite loops with zero-width matches
+    if (m.index === regex.lastIndex) {
+      regex.lastIndex++;
+    }
+    match = m
+  }
+  
+  return match ? match[2] : null
+}
 
 const getters = {
   allAssetMetas: (state: State) => state.assetMetas,
   getConfigFile: (state: State) => state.configFile,
-  getAutoexecFile: (state: State) => state.autoexecFile,
-  getAutoexecValue: (state: State) => name =>  {
-    const regex =  new RegExp(configValueRx(name), 'gim')
-    let match, m
-    while ((m = regex.exec(state.autoexecFile)) !== null) {
-      // This is necessary to avoid infinite loops with zero-width matches
-      if (m.index === regex.lastIndex) {
-        regex.lastIndex++;
-      }
-      match = m
-    }
-    
-    return match ? match[2] : null
+  getConfigValue: (state: State) => name => getValueInConfig(state.configFile, name),
+  getCurrentConfigType: (state: State) => {
+    const classicArtifact = /bind "a" "\+lookup"/
+    const modernArtifact = /bind "a" "\+moveleft"/
+
+    return state.configFile.match(classicArtifact) ? 'classic' :
+      state.configFile.match(modernArtifact) ? 'modern' : 'custom'
   },
+  getAutoexecFile: (state: State) => state.autoexecFile,
+  getAutoexecValue: (state: State) => name => getValueInConfig(state.autoexecFile, name),
   hasRegistered: (state: State) => !!state.assetMetas.find(a => a.game === 'id1' && a.fileName.toLowerCase() === 'pak1.pak'),
-  hasGame: (state: State) => game => !!state.assetMetas.some(a => a.game === game)
+  hasGame: (state: State) => game => !!state.assetMetas.some(a => a.game === game),
 }
 
 const actions = {
@@ -136,9 +224,13 @@ const actions = {
     localStorage[configFileName] = configFile
     this.setConfigFile(configFile)
   },
-  loadRecommendedConfig () {
-    localStorage[configFileName] = recommendedCfg
-    this.setConfigFile(recommendedCfg)
+  loadClassicConfig () {
+    classicBinds.map(bind => this.setConfigBind(bind))
+    theseShouldBeSet.map(bind => this.setConfigValue(bind))
+  },
+  loadModernConfig () {
+    modernBinds.map(bind => this.setConfigBind(bind))
+    theseShouldBeSet.map(bind => this.setConfigValue(bind))
   },
   loadAutoexec () {
     const autoexecFile = localStorage[autoExecFileName]
@@ -148,27 +240,19 @@ const actions = {
     localStorage[autoExecFileName] = autoexecFile
     this.setAutoexecFile(autoexecFile)
   },
-  setAutoexecValue (autoexecNameValue) {
-    const regex =  new RegExp(configValueRx(autoexecNameValue.name), 'gim')
-    let match, m
-    while ((m = regex.exec(this.autoexecFile)) !== null) {
-      // This is necessary to avoid infinite loops with zero-width matches
-      if (m.index === regex.lastIndex) {
-        regex.lastIndex++;
-      }
-      match = m
-    }
-    const newSetting = `${autoexecNameValue.name} "${autoexecNameValue.value}"`
-    if (match) {
-      const newConfig = [
-        this.autoexecFile.substring(0,match.index),
-        newSetting,
-        this.autoexecFile.substring(match.index + match[0].length, this.autoexecFile.length)
-      ]
-      return this.saveAutoexec(newConfig.join(''))
-    } else {
-      return this.saveAutoexec(this.autoexecFile +'\n' + newSetting)
-    }
+  setConfigBind (nameValue) {
+    this.saveConfig(setBindInConfig(this.configFile, nameValue))
+  },
+  setAutoexecValue (nameValue) {
+    this.saveAutoexec(setValueInConfig(this.autoexecFile, nameValue))
+  },
+  setConfigValue (nameValue) {
+    this.saveConfig(setValueInConfig(this.configFile, nameValue))
+  },
+  loadRecommendedConfig () {
+    localStorage[configFileName] = baseCfg
+    this.setConfigFile(baseCfg)
+    this.loadModernConfig()
   },
   loadRecommendedAutoexec () {
     localStorage[autoExecFileName] = recommendedAutoexec

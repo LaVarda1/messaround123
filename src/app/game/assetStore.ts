@@ -9,6 +9,7 @@ import IPackedFile from '../../engine/interfaces/store/IPackedFile'
 import axios from 'axios'
 import { FileMode } from '../../engine/interfaces/store/IAssetStore'
 
+const keepItToId1 = ['config.cfg', 'autoexec.cfg']
 const remoteIndexes = {}
 
 const checkRemoteFileList = async function (game, fileName) : Promise<boolean> {
@@ -113,9 +114,13 @@ export const writeFile = (filename: string, data: Uint8Array, len: number) =>
 export const writeTextFile = (filename, data) =>
 {
   filename = filename.toLowerCase();
+  const dir = keepItToId1.indexOf(filename) > -1 
+    ? 'id1' 
+    : com.state.searchpaths[com.state.searchpaths.length - 1].dir
+
   try
   {
-    localStorage.setItem('Quake.' + com.state.searchpaths[com.state.searchpaths.length - 1].dir + '/' + filename, data);
+    localStorage.setItem('Quake.' + dir + '/' + filename, data);
   }
   catch (e)
   {
@@ -143,6 +148,9 @@ const _loadFile = async (filename: string) : Promise<ArrayBuffer> => {
   for (i = com.state.searchpaths.length - 1; i >= 0; --i)
   {
     search = com.state.searchpaths[i];
+    if (keepItToId1.indexOf(filename) > -1 && search.dir !== 'id1') {
+      continue
+    }
 
     const data = getLocalStorage(search.dir, filename)
     if (data) {

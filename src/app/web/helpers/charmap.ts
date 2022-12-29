@@ -1,45 +1,26 @@
+import { playerColors } from "./playerColors";
+
 export type Write = (height: number, base64String: string) => string;
 export type WriteScore = (height: number, score: number, shirt: number, pant: number) => string;
 export type Writer = {write: Write; writeScore: WriteScore};
 
-export const playerColors = [
-  '#FFFFFF',
-  '#be9558',
-  '#b8b8ed',
-  '#8f8f24',
-  '#ab0505',
-  '#d0ab24',
-  '#ffa287',
-  '#ffbe9c',
-  '#c38fa2',
-  '#e2c3ab',
-  '#80a28f',
-  '#f8d624',
-  '#8080ff',
-  '#8080ff',
-  '#8080ff',
-];
-let staticCharmap = null
+let staticCharmap: Promise<Writer> | null = null
 export const createWriter = (): Promise<Writer> => {
   const canvas = document.createElement('CANVAS') as HTMLCanvasElement;
-  if (staticCharmap) {
-    return Promise.resolve({
-      writeScore: writeScore(canvas, staticCharmap),
-      write: write(canvas, staticCharmap),
-    })
+  if (!staticCharmap) {
+    staticCharmap = new Promise((resolve, reject) => {
+      var img = new Image();
+      img.onload = function () {
+        resolve({
+          writeScore: writeScore(canvas, img),
+          write: write(canvas, img),
+        });
+      };
+      img.onerror = reject;
+      img.src = '/static/img/charset.png';
+    });
   }
-  return new Promise((resolve, reject) => {
-  
-    staticCharmap = new Image();
-    staticCharmap.onload = function () {
-      resolve({
-        writeScore: writeScore(canvas, staticCharmap),
-        write: write(canvas, staticCharmap),
-      });
-    };
-    staticCharmap.onerror = reject;
-    staticCharmap.src = '/static/img/charset.png';
-  });
+  return staticCharmap
 };
 
 const writeToCanvas = (
@@ -138,7 +119,6 @@ const write = (canvas: HTMLCanvasElement, charmap: HTMLImageElement) => (height:
   if (!ctx) {
     return '';
   }
-
   const strToWrite = atob(base64String) || ' ';
   const lines = strToWrite.split('\n')
   const maxLine = lines.reduce((len, line) => len > line.length ? len : line.length, 0)
