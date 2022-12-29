@@ -203,7 +203,7 @@ const getters = {
   getAutoexecFile: (state: State) => state.autoexecFile,
   getAutoexecValue: (state: State) => name => getValueInConfig(state.autoexecFile, name),
   hasRegistered: (state: State) => !!state.assetMetas.find(a => a.game === 'id1' && a.fileName.toLowerCase() === 'pak1.pak'),
-  hasGame: (state: State) => game => !!state.assetMetas.some(a => a.game === game)
+  hasGame: (state: State) => game => !!state.assetMetas.some(a => a.game === game),
 }
 
 const actions = {
@@ -248,6 +248,11 @@ const actions = {
   },
   setConfigValue (nameValue) {
     this.saveConfig(setValueInConfig(this.configFile, nameValue))
+  },
+  loadRecommendedConfig () {
+    localStorage[configFileName] = baseCfg
+    this.setConfigFile(baseCfg)
+    this.loadModernConfig()
   },
   loadRecommendedAutoexec () {
     localStorage[autoExecFileName] = recommendedAutoexec

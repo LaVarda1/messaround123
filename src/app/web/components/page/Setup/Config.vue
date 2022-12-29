@@ -13,19 +13,6 @@ import { useGameStore } from '../../../stores/game';
 const gameStore = useGameStore()
 
 
-// export default {
-//   computed: {
-//     ...mapGetters('game', ['getConfigFile'])
-//   },
-//   methods: {
-//     ...mapActions('game', ['saveConfig', 'loadRecommendedConfig'])
-//   },
-//   beforeRouteEnter (to, from, next) {
-//     return next(vm => {
-//       vm.loadRecommendedConfig()
-//     })
-//   }
-// }
 </script>
 
 <style>
