@@ -1,10 +1,10 @@
 <template lang="pug">
 
 .modal.active#prejoin-modal
-  a.modal-overlay(href='#close' aria-label='Close')
+  a.modal-overlay(aria-label='Close')
   .modal-container
     .modal-header
-      a.btn.btn-clear.float-right(href='#close' aria-label='Close' @click="emit('cancel')")
+      a.btn.btn-clear.float-right(aria-label='Close' @click="emit('cancel')")
       .modal-title.h5 Customize Player
     .modal-body
       .content.container

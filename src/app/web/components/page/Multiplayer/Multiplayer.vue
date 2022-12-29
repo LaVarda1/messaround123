@@ -26,7 +26,8 @@
   Prejoin(
     v-if="model.customizeState === 'customize'" 
     :showCancel="false"
-    @ok="model.customizeState = 'none'")
+    @ok="model.customizeState = 'none'"
+    @cancel="model.customizeState = 'none'")
   Prejoin(
     v-if="model.customizeState.connecthostport" 
     :showCancel="true"
