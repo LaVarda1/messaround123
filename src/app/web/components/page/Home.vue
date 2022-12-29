@@ -14,10 +14,6 @@
             | Runs best in the latest Chrome browser
             p.upload Upload your pak1.pak from a purchased copy of quake in order to enjoy all mods and maps.
           
-    .containers
-      .columns
-        .content
-          p 12/28/2022 - Customizations have been updated
   h2
     .containers
       template(v-if="!packOne")
