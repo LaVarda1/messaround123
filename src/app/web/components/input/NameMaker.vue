@@ -4,7 +4,7 @@
   .buttons
     button.btn(@click="space") Space
     button.btn(@click="backspace") Backspace
-    button.btn.right(@click="done") Done
+    button.btn.right(@click.stop="done") Done
   canvas(ref="canvas" :height="model.charsetSize" :width="model.charsetSize" @mousemove="canvashover" @click="canvasclick")
 </template>
 
@@ -17,10 +17,16 @@ const emit = defineEmits<{
 }>()
 
 const blockedChars = [0, 9, 10, 12, 13, 173]
-const maxLength = 1515
+
 const canvas = ref<HTMLCanvasElement | null>(null)
 const input = ref<HTMLInputElement | null>(null)
-const props = withDefaults(defineProps<{value: string}>(), {value: ''})
+const props = withDefaults(defineProps<{
+  maxLength: number,
+  value: string
+}>(), {
+  value: '',
+  maxLength: 0
+})
 const model = reactive<{
   image: CanvasImageSource | null,
   charsetSize: number,
@@ -28,7 +34,7 @@ const model = reactive<{
   hoverPosition: {x: number, y: number} 
 }>({
   image: null,
-  charsetSize: 512,
+  charsetSize: 400,
   name: props.value,
   hoverPosition: {x: -1, y: -1}
 })
@@ -43,7 +49,7 @@ const insertCharacter = (char) => {
   const selectionEnd = input.value.selectionEnd!
   const newName = model.name.slice(0, selectionStart) + char + model.name.slice(selectionEnd);
   
-  if (newName.length <= maxLength) {
+  if (newName.length <= props.maxLength) {
     change(newName)
     nextTick(() => {
       input.value!.focus()
@@ -53,13 +59,13 @@ const insertCharacter = (char) => {
 }
 
 const change = (newName) => {
-
-  if (model.name.length <= maxLength) {
+  if (model.name.length <= props.maxLength) {
     emit('input', newName)
   }
 }
+
 const space = () => {
-  if (model.name.length <= maxLength) {
+  if (model.name.length <= props.maxLength) {
     insertCharacter(' ')
   }
 }
@@ -88,10 +94,14 @@ const done = () => {
 
 const inputKeyDown = (e) => {
   const key = e.key
+  if (key === "Escape") {
+    emit('done')
+    return
+  }
   if (key === "Backspace" || key === "Delete" || key==="ArrowLeft" || key==="ArrowRight") {
     return
   }
-  if (model.name.length > maxLength) {
+  if (model.name.length > props.maxLength) {
     e.preventDefault()
     return false
   }
@@ -127,7 +137,7 @@ const canvashover = (e: MouseEvent) => {
     const charCode = getCharCode(canvas.clientWidth, e.offsetX, e.offsetY)
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(model.image, 0, 0);
+    ctx.drawImage(model.image, 0, 0, model.charsetSize, model.charsetSize);
     
     canvas.style.cursor='default'
     if (!blockedChars.includes(charCode)) {
@@ -151,7 +161,7 @@ onMounted(() => {
         if (!ctx) return
         //draw background image
         model.image = charset
-        ctx.drawImage(model.image, 0, 0);
+        ctx.drawImage(model.image, 0, 0, model.charsetSize, model.charsetSize);
         //draw a box over the top
         // ctx.fillStyle = "rgba(200, 0, 0, 0.5)";
         // ctx.fillRect(0, 0, 500, 500);
