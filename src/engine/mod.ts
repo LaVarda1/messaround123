@@ -9,6 +9,7 @@ import * as vec from './vec'
 import * as host from './host'
 import * as def from './def'
 import * as tx from './texture'
+import * as bspx from './bspx'
 
 export const EFFECTS = {
   brightfield: 1,
@@ -1114,6 +1115,10 @@ export const loadBrushModel = async function(buffer)
     default:
       throw new Error('Mod.LoadBrushModel: ' +  loadmodel.name  + ' has wrong version number (' + version + ')');
   }
+
+  // bspx.setup(loadmodel, buffer);
+
+	// Q1BSPX_Setup(mod, buffer, com_filesize, header->lumps, HEADER_LUMPS);
   
   if (!host.state.dedicated) {
     loadVertexes(buffer);

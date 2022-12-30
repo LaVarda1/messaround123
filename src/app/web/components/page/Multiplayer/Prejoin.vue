@@ -1,6 +1,6 @@
 <template lang="pug">
 
-.modal.active#prejoin-modal
+.modal.active#prejoin-modal( @keydown.esc="emit('cancel')")
   a.modal-overlay(aria-label='Close')
   .modal-container
     .modal-header
@@ -49,7 +49,7 @@
 import QuakeTextInput from '../../input/QuakeTextInput.vue'
 import ModernControlImg from '../../../assets/modern-controls.svg'
 import ClassicControlImg from '../../../assets/classic-controls.svg'
-import {computed, onMounted} from 'vue'
+import {computed, onMounted, onUnmounted} from 'vue'
 import { useGameStore } from '../../../stores/game'
 import ColorSelect from './ColorSelect.vue'
 
@@ -75,6 +75,17 @@ const setShirtColor = (shirtColor: number) => setColors((shirtColor << 4) + pant
 const setPantColor = (pantColor: number) => setColors((shirtValue.value << 4) + pantColor)
 const setColors = (colorValue: number) => gameStore.setConfigValue({name: '_cl_color', value: colorValue.toFixed(0)})
 
+// const cancelOnEsc = (e) => {
+//   if (e.keyCode == 27) {
+//     emit('cancel')
+//   }
+// }
+// onUnmounted(() => {
+//   document.removeEventListener("keydown", cancelOnEsc)
+// })
+// onMounted(() => {
+//   document.addEventListener("keydown", cancelOnEsc)
+// })
 </script>
 
 <style lang="scss">

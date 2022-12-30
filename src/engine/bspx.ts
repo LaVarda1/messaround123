@@ -84,8 +84,8 @@ export const setup = (mod, buffer: ArrayBuffer) =>
 	if (misaligned)
 		con.dPrint(`${mod.name} contains misaligned lumps\n`);
 	offs = (offs + 3) & ~3;
-	// if (offs + sizeof(*bspxheader) > filelen)
-	// 	return; /*no space for it*/
+	if (offs + 40 > buffer.byteLength)
+		return; /*no space for it*/
 
   /// bspx_lump = 24 name, 4: fileofs, 4 filelen (32 bytes)
   /// bspx_header = 4 bytes: BSPX, 4 bytes: num lumps,  (8 + (numlumps * 32))

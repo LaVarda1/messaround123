@@ -1,5 +1,6 @@
 import Home from '../components/page/Home.vue'
 import Privacy from '../components/page/Privacy/Privacy.vue'
+import Faq from '../components/page/Faq.vue'
 import Multiplayer from '../components/page/Multiplayer/Multiplayer.vue'
 import Singleplayer from '../components/page/Singleplayer/Singleplayer.vue'
 
@@ -29,7 +30,8 @@ const routes = [
           { name: 'config', path: 'config', component: Config },
           { name: 'autoexec', path: 'autoexec', component: Autoexec }
         ]
-      }
+      },
+      { name: 'faq', path: '/faq', component: Faq }
     ]
   },
   { 

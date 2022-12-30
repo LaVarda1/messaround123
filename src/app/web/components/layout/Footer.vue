@@ -10,7 +10,7 @@
     |  |  
     a(href="/privacy") Privacy 
     |  | Buy me a 
-    a(href="https://www.buymeacoffee.com/joelukacovic") ☕ 
-    |  | or support on 
-    a(href="https://www.patreon.com/joelukacovic") Patreon
+    a(href="https://www.buymeacoffee.com/joelukacovic") ☕  
+    |  | 
+    router-link(:to="{name: 'faq'}") FAQ
 </template>
