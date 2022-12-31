@@ -9,7 +9,6 @@
             router-link.btn.btn-link(:to="{name: 'singleplayer'}") Singleplayer
             router-link.btn.btn-link(:to="{name: 'multiplayer'}") Multiplayer
             router-link.btn.btn-link(:to="{name: 'assets'}") Setup
-            router-link.btn.btn-link(:to="{name: 'faq'}") FAQ
     .columns
       .col-12.app-content
         router-view

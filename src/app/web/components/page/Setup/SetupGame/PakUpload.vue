@@ -1,6 +1,11 @@
 <template lang="pug">
 .pak-upload
-  .upload-zone(@drop="handleFileDrop" @dragover.prevent)
+  .upload-zone(
+    :class="{ active: model.active, border: showBorder }"
+    @drop.prevent="handleFileDrop" 
+    @dragover.prevent="model.active = true"
+    @dragenter.prevent="model.active = true" 
+    @dragleave.prevent="model.active = false")
     input.loader-file-input(:id="props.inputId" type="file" multiple name="files[]" accept=".pak" @change="handleFileSelect")
     slot
       .columns
@@ -16,11 +21,16 @@ import {reactive} from 'vue'
 const emit = defineEmits<{
   (e: 'uploadFiles', files: File[]): void}
 >()
-const props = withDefaults(defineProps<{inputId?: string}>(), {inputId: 'pak-file-browse'})
-const model = reactive<{loading: boolean}>({loading: false})
+const props = withDefaults(defineProps<{
+  inputId?: string
+  showBorder?: boolean
+}>(), {
+  inputId: 'pak-file-browse',
+  showBorder: true
+})
+const model = reactive<{loading: boolean, active: boolean}>({loading: false, active: false})
 
 const handleFileDrop = (e: DragEvent) => {
-  e.preventDefault();
   e.stopPropagation();
 
   if (e.dataTransfer && e.dataTransfer.items) {
@@ -52,8 +62,13 @@ const handleFileSelect = (e: Event) => {
 
 <style lang="scss" scoped>
 .upload-zone {
-  padding: 2rem;
-  border:  2px grey dashed;
+  &.border {
+    padding: 2rem;
+    border:  2px grey dashed;
+    &.active {
+      border:  2px lighten(grey, 10%) dashed;
+    }
+  }
   .text {
     font-size: 1.5rem;
     display:flex;

@@ -5,7 +5,7 @@
     input(type="radio" :id="'accordion-' + idx" name="accordion-radio" hidden)
     label.accordion-header(:for="'accordion-' + idx")
       i.icon.icon-arrow-right.mr-1 
-      | {{ qa.question }} 
+      strong {{ qa.question }} 
     .accordion-body(v-html="qa.answer")
 
 </template>
@@ -44,10 +44,15 @@ const qas = [{
           <li>5 - Super Nailgun</li>
           <li>6 - Grenade Launcher</li>
           <li>7 - Rocket Launcher</li>
-          <li>8 - Lighning gun</li>
+          <li>8 - Lightning gun</li>
         </ul>
       <p> You can also edit your <pre>config.cfg</pre> in setup and add these binds directly. They apply when you start
         the game.
       <p>This can also be used to assign other actions.`
 }]
 </script>
+
+<style lang="scss" scoped>
+.accordion-body {
+  margin-left: 2rem;
+}</style>

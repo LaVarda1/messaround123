@@ -23,26 +23,16 @@ table.table.table-hover.table-fixed-header(:class="props.loading ? 'loading-lg l
       td.author {{map.author}}
       td.date {{released(map.date)}}
       td.rating
-        .rating-container
-          .star-ratings-css-top(:style="'width: ' + rating(map.userrating) + '%;'")
-            span ★
-            span ★
-            span ★
-            span ★
-            span ★
-          .star-ratings-css-bottom
-            span ★
-            span ★
-            span ★
-            span ★
-            span ★
-      td.size.ta-right {{map.size}}
+        Rating(:rating="parseFloat(map.userrating)")
+      td.size.ta-right {{addCommas(map.size)}}
   
 </template>
 
 <script lang="ts" setup>
 import {reactive, onMounted, computed, watch} from 'vue'
 import type {QuaddictedMap} from '../../../../types/QuaddictedMap'
+import Rating from './Rating.vue'
+import { addCommas } from '../../../../helpers/number';
 
 const emit = defineEmits<{
   (e: 'update:modelValue', string: string): void}
@@ -60,7 +50,6 @@ const model = reactive<{sortBy: string, sortOrder: 'asc' | 'desc'}>({
   sortBy: 'date',
   sortOrder: 'asc'
 })
-
 const valueForSort = value => {
   return typeof value === 'string' ? value.toLowerCase() : value
 }
@@ -86,9 +75,6 @@ const released = (date: string) => {
           (dd>9 ? '' : '0') + dd
         ].join('-');
 }
-const rating =  (userRating) => {
-  return (userRating / 5) * 100
-}
 const changeSort = (sortCol: string) => {
   if (model.sortBy === sortCol) {
     model.sortOrder = model.sortOrder === 'desc' ? 'asc' : 'desc'
@@ -99,37 +85,6 @@ const changeSort = (sortCol: string) => {
 }
 </script>
 <style lang="scss">
-.rating-container {
-  position: relative;
-  max-width: fit-content;
-}
-.star-ratings-css {
-  unicode-bidi: bidi-override;
-  font-size: 25px;
-  height: 25px;
-  width: 100px;
-  margin: 0 auto;
-  position: relative;
-  padding: 0;
-  text-shadow: 0px 1px 0 #e2e2e2;
-  
-  &-top {
-    color: #8f4e28;
-    padding: 0;
-    position: absolute;
-    z-index: 1;
-    display: block;
-    top: 0;
-    left: 0;
-    overflow: hidden;
-  }
-  &-bottom {
-    color: #e0e0e0;
-    padding: 0;
-    display: block;
-    z-index: 0;
-  }
-}
 .sorting {
   padding-left: 1rem;
 }

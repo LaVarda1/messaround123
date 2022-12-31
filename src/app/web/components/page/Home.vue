@@ -21,7 +21,11 @@
           .column.mt-2.col-md-6.col-xs-12
             .btn.solid.btn-large.full-width(@click="start()") Start Shareware
           .column.mt-2.col-md-6.col-xs-12
-            PakUpload(@uploadFiles="uploadFilesRequest" inputId="home-upload" :loading="model.loading")
+            PakUpload(
+              @uploadFiles="uploadFilesRequest" 
+              :showBorder="false"
+              inputId="home-upload" 
+              :loading="model.loading")
               .btn.solid.btn-large.full-width
                 label(for="home-upload")
                   i.icon.icon-upload
@@ -42,6 +46,7 @@ import { useGameStore } from '../../stores/game';
 import { useRoute, useRouter } from 'vue-router';
 import {isId1Pak1, readPackFile} from '../../helpers/assetChecker'
 import PakUpload from './Setup/SetupGame/PakUpload.vue'
+import { useToast } from "vue-toastification";
 
 const emit = defineEmits<{
   (e: 'uploaded', uploadedFiles: []): void}
@@ -54,10 +59,11 @@ const packOne = computed(() => assetMetas.value.find(assetMeta => assetMeta.file
 const start = () => router.push({name: 'quake'})
 const multiplayer = () => router.push({name: 'multiplayer'})
 
+const toast = useToast();
 const processReadFile = async ({fileName, data}) => {
   const packFiles = readPackFile(data)
   if (packFiles.length === 0) {
-    throw new Error("Not a valid quake pack file")
+    throw new Error("Not a valid quake pak file")
   }
   if (fileName.toLowerCase() === 'pak1.pak' && !isId1Pak1(packFiles, data)) {
     throw new Error("Pak1.pak is not the original registered quake pak")
@@ -83,12 +89,20 @@ const readFile = async (file) => {
 const uploadFilesRequest = async (files) => {
   model.loading = true
   
+  if (!files.some(file => file.name.toLowerCase() === 'pak1.pak')) {
+    toast.warning('pak1.pak was not selected to upload');
+    return
+  }
   const promises = files.map(async file => {
     try {
       const fileObj = await readFile(file)
       await processReadFile(fileObj)
+      if (file.name.toLowerCase() === 'pak1.pak') {
+        toast.success("Successfully added pak1.pak");
+      }
       return file.name
     } catch (e) {
+      toast.warning(e.message);
       console.log(e)
       // meh.
     }
@@ -100,11 +114,7 @@ const uploadFilesRequest = async (files) => {
   model.loading = false
 }
 </script>
-<style lang="scss">
-.upload-zone {
-  padding: 0 !important;
-  border: none !important;
-}
+<style lang="scss" scoped>
 .upload {
   margin-top: 1rem;
 }

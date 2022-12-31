@@ -9,10 +9,12 @@ tr
   td(v-else)  {{formatPlayerCount}}
   td {{props.server.ping}}
   td
-    button.btn.tooltip.tooltip-left(
+    QButton(
       @click="emit('join', props.server)" 
       :disabled="isDisabled" 
-      :data-tooltip="joinTooltipText") Join
+      :tooltipPlacement="TooltipPlacement.left"
+      :tooltip="joinTooltipText"
+    ) Join
 
 </template>
 
@@ -20,6 +22,7 @@ tr
 import {reactive, onMounted, computed, watch, defineProps} from 'vue'
 import { createWriter } from "../../../helpers/charmap"
 import { useGameStore } from '../../../stores/game';
+import QButton, {TooltipPlacement, ButtonType} from '../../input/QButton.vue'
 import type { ServerStatus } from '../../../stores/multiplayer';
 
 const emit = defineEmits<{
@@ -33,7 +36,7 @@ const props = defineProps<{server: ServerStatus}>()
 const model = reactive<{playerTooltipHtml}>({playerTooltipHtml: ''})
 const formatPlayerCount = computed(() => `${props.server.players.length}/${props.server.maxPlayers}`)
 const isDisabled = computed(() => !gameStore.hasRegistered && !sharewareMaps.find(m => m === props.server.map))
-const joinTooltipText = computed(() => isDisabled.value ? "Must add registered assets in setup\n before joining this server" : "Join this game server")
+const joinTooltipText = computed(() => isDisabled.value ? "You must load your pak1.pak before playing modified games.\n See FAQ for details." : "Join this game server")
 
 watch(props, () => {
   createWriter()

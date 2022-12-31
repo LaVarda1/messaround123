@@ -21,6 +21,9 @@ import PakUpload from './PakUpload.vue'
 import { useGameStore } from '../../../../stores/game';
 import {isId1Pak1, readPackFile} from '../../../../helpers/assetChecker'
 
+import { useToast } from "vue-toastification";
+
+const toast = useToast();
 type FileWithData = {fileName: string, data: ArrayBuffer}
 const emit = defineEmits<{
   (e: 'uploaded', uploadedFiles: any): void}
@@ -50,7 +53,7 @@ const packZero = computed(() => assetMetas.value.find(am => am.fileName.toLowerC
 const processReadFile = async ({fileName, data}) => {
   const packFiles = readPackFile(data)
   if (packFiles.length === 0) {
-    throw new Error("Not a valid quake pack file")
+    throw new Error("Not a valid quake pak file")
   }
   if (fileName.toLowerCase() === 'pak1.pak' && !isId1Pak1(packFiles, data)) {
     throw new Error("Pak1.pak is not the original registered quake pak")
@@ -66,10 +69,13 @@ const uploadFilesRequest = async (files: File[]) => {
     try {
       const fileObj = await readFile(file)
       await processReadFile(fileObj)
+      if (file.name.toLowerCase() === 'pak1.pak') {
+        toast.success("Successfully added pak1.pak");
+      }
       return file.name
     } catch (e) {
+      toast.warning(e.message);
       console.log(e)
-      // meh.
     }
   });
 
