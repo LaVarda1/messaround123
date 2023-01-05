@@ -26,7 +26,7 @@ watch(map, () => {
 })
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .map-image {
   background-repeat: no-repeat;
   background-size: cover;

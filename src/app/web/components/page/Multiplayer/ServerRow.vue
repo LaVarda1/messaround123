@@ -103,7 +103,7 @@ watch(props, () => {
   }
 })
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 @import '../../../scss/colors.scss';
 
 .server-row {
@@ -166,6 +166,8 @@ watch(props, () => {
     background-position: right;
     position: relative;
     height: 100%;
+    background-repeat: no-repeat;
+    background-size: cover;
 
     .map-text {
       text-shadow: 2px 2px rgb(0,0,0);
