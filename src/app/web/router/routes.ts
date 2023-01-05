@@ -10,6 +10,7 @@ import Autoexec from '../components/page/Setup/Autoexec.vue'
 import SetupGame from '../components/page/Setup/SetupGame/SetupGame.vue'
 import GameLauncher from '../components/page/Game/GameLauncher.vue'
 
+import SharewareLicense from '../components/page/SharewareLicense.vue'
 import Frontend from '../components/layout/Frontend.vue'
 
 const routes = [
@@ -31,7 +32,8 @@ const routes = [
           { name: 'autoexec', path: 'autoexec', component: Autoexec }
         ]
       },
-      { name: 'faq', path: '/faq', component: Faq }
+      { name: 'faq', path: '/faq', component: Faq },
+      { name: 'faq', path: '/slicnse', component: SharewareLicense }
     ]
   },
   { 

@@ -20,6 +20,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.2.1",
+    "@fortawesome/free-solid-svg-icons": "^6.2.1",
+    "@fortawesome/vue-fontawesome": "^3.0.2",
     "@types/websocket": "^1.0.5",
     "@vitejs/plugin-vue": "^3.2.0",
     "base-64": "^1.0.0",

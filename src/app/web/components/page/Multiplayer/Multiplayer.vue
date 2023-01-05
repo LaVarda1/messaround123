@@ -6,22 +6,17 @@
       .name-value 
         QuakeText(:value="playerName" :size="14")
         small
-          a(@click="model.customizeState = 'customize'") customize...
-    
-  .server-list(v-if="!model.changeName")
-    table.table(:class="(model.refreshing ? 'loading' : '')")
-      thead
-        th Name
-        th Location
-        th Map
-        th Players
-        th Ping
-        th 
-      tbody
-        ServerRow(
-          v-for="(server, key) in multiplayerStore.getServerStatuses" 
-          :server="server"
-          @join="testPrejoin")
+          a(@click="model.customizeState = 'customize'") 
+            i.icon.icon-edit 
+            |  customize...
+  template(v-if="multiplayerStore.refreshError")
+    .refresh-error 
+      font-awesome-icon.icon(icon="fa-solid fa-circle-exclamation" size="xs") 
+      |  Error refreshing list
+  ServerList(
+    @join="testPrejoin"
+    :loading="model.refreshing"
+    :servers="multiplayerStore.getServerStatuses")
   Discord
   Prejoin(
     v-if="model.customizeState === 'customize'" 
@@ -40,20 +35,26 @@
 import { defineComponent } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import { useMultiplayerStore } from '../../../stores/multiplayer'
+import ServerList from './ServerList.vue'
 
+type CustomizeState = 'none' | ServerStatus | 'customize'
+type Model = {
+  refreshing: boolean,
+  customizeState: CustomizeState,
+  playersImg: any[]
+}
 const PREJOIN_KEY = 'Quake.multiplayer.prejoin'
 interface IInstance extends ComponentPublicInstance {
-  refreshing: boolean,
-  setAutoRefreshOn: () => void
+  model: Model
 }
 export default defineComponent({
   beforeRouteEnter(to, from, next) {
     return next(vm => {
       const multiplayerStore = useMultiplayerStore()
       const instance = vm as IInstance
-      instance.refreshing = true
+      instance.model.refreshing = true
       multiplayerStore.refresh().then(() => {
-        instance.refreshing = false
+        instance.model.refreshing = false
         multiplayerStore.setAutoRefreshOn()
       })
     })
@@ -71,16 +72,10 @@ import { useGameStore } from '../../../stores/game'
 import type { ServerStatus } from '../../../stores/multiplayer'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 
-type CustomizeState = 'none' | ServerStatus | 'customize'
-
 const router = useRouter()
 const multiplayerStore = useMultiplayerStore()
 const gameStore = useGameStore()
-const model = reactive<{
-  refreshing: boolean,
-  customizeState: CustomizeState,
-  playersImg: any[]
-}>({
+const model = reactive<Model>({
   refreshing: false,
   customizeState: 'none',
   playersImg: []
@@ -115,6 +110,9 @@ const join = (server: ServerStatus) => {
   router.push({name: 'quake', query})
 }
 
+defineExpose({
+  model
+})
 onBeforeRouteLeave((to, from, next) => {
   multiplayerStore.setAutoRefreshOff()
   return next()
@@ -129,15 +127,21 @@ onBeforeRouteLeave((to, from, next) => {
 }
 </style>
 <style lang="scss" scoped>
+@import '../../../scss/colors.scss';
+.refresh-error {
+  font-weight: bold;
+  color: $secondary-color;
+}
 .server-list {
   margin-bottom: 1rem;
 }
 .name-setup {
-  margin-top: 1rem;
+  margin: 1rem 0;
+
   .name {
     display: flex;
     align-items: flex-start;
-
+    font-size: 1rem;
     .name-value {
       margin-left: 2rem;
     }
