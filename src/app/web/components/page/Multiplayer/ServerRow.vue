@@ -1,43 +1,74 @@
 <template lang="pug">
-tr
-  td {{props.server.name}}
-  td {{props.server.location}}
-  td {{props.server.map}}
-  td(v-if="props.server.players.length"
-    v-tippy="{allowHTML: true}"
-    :content="model.playerTooltipHtml")  {{formatPlayerCount}}
-  td(v-else)  {{formatPlayerCount}}
-  td {{props.server.ping}}
-  td
+.server-row
+  .map-image(
+    ref="mapEl"
+    v-tippy
+    :content="props.server.map")
+    .map-text {{props.server.map}}
+  .detail
+    .name 
+      span(:class="{disabled: props.disabled}") {{props.server.name}} &nbsp;
+      span.shareware(
+        v-if="props.shareware"
+        v-tippy
+        content="This server allows anyone to join")
+        a(href="/slicnse"  target="_blank") shareware
+    .location
+      span(v-tippy content="location")
+        font-awesome-icon.icon(icon="fa-solid fa-location-dot" size="xs") 
+        | {{props.server.location}}
+    .ping 
+      span(v-tippy content="ping")
+        font-awesome-icon.icon(icon="fa-solid fa-signal" size="xs") 
+        | {{props.server.ping}} ms
+  .players Players
+
+    .activity.active(v-if="props.server.players.length"
+      v-tippy="{allowHTML: true}"
+      :content="model.playerTooltipHtml")  {{formatPlayerCount}}
+  
+    .activity.inactive(v-else)  {{formatPlayerCount}}
+  .action
     QButton(
-      @click="emit('join', props.server)" 
-      :disabled="isDisabled" 
-      :tooltipPlacement="TooltipPlacement.left"
-      :tooltip="joinTooltipText"
+        @click="emit('join', props.server)" 
+        :disabled="props.disabled" 
+        :tooltipPlacement="TooltipPlacement.left"
+        :tooltip="joinTooltipText"
     ) Join
 
 </template>
 
 <script lang="ts" setup>
-import {reactive, onMounted, computed, watch, defineProps} from 'vue'
+import {reactive, onMounted, computed, watch, defineProps, ref} from 'vue'
 import { createWriter } from "../../../helpers/charmap"
 import { useGameStore } from '../../../stores/game';
 import QButton, {TooltipPlacement, ButtonType} from '../../input/QButton.vue'
 import type { ServerStatus } from '../../../stores/multiplayer';
+import MapImage from '../../MapImage.vue'
+import { getMapImageUrl, genericImageUrl } from '../../../helpers/map';
 
+const mapEl = ref<HTMLImageElement|null>(null)
 const emit = defineEmits<{
   (e: 'join', server: ServerStatus): void}
 >()
 
 const gameStore = useGameStore()
-const sharewareMaps = ['start', 'e1m1', 'e1m2', 'e1m3', 'e1m4', 'e1m5', 'e1m6', 'e1m7', 'e1m8']
-
-const props = defineProps<{server: ServerStatus}>()
+const props = defineProps<{
+  server: ServerStatus
+  disabled: boolean
+  shareware: boolean
+}>()
 const model = reactive<{playerTooltipHtml}>({playerTooltipHtml: ''})
 const formatPlayerCount = computed(() => `${props.server.players.length}/${props.server.maxPlayers}`)
-const isDisabled = computed(() => !gameStore.hasRegistered && !sharewareMaps.find(m => m === props.server.map))
-const joinTooltipText = computed(() => isDisabled.value ? "You must load your pak1.pak before playing modified games.\n See FAQ for details." : "Join this game server")
-
+const joinTooltipText = computed(() => props.disabled ? "You must load your pak1.pak before\nplaying modified games.\nSee FAQ for details." : "Join this game server")
+const joinUrl = computed(() => {
+  var query = {
+    "-connect": `wss://${props.server.connecthostport}`,
+  }
+  if (props.server.game && props.server.game !== 'id1') {
+    query["-game"] = props.server.game
+  }
+})
 watch(props, () => {
   createWriter()
     .then(writer => {
@@ -58,4 +89,91 @@ watch(props, () => {
       model.playerTooltipHtml = `<table><tbody>${body}</tbody></table>`;
     })
 }, {immediate: true})
+
+
+onMounted(() => {
+  if (mapEl.value) {
+    mapEl.value.style.backgroundImage = `url(${getMapImageUrl(props.server.map)}), url(${genericImageUrl})`
+  }
+})
+
+watch(props, () => {
+  if (mapEl.value) {
+    mapEl.value.style.backgroundImage = `url(${getMapImageUrl(props.server.map)}), url(${genericImageUrl})`
+  }
+})
 </script>
+<style lang="scss">
+@import '../../../scss/colors.scss';
+
+.server-row {
+  padding: .2rem 0;
+  border-top: 1px solid grey;
+  &:last-child {
+    border-bottom: 1px solid grey;
+  }
+
+  width: 100%;
+  display: grid;
+  grid-template-columns: 150px auto 8rem 2rem;
+  grid-template-areas: 
+    "map details players action";
+
+  .detail {
+    margin-left: .5rem;
+    grid-area: details;
+    color: darken($body-font-color, 30%);
+    .icon {
+      font-size: .7rem;
+      padding-right: .7rem;
+    }
+    .name {
+      color: $body-font-color;
+      font-weight: 700;
+      font-size: 1rem;
+      .disabled {
+        color: darken($body-font-color, 50%);
+      }
+      .shareware {
+        font-size: .8rem;
+      }
+    }
+  }
+  .players {
+    grid-area: players;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-weight: 700;
+      color: darken($body-font-color, 30%);
+    font-size: 1rem;
+    .activity {
+      &.active {
+        color: $light-color;
+      }
+    }
+  }
+  .action {
+    grid-area: action;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    margin-right: 2rem;
+  }
+  .map-image {
+    grid-area: map;
+    background-position: right;
+    position: relative;
+    height: 100%;
+
+    .map-text {
+      text-shadow: 2px 2px rgb(0,0,0);
+      //background-color: rgba(0,0,0,.4);
+      position: absolute;
+      bottom: 2px;
+      left: 2px;
+    }
+  }
+}
+</style>

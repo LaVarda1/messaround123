@@ -81,7 +81,7 @@ const link = computed(() => 'https://www.quaddicted.com/reviews/' + props.map?.d
 const tooltipText = computed(() => {
   switch(true){
     case !gameStore.hasRegistered:
-      return `You must load your pak1.pak before playing modified games.\n See FAQ for details.`
+      return `You must load your pak1.pak before\nplaying modified games.\nSee FAQ for details.`
     case props.map && props.map.requirements.length > 0: 
       return 'This requires loading additional resources \nwhich isn\'t supported yet:\n' + props.map?.requirements.join('\n')
     default:

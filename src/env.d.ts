@@ -2,6 +2,7 @@
 
 interface ImportMetaEnv {
   readonly VITE_ALLOW_SERVER_DOWNLOADS: boolean
+  readonly VITE_THUMBNAILS_PATH: string
   // more env variables...
 }
 

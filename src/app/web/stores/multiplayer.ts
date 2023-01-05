@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { defineStore } from 'pinia'
+
 const masterServerUrl = '/api/server'
 
 export type PlayerStatus = {
@@ -22,22 +23,21 @@ export type ServerStatus = {
 
 interface State {
   serverStatuses: Record<string,ServerStatus>
+  refreshError: boolean
   autoRefresh: boolean
 }
 
 export const useMultiplayerStore = defineStore('mutiplayer', {
   state: (): State => ({
     serverStatuses: {},
-    autoRefresh: false
+    autoRefresh: false,
+    refreshError: false
   }),
   getters: {
     getServerStatuses: state => state.serverStatuses,
     getAutoRefersh: state => state.autoRefresh
   },
   actions: {
-    setServerStatuses(serverStatuses: ServerStatus[]) {
-      this.serverStatuses = serverStatuses
-    },
     setServerPing ({serverKey, ping}) {
       this.serverStatuses[serverKey].ping = ping
     },
@@ -50,7 +50,8 @@ export const useMultiplayerStore = defineStore('mutiplayer', {
     loadServerStatuses () {
       return axios.get(masterServerUrl)
         .then(serverStatuses => {
-          this.setServerStatuses(serverStatuses.data.reduce((agg, server) => {
+          this.refreshError = false
+          this.serverStatuses = serverStatuses.data.reduce((agg, server) => {
             // Transforms array into key/value hash with key being host:port
             return {
               ...agg,
@@ -59,7 +60,12 @@ export const useMultiplayerStore = defineStore('mutiplayer', {
                 ...server
               }
             }
-          }, {}))
+          }, {})
+        })
+        .catch(err => { 
+          console.log('Server refresh error')
+          console.log(err)
+          this.refreshError = true
         })
     },
     pingAllServers () {
@@ -77,7 +83,8 @@ export const useMultiplayerStore = defineStore('mutiplayer', {
     },
     refreshLoop () {
       const work = this.getAutoRefersh  ? this.refresh() : Promise.resolve()
-      return work.then(() => {
+      return work
+        .then(() => {
           setTimeout(() => {
             this.refreshLoop()
           }, refreshTime)
