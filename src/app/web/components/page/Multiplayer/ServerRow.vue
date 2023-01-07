@@ -105,19 +105,26 @@ watch(props, () => {
 </script>
 <style lang="scss" scoped>
 @import '../../../scss/colors.scss';
+@import '../../../scss/variables.scss';
 
 .server-row {
   padding: .2rem 0;
   border-top: 1px solid grey;
+
   &:last-child {
     border-bottom: 1px solid grey;
   }
 
   width: 100%;
   display: grid;
-  grid-template-columns: 150px auto 8rem 2rem;
+  grid-template-columns: auto 8rem 2rem;
   grid-template-areas: 
-    "map details players action";
+    "details players action";
+  @media only screen and (min-width: $phone-breakpoint)  {
+    grid-template-columns: 150px auto 8rem 2rem;
+    grid-template-areas: 
+      "map details players action";
+  }
 
   .detail {
     margin-left: .5rem;
@@ -162,6 +169,10 @@ watch(props, () => {
     margin-right: 2rem;
   }
   .map-image {
+    display: none;
+    @media only screen and (min-width: $phone-breakpoint) {
+      display: block;
+    }
     grid-area: map;
     background-position: right;
     position: relative;
