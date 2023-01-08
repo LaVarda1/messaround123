@@ -1557,7 +1557,7 @@ export const init = async function(
     sys.print('Applying startup cfg...\n');
     cmd.state.text += process.env.STARTUP_CFG + "\n"
   }
-  cmd.state.text += '+mlook\n' + cmd.state.text;
+  cmd.state.text += '\n+mlook\n' + cmd.state.text;
   cmd.state.text += 'exec quake.rc\n' + cmd.state.text;
   state.initialized = true;
   sys.print('========Quake Initialized=========\n');
