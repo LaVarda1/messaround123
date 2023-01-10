@@ -7,7 +7,7 @@
     "outDir": "./dist/",
     "noImplicitAny": false,
     "sourceMap": true,
-    "module": "es2022",
+    "module": "commonjs",
     "target": "ESNext",
     "allowJs": true,
     "esModuleInterop": true,
