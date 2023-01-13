@@ -33,7 +33,7 @@ const routes = [
         ]
       },
       { name: 'faq', path: '/faq', component: Faq },
-      { name: 'faq', path: '/slicnse', component: SharewareLicense }
+      { name: 'slicnse', path: '/slicnse', component: SharewareLicense }
     ]
   },
   { 
